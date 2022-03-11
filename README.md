@@ -97,6 +97,14 @@ In order to use locked pages, you need to be in kernel mode. In kernel mode, all
 
 The CPU starts in kernel mode with all pages locked.
 
+## Additional assembly
+
+There are a few functions that are not supported natively by the processor that can still be implemented trivially in asm. The following are the commands:
+
+`NOT Rx` - Bitwise not operation on register.
+`NOP` - Do nothing.
+`HALT` - Stops the processor.
+
 ## Process slots
 
 
