@@ -8,18 +8,17 @@ uint16_t Processor::getExtData() {
 };
 
 void Processor::executeNextInstruction() {
-    int16_t addr = getAddress(m_program_counter++);
-    int16_t instruction = m_memory[addr];
-    int8_t ins_high = instruction >> 8;
-    int8_t ins_low = instruction & 0xFF;
-
-    std::cout << "INS: " << static_cast<int>(ins_high) << " " << static_cast<int>(ins_low) << std::endl;
+    uint16_t addr = getAddress(m_program_counter++);
+    uint16_t instruction = m_memory[addr];
+    uint8_t ins_high = instruction >> 8;
+    uint8_t ins_low = instruction & 0xFF;
 
     if(ins_high & 0x80) {
         // Cannot execute kernel instructions when not in kernel mode.
         if(!(m_flags & E_PROC_FLAG_KERNEL)) throw E_PROC_ERROR_BAD_INS;
 
-        switch(static_cast<PROC_KERN_INSTRUCTIONS>(ins_high & 0x7F))
+        uint16_t _temp;
+        switch(static_cast<PROC_KERN_INSTRUCTIONS>(ins_high))
         {
             case E_PROC_KINS_LOCK:
                 m_REGS[E_PROC_REG_PAGE_STACK_SIZE] -= ins_low;
@@ -39,6 +38,22 @@ void Processor::executeNextInstruction() {
 
             case E_PROC_KINS_USR_ADDR:
                 // Todo
+            break;
+
+            case E_PROC_KINS_SHUTDOWN:
+                m_running = false;
+            break;
+
+            case E_PROC_KINS_PRINTL:
+                _temp = m_REGS[ins_low] & 0xFF;
+                std::cout << reinterpret_cast<char&>(_temp);
+            break;
+            case E_PROC_KINS_PRINTH:
+                _temp = (m_REGS[ins_low] >> 8) & 0xFF;
+                std::cout << reinterpret_cast<char&>(_temp);
+            break;
+            case E_PROC_KINS_PRINTFLUSH:
+                std::cout << std::flush;
             break;
 
             default: throw E_PROC_ERROR_BAD_INS;
@@ -85,10 +100,17 @@ void Processor::executeNextInstruction() {
             break;
 
             case E_PROC_INS_CALL:
-                // Todo
+                _TEMP = getExtData();
+                stackPush(m_program_counter);
+                m_program_counter = _TEMP;
             break;
             case E_PROC_INS_RET:
-                // Todo
+                m_program_counter = stackPop();
+            break;
+
+            case E_PROC_INS_LD:
+                reg1 = getReg(ins_low);
+                priv_setReg(ins_low, m_memory[getAddress(reg1)]);
             break;
 
             case E_PROC_INS_RAISE:
@@ -129,7 +151,6 @@ void Processor::dumpState() {
 void Processor::step() {
     // Execute next instruction.
     try {
-        std::cout << "STEP EXECUTE INSTRUCTION" << std::endl;
         executeNextInstruction();
     }
     // Interupts
@@ -151,7 +172,7 @@ void Processor::step() {
 }
 
 void Processor::run() {
-    while(true) {
+    while(m_running) {
         step();
     }
 };
@@ -181,14 +202,21 @@ void Processor::priv_setReg(uint8_t reg, uint16_t value) {
     m_REGS[reg] = value;
 }
 
-void Processor::PUSH(uint8_t x) {
+void Processor::stackPush(uint16_t x) {
     if(m_REGS[E_PROC_REG_STACK_SIZE] >= 0XFF) throw E_PROC_ERROR_STACK_OVERFLOW;
-    m_STACK[m_REGS[E_PROC_REG_STACK_SIZE]] = m_REGS[x];
+    m_STACK[m_REGS[E_PROC_REG_STACK_SIZE]] = x;
     ++m_REGS[E_PROC_REG_STACK_SIZE];
 }
-void Processor::POP(uint8_t x) {
+uint16_t Processor::stackPop() {
     if(m_REGS[E_PROC_REG_STACK_SIZE] == 0) throw E_PROC_ERROR_STACK_UNDERFLOW;
-    priv_setReg(x, m_STACK[--m_REGS[E_PROC_REG_STACK_SIZE]]);
+    return m_STACK[--m_REGS[E_PROC_REG_STACK_SIZE]];
+}
+
+void Processor::PUSH(uint8_t x) {
+    stackPush(m_REGS[x]);
+}
+void Processor::POP(uint8_t x) {
+    priv_setReg(x, stackPop());
 }
 
 // The ALU component.
@@ -274,9 +302,9 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
     // Single register modification.
     else {
         switch(opcode) {
-            case E_PROC_INS_ALU_XORI: setReg(x, x ^ getExtData()); break;
-            case E_PROC_INS_ALU_ANDI: setReg(x, x & getExtData()); break;
-            case E_PROC_INS_ALU_ORI: setReg(x, x | getExtData()); break;
+            case E_PROC_INS_ALU_XORI: priv_setReg(x, getReg(x) ^ getExtData()); break;
+            case E_PROC_INS_ALU_ANDI: priv_setReg(x, getReg(x) & getExtData()); break;
+            case E_PROC_INS_ALU_ORI: priv_setReg(x, getReg(x) | getExtData()); break;
 
             default: throw E_PROC_ERROR_BAD_INS;
         }

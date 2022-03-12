@@ -14,6 +14,8 @@ enum PROC_FLAGS {
 
 class Processor {
     uint16_t m_program_counter = 0;
+    
+    bool m_running = true;
 
     uint16_t m_REGS[256]; // Registers.
 
@@ -48,6 +50,9 @@ class Processor {
     void PUSH(uint8_t x);
     void POP(uint8_t x);
 
+    void stackPush(uint16_t x);
+    uint16_t stackPop();
+
     uint16_t getReg(uint8_t reg);
     void setReg(uint8_t reg, uint16_t value);
 
@@ -58,6 +63,7 @@ class Processor {
     void reset();
 
 public:
+    bool isRunning() { return m_running; }
     void dumpState();
     void step();
     void run();

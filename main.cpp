@@ -18,17 +18,24 @@ int main(int argc, char** argv) {
     memFile.close();
 
     std::string nextWord;
-    bool isRunning = true;
-    while(std::cin >> nextWord && isRunning)
+    while(std::cin >> nextWord)
     {
         if(nextWord == "step") {
+            std::cout << "STEP EXECUTE INSTRUCTION" << std::endl;
             proc.step();
+        }
+        else if(nextWord == "run") {
+            proc.run();
         }
         else if(nextWord == "dump") {
             proc.dumpState();
         }
-        else if(nextWord == "exit") {
-            isRunning = false;
+        else if(nextWord == "exit" || nextWord == "quit" || nextWord == "Quit") {
+            return 0;
+        }
+
+        if(!proc.isRunning()) {
+            return 0;
         }
     }
     return 0;

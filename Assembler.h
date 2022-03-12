@@ -14,6 +14,7 @@ enum ASM_DIRECTIVES {
     E_ASM_DIR_SET,
     E_ASM_DIR_MOV,
     E_ASM_DIR_SWP, // Swap
+    E_ASM_DIR_LD,
 
     E_ASM_DIR_INC,
     E_ASM_DIR_DEC,
@@ -53,6 +54,10 @@ enum ASM_DIRECTIVES {
     E_ASM_DIR_PUSH,
     E_ASM_DIR_POP,
     E_ASM_DIR_USR_ADDR,
+    E_ASM_DIR_PRINTL,
+    E_ASM_DIR_PRINTH,
+    E_ASM_DIR_PRINTFLUSH,
+    E_ASM_DIR_SHUTDOWN,
 
     // Shorthand for common commands that are implemented strangely.
     E_ASM_DIR_BNOT,
@@ -61,7 +66,9 @@ enum ASM_DIRECTIVES {
 
     // Assembler directives
     E_ASM_DOT_ALIAS,
+    E_ASM_DOT_TEXT,
     E_ASM_DOT_DATA,
+    E_ASM_DOT_ORG,
 };
 
 const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
@@ -71,6 +78,7 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DIR_SET, "SET" },
     { E_ASM_DIR_MOV, "MOV" },
     { E_ASM_DIR_SWP, "SWP" },
+    { E_ASM_DIR_LD, "LD" },
 
     { E_ASM_DIR_CALL, "CALL" },
     { E_ASM_DIR_RET, "RET" },
@@ -106,13 +114,19 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DIR_PUSH, "PUSH" },
     { E_ASM_DIR_POP, "POP" },
     { E_ASM_DIR_USR_ADDR, "USR_ADDR" },
+    { E_ASM_DIR_PRINTL, "PRINTL" },
+    { E_ASM_DIR_PRINTH, "PRINTH" },
+    { E_ASM_DIR_PRINTFLUSH, "PRINTFLUSH" },
+    { E_ASM_DIR_SHUTDOWN, "SHUTDOWN" },
 
     { E_ASM_DIR_HALT, "HALT" },
     { E_ASM_DIR_BNOT, "BNOT" },
     { E_ASM_DIR_NOP, "NOP" },
 
     { E_ASM_DOT_ALIAS, ".ALIAS" },
+    { E_ASM_DOT_TEXT, ".TEXT" },
     { E_ASM_DOT_DATA, ".DATA" },
+    { E_ASM_DOT_ORG, ".ORG" },
 };
 const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "RJMP", E_ASM_DIR_RJMP },
@@ -121,6 +135,7 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "SET", E_ASM_DIR_SET },
     { "MOV", E_ASM_DIR_MOV },
     { "SWP", E_ASM_DIR_SWP },
+    { "LD", E_ASM_DIR_LD },
 
     { "CALL", E_ASM_DIR_CALL },
     { "RET", E_ASM_DIR_RET },
@@ -156,13 +171,18 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "PUSH", E_ASM_DIR_PUSH },
     { "POP", E_ASM_DIR_POP },
     { "USR_ADDR", E_ASM_DIR_USR_ADDR },
+    { "PRINTL", E_ASM_DIR_PRINTL },
+    { "PRINTH", E_ASM_DIR_PRINTH },
+    { "PRINTFLUSH", E_ASM_DIR_PRINTFLUSH },
+    { "SHUTDOWN", E_ASM_DIR_SHUTDOWN },
     
     { "BNOT", E_ASM_DIR_BNOT },
     { "HALT", E_ASM_DIR_HALT },
     { "NOP", E_ASM_DIR_NOP },
 
     { ".ALIAS", E_ASM_DOT_ALIAS },
-    { ".DATA", E_ASM_DOT_DATA },
+    { ".TEXT", E_ASM_DOT_TEXT },
+    { ".ORG", E_ASM_DOT_ORG },
 };
 
 enum ASSEMBLER_RESPOSE_CODES {
@@ -172,6 +192,8 @@ enum ASSEMBLER_RESPOSE_CODES {
     RESPONSE_CODE_COULD_NOT_OPEN_FILE,
     RESPONSE_CODE_INVALID_IDENTIFIER,
     RESPONSE_CODE_IDENTIFIER_OVERWRITE,
+    RESPONSE_CODE_OVERLAP,
+    RESPONSE_CODE_INVALID_SYNTAX,
 };
 
 std::string ASM_ERROR_NAME(ASSEMBLER_RESPOSE_CODES code);

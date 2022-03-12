@@ -54,10 +54,12 @@ MOV 0000 0011 xxxx xxxx 0000 0000 yyyy yyyy - Move Register y to x.
 
 SWP 0000 0011 xxxx xxxx 0000 0001 yyyy yyyy - Swap regs x and y.
 
-### Functions
-CALL 0000 0100 xxxx xxxx yyyy yyyy yyyy yyyy - Call function at address, place return value in reg
+LD 0000 1000 xxxx xxxx - Load value from memory at reg x to reg x
 
-RET 0000 0101 xxxx xxxx - Return from function with value in reg
+### Functions
+CALL 0000 0100 ---- ---- yyyy yyyy yyyy yyyy - Call function at address, place return value in reg
+
+RET 0000 0101 ---- ---- - Return from function with value in reg
 
 INC 0000 0110 xxxx xxxx - Inc register.
 
@@ -110,6 +112,14 @@ PUSH 1000 0010 xxxx xxxx - Push data in Reg X to stack
 POP  1000 0010 xxxx xxxx - Pop data from stack, place in Reg X
 
 USR_ADDR 1000 1000 xxxx xxxx - Convert the address in reg X from user space to kernel space.
+
+PRINTH 1111 1100 xxxx xxxx - Print high bits of register X
+
+PRINTL 1111 1101 xxxx xxxx - Print low bits of register X
+
+PRINTFLUSH 1111 1110 ---- ---- Flush print buffer.
+
+SHUTDOWN 1111 1111 xxxx xxxx - Shutdown the machine. (Optional: machine returns status code xxxx xxxx?)
 
 When accessing heap addresses, the processor considers locked pages to not exist. For example, if page 0
 is locked and page 1 is not locked, any attempt by the processor to access a page 0 address will result

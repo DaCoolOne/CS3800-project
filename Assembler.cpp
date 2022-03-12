@@ -90,6 +90,8 @@ void Assembler::newCommand(std::string cmd) {
     uint8_t table[4];
     uint16_t _temp;
     int _s_temp;
+    std::size_t _size_temp;
+    std::size_t _size_temp2;
     try {
         ASM_DIRECTIVES a = ASM_STR_TO_DIR.at(COMMAND);
         switch(a) {
@@ -144,20 +146,26 @@ void Assembler::newCommand(std::string cmd) {
                 table[3] = readStr(tokenGroup.at(2));
                 size = 4;
             break;
+            case E_ASM_DIR_LD:
+                if(tokenGroup.size() != 2) throw RESPONSE_CODE_WRONG_NUMBER_ARGS;
+                table[0] = static_cast<uint8_t>(E_PROC_INS_LD);
+                table[1] = readStr(tokenGroup.at(1));
+                size = 2;
+            break;
 
             case E_ASM_DIR_CALL:
                 if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_CALL);
-                table[1] = readStr(tokenGroup.at(1));
-                _temp = readStr(tokenGroup.at(2), 2, 2);
+                table[1] = 0x00;
+                _temp = readStr(tokenGroup.at(1), 2, 2);
                 table[2] = _temp >> 8;
                 table[3] = _temp & 0xFF;
                 size = 4;
             break;
             case E_ASM_DIR_RET:
-                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                if(tokenGroup.size() != 1) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_RET);
-                table[1] = readStr(tokenGroup.at(1));
+                table[1] = 0x00;
                 size = 2;
             break;
 
@@ -394,6 +402,32 @@ void Assembler::newCommand(std::string cmd) {
                 table[1] = readStr(tokenGroup.at(1));
                 size = 2;
             break;
+            
+            case E_ASM_DIR_PRINTL:
+                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_KINS_PRINTL);
+                table[1] = readStr(tokenGroup.at(1));
+                size = 2;
+            break;
+            case E_ASM_DIR_PRINTH:
+                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_KINS_PRINTH);
+                table[1] = readStr(tokenGroup.at(1));
+                size = 2;
+            break;
+            case E_ASM_DIR_PRINTFLUSH:
+                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_KINS_PRINTFLUSH);
+                table[1] = 0x00;
+                size = 2;
+            break;
+
+            case E_ASM_DIR_SHUTDOWN:
+                if(tokenGroup.size() != 1) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_KINS_SHUTDOWN);
+                table[1] = 0x0; // readStr(tokenGroup.at(1));
+                size = 2;
+            break;
 
             // Special cases
             case E_ASM_DIR_BNOT:
@@ -431,6 +465,36 @@ void Assembler::newCommand(std::string cmd) {
             break;
             
             case E_ASM_DOT_DATA:
+                for(int i = 1; i < tokenGroup.size(); i ++) {
+                    _temp = readStr(tokenGroup.at(1));
+                    table[0] = _temp >> 8;
+                    table[1] = _temp & 0xFF;
+                    buffer(reinterpret_cast<char*>(table), 2);
+                }
+                size = 0;
+            break;
+            case E_ASM_DOT_TEXT:
+                _size_temp = cmd.find_first_of('"');
+                if(_size_temp == std::string::npos) throw RESPONSE_CODE_INVALID_SYNTAX;
+                _size_temp2 = cmd.find_first_of('"', _size_temp+1);
+                if(_size_temp2 == std::string::npos) throw RESPONSE_CODE_INVALID_SYNTAX;
+                for(int i = _size_temp + 1; i < _size_temp2 + 1; i += 2) {
+                    table[0] = i >= _size_temp2 ? '\0' : cmd.at(i);
+                    table[1] = (i + 1) >= _size_temp2 ? '\0' : cmd.at(i+1);
+                    buffer(reinterpret_cast<char*>(table), 2);
+                }
+                size = 0;
+            break;
+
+            case E_ASM_DOT_ORG:
+                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                _s_temp = readStr(tokenGroup.at(1));
+                if(_s_temp * 2 < bufferSize) throw RESPONSE_CODE_OVERLAP;
+                table[0] = '\0';
+                table[1] = '\0';
+                for(int i = bufferSize; i < _s_temp * 2; i += 2) {
+                    buffer(reinterpret_cast<char*>(table), 2);
+                }
                 size = 0;
             break;
 
@@ -498,6 +562,8 @@ std::string ASM_ERROR_NAME(ASSEMBLER_RESPOSE_CODES code)
         case RESPONSE_CODE_COULD_NOT_OPEN_FILE: return "COULD NOT OPEN FILE";
         case RESPONSE_CODE_INVALID_IDENTIFIER: return "INVALID IDENTIFIER";
         case RESPONSE_CODE_IDENTIFIER_OVERWRITE: return "CONFLICTING IDENTIFIER DEFINITIONS";
+        case RESPONSE_CODE_OVERLAP: return "OVERLAPPING CODE SEGMENTS";
+        case RESPONSE_CODE_INVALID_SYNTAX: return "INVALID SYNTAX";
     }
     return "UNKNOWN ERROR";
 };

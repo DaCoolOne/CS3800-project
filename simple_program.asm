@@ -1,32 +1,50 @@
 
 
-.ALIAS data1 0x0F40
-.ALIAS data2 0x00C3
+; A hello world program.
 
-; Memory starts with a jump table for all interrupts.
-; We aren't using this functionality, so we can simply set up a quick and dirty
-; default jump table
-jump_table:
-    JMP start      ; RESET
-    JMP jump_table ; TIMER TICK
-    JMP jump_table ; BAD MEM ACCESS
-    JMP jump_table ; STACK OVERFLOW
-    JMP jump_table ; STACK UNDERFLOW
-bad_instruction:
-    JMP jump_table ; BAD INSTRUCTION
+.ALIAS HELLO_WORLD 0x050
 
-; Not using any user defined interrupts, but in the future that will change.
-; Even if an interrupt is not specified, there must be some error handling system.
-; I recommend the following for unused user defined interrupts:
-    JMP bad_instruction
-    JMP bad_instruction
+.ALIAS CHARACTER_OFFSET 0x04
+.ALIAS CURRENT_CHAR_PAIR 0x05
+.ALIAS CURRENT_CHAR 0x06
 
 start:
-    SET 0x10 data1
-    SET 0x11 data2
-    ADD 0x2F 0x10 0x11
+    SET CHARACTER_OFFSET 0x00
 
-loop:
-    SWP 0x10 0x11
-    INC 0x2F
-    RJMP loop
+; The print loop
+prnt_loop:
+    ; Fetch the next character pair
+    CALL fetch_next
+    
+    ; Copy data, check for null character
+    MOV CURRENT_CHAR CURRENT_CHAR_PAIR
+    ANDI CURRENT_CHAR 0xFF00
+    CJMP CURRENT_CHAR success_got_c1
+    SHUTDOWN
+
+success_got_c1:
+    ; Print current char
+    PRINTH CURRENT_CHAR
+
+    ; Copy data, check for null character
+    MOV CURRENT_CHAR CURRENT_CHAR_PAIR
+    ANDI CURRENT_CHAR 0x00FF
+    CJMP CURRENT_CHAR success_got_c2
+    SHUTDOWN
+
+success_got_c2:
+    PRINTL CURRENT_CHAR
+    JMP prnt_loop
+
+; Fetches the next character from the string
+fetch_next:
+    SET CURRENT_CHAR_PAIR HELLO_WORLD
+    ADD CURRENT_CHAR_PAIR CURRENT_CHAR_PAIR CHARACTER_OFFSET
+    LD CURRENT_CHAR_PAIR
+    INC CHARACTER_OFFSET
+    RET
+
+; The string
+.ORG HELLO_WORLD
+    .TEXT "Hello World!"
+
