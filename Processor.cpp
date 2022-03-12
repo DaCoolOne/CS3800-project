@@ -50,6 +50,7 @@ void Processor::executeNextInstruction() {
     }
     else {
         uint16_t _TEMP;
+        uint16_t reg1, reg2;
         switch(static_cast<PROC_INSTRUCTIONS>(ins_high))
         {
             case E_PROC_INS_RJMP:
@@ -66,7 +67,10 @@ void Processor::executeNextInstruction() {
             case E_PROC_INS_SET_MOV:
                 _TEMP = getExtData();
                 if(_TEMP & 0xFF00) {
-                    setReg(ins_low, getReg(_TEMP & 0xFF));
+                    reg1 = getReg(_TEMP & 0xFF);
+                    reg2 = getReg(ins_low);
+                    priv_setReg(ins_low, reg1);
+                    priv_setReg(_TEMP & 0xFF, reg2);
                 }
                 else {
                     setReg(ins_low, getReg(_TEMP & 0xFF));

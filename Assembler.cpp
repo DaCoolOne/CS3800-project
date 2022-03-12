@@ -128,6 +128,23 @@ void Assembler::newCommand(std::string cmd) {
                 size = 2;
             break;
 
+            case E_ASM_DIR_MOV:
+                if(tokenGroup.size() != 3) throw RESPONSE_CODE_WRONG_NUMBER_ARGS;
+                table[0] = static_cast<uint8_t>(E_PROC_INS_SET_MOV);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = 0x00;
+                table[3] = readStr(tokenGroup.at(2));
+                size = 4;
+            break;
+            case E_ASM_DIR_SWP:
+                if(tokenGroup.size() != 3) throw RESPONSE_CODE_WRONG_NUMBER_ARGS;
+                table[0] = static_cast<uint8_t>(E_PROC_INS_SET_MOV);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = 0x01;
+                table[3] = readStr(tokenGroup.at(2));
+                size = 4;
+            break;
+
             case E_ASM_DIR_CALL:
                 if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_CALL);
