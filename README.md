@@ -167,3 +167,8 @@ and corresponds to the following table:
 
 These can be accessed in kernel-lisp scripts by writing function definitions.
 
+
+
+# TODO ITEMS
+
+Fix rjmp when jumping to a future

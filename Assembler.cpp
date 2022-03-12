@@ -416,7 +416,7 @@ void Assembler::newCommand(std::string cmd) {
                 size = 2;
             break;
             case E_ASM_DIR_PRINTFLUSH:
-                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                if(tokenGroup.size() != 1) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_KINS_PRINTFLUSH);
                 table[1] = 0x00;
                 size = 2;

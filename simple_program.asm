@@ -20,7 +20,7 @@ prnt_loop:
     MOV CURRENT_CHAR CURRENT_CHAR_PAIR
     ANDI CURRENT_CHAR 0xFF00
     CJMP CURRENT_CHAR success_got_c1
-    SHUTDOWN
+    JMP stop
 
 success_got_c1:
     ; Print current char
@@ -30,7 +30,7 @@ success_got_c1:
     MOV CURRENT_CHAR CURRENT_CHAR_PAIR
     ANDI CURRENT_CHAR 0x00FF
     CJMP CURRENT_CHAR success_got_c2
-    SHUTDOWN
+    JMP stop
 
 success_got_c2:
     PRINTL CURRENT_CHAR
@@ -43,6 +43,10 @@ fetch_next:
     LD CURRENT_CHAR_PAIR
     INC CHARACTER_OFFSET
     RET
+
+stop:
+    PRINTFLUSH
+    SHUTDOWN
 
 ; The string
 .ORG HELLO_WORLD
