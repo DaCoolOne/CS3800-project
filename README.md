@@ -45,7 +45,7 @@ CJMP 0000 0001 xxxx xxxx yyyy yyyy yyyy yyyy - Jump to literal position if Reg X
 
 JMP  0000 0001 1111 1111 yyyy yyyy yyyy yyyy - Jump to literal position
 
-REGJMP 0000 0110 xxxx xxxx - Jump to literal position in register. (TODO)
+REGJMP 0000 1000 xxxx xxxx - Jump to literal position in register. (TODO)
 
 ### Direct Reg manip
 SET 0000 0010 xxxx xxxx yyyy yyyy yyyy yyyy - Literal set reg x to y.
@@ -58,6 +58,10 @@ SWP 0000 0011 xxxx xxxx 0000 0001 yyyy yyyy - Swap regs x and y.
 CALL 0000 0100 xxxx xxxx yyyy yyyy yyyy yyyy - Call function at address, place return value in reg
 
 RET 0000 0101 xxxx xxxx - Return from function with value in reg
+
+INC 0000 0110 xxxx xxxx - Inc register.
+
+DEC 0000 0111 xxxx xxxx - Dec register.
 
 ### ALU Operations:
 010A AAAA xxxx xxxx yyyy yyyy zzzz zzzz - Perform ALU operation A on registers Y, Z. Place result in X.

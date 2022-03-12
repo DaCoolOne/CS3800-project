@@ -192,9 +192,10 @@ class Assembler
     uint32_t bufferSize = 0;
     uint32_t maxBufferSize = 0xFF;
 
-    int readStr(std::string s, uint8_t size, uint32_t futurePosition);
+    int readStr(std::string s, uint8_t size = 0, uint8_t futurePosition = 0xFF);
     void expand(uint32_t newSize);
     void buffer(char* arr, uint8_t size);
+    void resolveIdent(std::string ident, int value);
     Assembler(Assembler& other);
 public:
     Assembler(): outputBuffer(new char[maxBufferSize]) {}

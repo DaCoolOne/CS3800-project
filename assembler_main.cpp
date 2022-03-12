@@ -20,6 +20,7 @@ int main(int argc, char** argv) {
         std::string line;
         while(std::getline(input, line)) {
             ++line_count;
+            // std::cout << "PROCESS LINE " << line_count << std::endl;
             a.newCommand(line);
         }
 
