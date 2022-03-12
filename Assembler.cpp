@@ -7,10 +7,39 @@
 #include <algorithm>
 #include <cctype>
 
-#include "Processor.h"
+#include "ProcessorConsts.h"
 #include "Assembler.h"
 
-int readStr(std::string s) {
+bool isValidIdent(std::string s) {
+    for(int i = 0; i < s.size(); ++i) {
+        char c = s[i];
+        if(!(('A' <= c && 'Z' >= c) || ('a' <= c && 'z' >= c) || ('0' <= c && '9' >= c && i > 0) || c == '_'))
+        {
+            return false;
+        }
+    }
+    return s.size() > 0;
+}
+
+int Assembler::readStr(std::string s, uint8_t size = 0, uint8_t futurePosition = 0xFF) {
+    if(isValidIdent(s)) {
+        if(futurePosition < 0xFF) {
+            if(m_labels.count(s)) {
+                return m_labels.at(s);
+            }
+            else {
+                Assembler_Link_Future future;
+                future.ident = s;
+                future.start = bufferSize + futurePosition;
+                future.size = size;
+                m_to_link.push_back(future);
+                return 0;
+            }
+        }
+        else {
+            return m_labels.at(s);
+        }
+    }
     if(s.size() >= 3) {
         if(s[0] == '0' && s[1] == 'x') {
             return std::stoi(s.substr(2), nullptr, 16);
@@ -22,7 +51,7 @@ int readStr(std::string s) {
     return std::stoi(s);
 }
 
-void Assembler::newCommand(std::string cmd, std::ofstream& out) {
+void Assembler::newCommand(std::string cmd) {
     // Remove comments
     auto pos = cmd.find_first_of(';');
     if(pos != std::string::npos) {
@@ -36,14 +65,6 @@ void Assembler::newCommand(std::string cmd, std::ofstream& out) {
     while(streamver >> token) {
         tokenGroup.push_back(token);
     }
-
-    /*
-    std::cout << "V: ";
-    for(auto c : tokenGroup) {
-        std::cout << c << "\t";
-    }
-    std::cout << std::endl;
-    */
 
     if(tokenGroup.size() == 0) return;
     
@@ -72,7 +93,7 @@ void Assembler::newCommand(std::string cmd, std::ofstream& out) {
                 if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 token[0] = static_cast<char>(E_PROC_INS_JMP);
                 token[1] = readStr(tokenGroup.at(1));
-                _temp = readStr(tokenGroup.at(2));
+                _temp = readStr(tokenGroup.at(2), 2, 2);
                 table[2] = _temp >> 8;
                 table[3] = _temp & 0xFF;
             break;
@@ -80,9 +101,25 @@ void Assembler::newCommand(std::string cmd, std::ofstream& out) {
                 if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 token[0] = static_cast<char>(E_PROC_INS_JMP);
                 token[1] = 0xFF; // Reg is always true by convention.
-                _temp = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(1), 2, 2);
                 table[2] = _temp >> 8;
                 table[3] = _temp & 0xFF;
+            break;
+
+            case E_ASM_DIR_CALL:
+                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                token[0] = static_cast<char>(E_PROC_INS_CALL);
+                token[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2), 2, 2);
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
+            break;
+            case E_ASM_DIR_RET:
+                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                token[0] = static_cast<char>(E_PROC_INS_RET);
+                token[1] = readStr(tokenGroup.at(1));
+                size = 2;
             break;
 
             case E_ASM_DIR_ADD:
@@ -332,15 +369,54 @@ void Assembler::newCommand(std::string cmd, std::ofstream& out) {
                 size = 2;
             break;
 
+            // Assembler directives:
+            case E_ASM_DOT_ALIAS:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                if(!isValidIdent(tokenGroup.at(1))) throw RESPONSE_CODE_INVALID_IDENTIFIER;
+                if(m_labels.count(tokenGroup.at(1))) throw RESPONSE_CODE_IDENTIFIER_OVERWRITE;
+                m_labels.insert(std::pair<std::string, int>(tokenGroup.at(1), readStr(tokenGroup.at(2))));
+                size = 0;
+            break;
+            
+            case E_ASM_DOT_DATA:
+                size = 0;
+            break;
+
             default:
                 std::cerr << "I don't know what to do with this: " << a << std::endl;
                 throw 0xff;
         }
-        out.write(reinterpret_cast<char*>(table), size);
+        buffer(reinterpret_cast<char*>(table), size);
     }
     catch(std::out_of_range e) {
         throw RESPONSE_CODE_UNKNOWN_IDENTIFIER;
     }
+}
+
+void Assembler::compile(std::ofstream& out) {
+    if(m_to_link.size() > 0) throw RESPONSE_CODE_UNKNOWN_IDENTIFIER;
+
+    out.write(outputBuffer, bufferSize);
+}
+
+void Assembler::expand(uint32_t newSize) {
+    if(maxBufferSize <= newSize) {
+        newSize = std::max(newSize, maxBufferSize * 2);
+        char* _temp = new char[newSize];
+        for(int i = 0; i < bufferSize; i ++) {
+            _temp[i] = outputBuffer[i];
+        }
+        delete[] outputBuffer;
+        outputBuffer = _temp;
+        maxBufferSize = newSize;
+    }
+}
+void Assembler::buffer(char* arr, uint8_t size) {
+    expand(size + maxBufferSize);
+    for(unsigned int i = 0; i < size; i ++) {
+        outputBuffer[i + bufferSize] = arr[i];
+    }
+    bufferSize += size;
 }
 
 std::string ASM_ERROR_NAME(ASSEMBLER_RESPOSE_CODES code)
@@ -351,6 +427,8 @@ std::string ASM_ERROR_NAME(ASSEMBLER_RESPOSE_CODES code)
         case RESPONSE_CODE_UNKNOWN_IDENTIFIER: return "UNKNOWN IDENTIFIER";
         case RESPONSE_CODE_WRONG_NUMBER_ARGS: return "WRONG NUMBER OF ARGS";
         case RESPONSE_CODE_COULD_NOT_OPEN_FILE: return "COULD NOT OPEN FILE";
+        case RESPONSE_CODE_INVALID_IDENTIFIER: return "INVALID IDENTIFIER";
+        case RESPONSE_CODE_IDENTIFIER_OVERWRITE: return "CONFLICTING IDENTIFIER DEFINITIONS";
     }
     return "UNKNOWN ERROR";
 };

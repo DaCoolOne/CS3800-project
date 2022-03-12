@@ -31,6 +31,7 @@ You can run the processor with the command:
 Some of the registers have special meanings:
 
 Reg 0x00 -> Page stack size.
+
 Reg 0x01 -> Stack size.
 
 Reg 0xFF -> Always 0xFF. Writing to this register is a NOP.
@@ -39,38 +40,53 @@ Reg 0xFF -> Always 0xFF. Writing to this register is a NOP.
 
 ### Jump
 RJMP 0000 0000 xxxx xxxx - Add X to the PC
+
 CJMP 0000 0001 xxxx xxxx yyyy yyyy yyyy yyyy - Jump to literal position if Reg X is not 0
+
 JMP  0000 0001 1111 1111 yyyy yyyy yyyy yyyy - Jump to literal position
 
-REGJMP 0000 0110 xxxx xxxx - Jump to literal position in register.
+REGJMP 0000 0110 xxxx xxxx - Jump to literal position in register. (TODO)
 
 ### Direct Reg manip
 SET 0000 0010 xxxx xxxx yyyy yyyy yyyy yyyy - Literal set reg x to y.
+
 MOV 0000 0011 xxxx xxxx 0000 0000 yyyy yyyy - Move Register y to x.
+
 SWP 0000 0011 xxxx xxxx 0000 0001 yyyy yyyy - Swap regs x and y.
 
 ### Functions
 CALL 0000 0100 xxxx xxxx yyyy yyyy yyyy yyyy - Call function at address, place return value in reg
+
 RET 0000 0101 xxxx xxxx - Return from function with value in reg
 
 ### ALU Operations:
 010A AAAA xxxx xxxx yyyy yyyy zzzz zzzz - Perform ALU operation A on registers Y, Z. Place result in X.
+
 The alu operations are as follows:
+
 ADD, SUB, DIV, LSHIFT, RSHIFT, AND, OR, XOR, BAND, BOR, BXOR, MOD
 
 Two reg ALU operations:
+
 0110 AAAA xxxx xxxx yyyy yyyy zzzz zzzz - Same as normal ALU operations, but uses two sequential registers.
+
 FADD, FSUB, MUL, FMUL, FDIV,
 DIVMOD
 
 Special notes:
+
 MUL and DIVMOD take as right hand arguments Y and Z that are single register, but the output is two registers large.
+
 DIVMOD places the result of int division in reg X, and the result of modulus in X+1
 
 Literal ALU operations:
+
 0111 AAAA xxxx xxxx yyyy yyyy yyyy yyyy - Perform operation on reg X with value Y.
+
 XORI - Bitwise xor with a literal value. Bitwise not can be run using XORI R 0xFF
+
 ORI - Bitwise or with a literal value.
+
 ANDI - Bitwise and with a literal value.
 
 BNOT - Binary not, does not have a y argument.
@@ -82,9 +98,11 @@ RAISE 0011 1111 --xx xxxx - Throw interrupt X+1.
 ## Kernel mode functions, processor must be in kernel mode.
 
 UNLOCK  1000 0001 xxxx xxxx - Unlock the last X pages of memory. Place last unlocked page into the accumulator.
+
 LOCK    1000 0000 xxxx xxxx - Lock page X of memory. Locked pages cannot be accessed by the processor.
 
 PUSH 1000 0010 xxxx xxxx - Push data in Reg X to stack
+
 POP  1000 0010 xxxx xxxx - Pop data from stack, place in Reg X
 
 USR_ADDR 1000 1000 xxxx xxxx - Convert the address in reg X from user space to kernel space.
@@ -102,7 +120,9 @@ The CPU starts in kernel mode with all pages locked.
 There are a few functions that are not supported natively by the processor that can still be implemented trivially in asm. The following are the commands:
 
 `NOT Rx` - Bitwise not operation on register.
+
 `NOP` - Do nothing.
+
 `HALT` - Stops the processor.
 
 ## Process slots
@@ -118,11 +138,17 @@ Whenever an interupt occurs, the processor enters kernel mode. The function that
 and corresponds to the following table:
 
 0x0000 -> RESET
+
 0x0002 -> TIMER_TICK
+
 0x0004 -> BAD_MEM_ACCESS
+
 0x0006 -> STACK_OVERFLOW
+
 0x0008 -> STACK_UNDERFLOW
+
 0x000A -> BAD_INS
+
 0x000C - 0x0080 -> USER_DEFINED_1 - USER_DEFINED_XX
 
 These can be accessed in kernel-lisp scripts by writing function definitions.

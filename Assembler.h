@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <cstdint>
 #include <fstream>
 
@@ -13,6 +14,9 @@ enum ASM_DIRECTIVES {
     E_ASM_DIR_SET,
     E_ASM_DIR_MOV,
     E_ASM_DIR_SWP, // Swap
+
+    E_ASM_DIR_INC,
+    E_ASM_DIR_DEC,
 
     E_ASM_DIR_CALL,
     E_ASM_DIR_RET,
@@ -54,6 +58,10 @@ enum ASM_DIRECTIVES {
     E_ASM_DIR_BNOT,
     E_ASM_DIR_HALT,
     E_ASM_DIR_NOP,
+
+    // Assembler directives
+    E_ASM_DOT_ALIAS,
+    E_ASM_DOT_DATA,
 };
 
 const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
@@ -63,8 +71,13 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DIR_SET, "SET" },
     { E_ASM_DIR_MOV, "MOV" },
     { E_ASM_DIR_SWP, "SWP" },
+
     { E_ASM_DIR_CALL, "CALL" },
     { E_ASM_DIR_RET, "RET" },
+
+    { E_ASM_DIR_INC, "INC" },
+    { E_ASM_DIR_DEC, "DEC" },
+
     { E_ASM_DIR_ADD, "ADD" },
     { E_ASM_DIR_SUB, "SUB" },
     { E_ASM_DIR_DIV, "DIV" },
@@ -97,6 +110,9 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DIR_HALT, "HALT" },
     { E_ASM_DIR_BNOT, "BNOT" },
     { E_ASM_DIR_NOP, "NOP" },
+
+    { E_ASM_DOT_ALIAS, ".ALIAS" },
+    { E_ASM_DOT_DATA, ".DATA" },
 };
 const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "RJMP", E_ASM_DIR_RJMP },
@@ -105,8 +121,13 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "SET", E_ASM_DIR_SET },
     { "MOV", E_ASM_DIR_MOV },
     { "SWP", E_ASM_DIR_SWP },
+
     { "CALL", E_ASM_DIR_CALL },
     { "RET", E_ASM_DIR_RET },
+    
+    { "INC", E_ASM_DIR_INC },
+    { "DEC", E_ASM_DIR_DEC },
+
     { "ADD", E_ASM_DIR_ADD },
     { "SUB", E_ASM_DIR_SUB },
     { "DIV", E_ASM_DIR_DIV },
@@ -139,6 +160,9 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "BNOT", E_ASM_DIR_BNOT },
     { "HALT", E_ASM_DIR_HALT },
     { "NOP", E_ASM_DIR_NOP },
+
+    { ".ALIAS", E_ASM_DOT_ALIAS },
+    { ".DATA", E_ASM_DOT_DATA },
 };
 
 enum ASSEMBLER_RESPOSE_CODES {
@@ -146,17 +170,36 @@ enum ASSEMBLER_RESPOSE_CODES {
     RESPONSE_CODE_UNKNOWN_IDENTIFIER,
     RESPONSE_CODE_WRONG_NUMBER_ARGS,
     RESPONSE_CODE_COULD_NOT_OPEN_FILE,
+    RESPONSE_CODE_INVALID_IDENTIFIER,
+    RESPONSE_CODE_IDENTIFIER_OVERWRITE,
 };
 
 std::string ASM_ERROR_NAME(ASSEMBLER_RESPOSE_CODES code);
 
+struct Assembler_Link_Future
+{
+    std::string ident;
+    uint32_t start;
+    uint8_t size;
+};
+
 // Assembler class.
 class Assembler
 {
-    std::map<std::string, uint16_t> m_labels;
-    uint16_t commandLength = 0;
+    std::map<std::string, int> m_labels;
+    std::vector<Assembler_Link_Future> m_to_link;
+    char* outputBuffer;
+    uint32_t bufferSize = 0;
+    uint32_t maxBufferSize = 0xFF;
+
+    int readStr(std::string s, uint8_t size, uint32_t futurePosition);
+    void expand(uint32_t newSize);
+    void buffer(char* arr, uint8_t size);
+    Assembler(Assembler& other);
 public:
-    void newCommand(std::string cmd, std::ofstream& out);
+    Assembler(): outputBuffer(new char[maxBufferSize]) {}
+    void newCommand(std::string cmd);
+    void compile(std::ofstream& out);
 };
 
 #endif

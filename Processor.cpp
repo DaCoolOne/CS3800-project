@@ -29,11 +29,16 @@ void Processor::executeNextInstruction() {
                 m_pageLocks[m_REGS[E_PROC_REG_PAGE_STACK_SIZE]] = ins_low;
                 ++m_REGS[E_PROC_REG_PAGE_STACK_SIZE];
             break;
+
             case E_PROC_KINS_STACK_PUSH:
                 PUSH(ins_low);
             break;
             case E_PROC_KINS_STACK_POP:
                 POP(ins_low);
+            break;
+
+            case E_PROC_KINS_USR_ADDR:
+                // Todo
             break;
 
             default: throw E_PROC_ERROR_BAD_INS;
@@ -66,6 +71,20 @@ void Processor::executeNextInstruction() {
                 else {
                     setReg(ins_low, getReg(_TEMP & 0xFF));
                 }
+            break;
+
+            case E_PROC_INS_INC:
+                priv_setReg(ins_low, getReg(ins_low) + 1);
+            break;
+            case E_PROC_INS_DEC:
+                priv_setReg(ins_low, getReg(ins_low) - 1);
+            break;
+
+            case E_PROC_INS_CALL:
+                // Todo
+            break;
+            case E_PROC_INS_RET:
+                // Todo
             break;
 
             case E_PROC_INS_RAISE:

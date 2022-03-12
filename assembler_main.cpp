@@ -20,9 +20,10 @@ int main(int argc, char** argv) {
         std::string line;
         while(std::getline(input, line)) {
             ++line_count;
-            a.newCommand(line, output);
+            a.newCommand(line);
         }
 
+        a.compile(output);
     }
     catch(ASSEMBLER_RESPOSE_CODES e) {
         std::cout << "ERROR! Line " << line_count << ": " << ASM_ERROR_NAME(e) << std::endl;
