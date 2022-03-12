@@ -123,7 +123,7 @@ void Assembler::newCommand(std::string cmd) {
             case E_ASM_DIR_RJMP:
                 if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_RJMP);
-                _s_temp = readStr(tokenGroup.at(1), 2, 2) - static_cast<int>(bufferSize);
+                _s_temp = readStr(tokenGroup.at(1), 2, 2) - static_cast<int>(bufferSize / 2) - 1;
                 table[1] = _s_temp & 0xFF; // Reg is always true by convention.
                 size = 2;
             break;
