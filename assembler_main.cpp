@@ -11,7 +11,6 @@ int main(int argc, char** argv) {
     std::ifstream input(argv[1], std::ios::binary);
     std::ofstream output(argv[2], std::ios::binary);
 
-    int line_count;
     try {
         if(!input.is_open() || !output.is_open()) throw RESPONSE_CODE_COULD_NOT_OPEN_FILE;
 
@@ -19,20 +18,19 @@ int main(int argc, char** argv) {
         
         std::string line;
         while(std::getline(input, line)) {
-            ++line_count;
             // std::cout << "PROCESS LINE " << line_count << std::endl;
             a.newCommand(line);
         }
 
         a.compile(output);
     }
-    catch(ASSEMBLER_RESPOSE_CODES e) {
-        std::cout << "ERROR! Line " << line_count << ": " << ASM_ERROR_NAME(e) << std::endl;
+    catch(AssemblerErrorAtLine e) {
+        std::cout << "ERROR! Line " << e.line << ": " << ASM_ERROR_NAME(e.code) << std::endl;
 
         input.close();
         output.close();
 
-        return e;
+        return e.code;
     }
 
     input.close();

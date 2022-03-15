@@ -207,6 +207,12 @@ enum ASSEMBLER_RESPOSE_CODES {
     RESPONSE_CODE_INVALID_SYNTAX,
 };
 
+struct AssemblerErrorAtLine {
+    ASSEMBLER_RESPOSE_CODES code;
+    uint64_t line;
+    AssemblerErrorAtLine(ASSEMBLER_RESPOSE_CODES c, uint64_t lineNum): code(c), line(lineNum) {}
+};
+
 std::string ASM_ERROR_NAME(ASSEMBLER_RESPOSE_CODES code);
 
 struct Assembler_Link_Future
@@ -214,6 +220,8 @@ struct Assembler_Link_Future
     std::string ident;
     uint32_t start;
     uint8_t size;
+    bool relative;
+    int line;
 };
 
 // Assembler class.
@@ -225,7 +233,9 @@ class Assembler
     uint32_t bufferSize = 0;
     uint32_t maxBufferSize = 0xFF;
 
-    int readStr(std::string s, uint8_t size = 0, uint8_t futurePosition = 0xFF);
+    uint64_t lineNo = 0;
+
+    int readStr(std::string s, uint8_t size = 0, uint8_t futurePosition = 0xFF, bool relative = false);
     void expand(uint32_t newSize);
     void buffer(char* arr, uint8_t size);
     void resolveIdent(std::string ident, int value);

@@ -21,7 +21,7 @@ bool isValidIdent(std::string s) {
     return s.size() > 0;
 }
 
-int Assembler::readStr(std::string s, uint8_t size, uint8_t futurePosition) {
+int Assembler::readStr(std::string s, uint8_t size, uint8_t futurePosition, bool relative) {
     if(isValidIdent(s)) {
         if(futurePosition < 0xFF) {
             if(m_labels.count(s)) {
@@ -32,6 +32,8 @@ int Assembler::readStr(std::string s, uint8_t size, uint8_t futurePosition) {
                 future.ident = s;
                 future.start = bufferSize + futurePosition;
                 future.size = size;
+                future.relative = relative;
+                future.line = lineNo;
                 m_to_link.push_back(future);
                 return 0;
             }
@@ -52,6 +54,8 @@ int Assembler::readStr(std::string s, uint8_t size, uint8_t futurePosition) {
 }
 
 void Assembler::newCommand(std::string cmd) {
+    ++ lineNo;
+
     // Remove comments
     auto pos = cmd.find_first_of(';');
     if(pos != std::string::npos) {
@@ -125,7 +129,7 @@ void Assembler::newCommand(std::string cmd) {
             case E_ASM_DIR_RJMP:
                 if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_RJMP);
-                _s_temp = readStr(tokenGroup.at(1), 2, 2) - static_cast<int>(bufferSize / 2) - 1;
+                _s_temp = readStr(tokenGroup.at(1), 1, 1, true) - static_cast<int>(bufferSize / 2) - 1;
                 table[1] = _s_temp & 0xFF; // Reg is always true by convention.
                 size = 2;
             break;
@@ -532,12 +536,18 @@ void Assembler::newCommand(std::string cmd) {
         }
     }
     catch(std::out_of_range e) {
-        throw RESPONSE_CODE_UNKNOWN_IDENTIFIER;
+        throw AssemblerErrorAtLine(RESPONSE_CODE_UNKNOWN_IDENTIFIER, lineNo);
+    }
+    catch(ASSEMBLER_RESPOSE_CODES e) {
+        throw AssemblerErrorAtLine(e, lineNo);
     }
 }
 
 void Assembler::compile(std::ofstream& out) {
-    if(m_to_link.size() > 0) throw RESPONSE_CODE_UNKNOWN_IDENTIFIER;
+    if(m_to_link.size() > 0) {
+        auto link = m_to_link.at(0);
+        throw AssemblerErrorAtLine(RESPONSE_CODE_UNKNOWN_IDENTIFIER, link.line);
+    }
 
     out.write(outputBuffer, bufferSize);
 }
@@ -568,7 +578,13 @@ void Assembler::resolveIdent(std::string ident, int value)
         auto link = m_to_link.at(i);
         if(link.ident == ident) {
             for(unsigned int j = 0; j < link.size; j ++) {
-                outputBuffer[link.start + j] = (static_cast<uint32_t>(value) >> (8 * (link.size - 1 - j))) & 0xFF;
+                if(link.relative) {
+                    uint32_t v = value - static_cast<int>(link.start / 2) - 1;
+                    outputBuffer[link.start + j] = (v >> (8 * (link.size - 1 - j))) & 0xFF;
+                }
+                else {
+                    outputBuffer[link.start + j] = (static_cast<uint32_t>(value) >> (8 * (link.size - 1 - j))) & 0xFF;
+                }
             }
 
             std::swap(m_to_link.at(i), m_to_link.at(m_to_link.size()-1));
