@@ -84,6 +84,8 @@ class Processor {
     void printAppend(char c);
     void printFlush();
 
+    void interrupt(PROC_ERRORS err);
+
 public:
     bool isRunning() { return m_running; }
     void dumpState();

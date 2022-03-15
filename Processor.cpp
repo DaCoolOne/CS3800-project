@@ -46,17 +46,17 @@ void Processor::executeNextInstruction() {
             case E_PROC_KINS_EXTFETCH:
                 _temp = getExtData();
                 y = m_REGS[(_temp >> 8) & 0xFF], z = m_REGS[_temp & 0xFF];
-                if(m_REGS[ins_low] >= m_ports.size()) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+                if(m_REGS[ins_low] >= m_ports.size()) interrupt(E_PROC_ERROR_FAILED_EXT_ACCESS);
                 _temp32 = (y << 16) | z;
-                if(_temp32 >= m_ports[m_REGS[ins_low]].size) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+                if(_temp32 >= m_ports[m_REGS[ins_low]].size) interrupt(E_PROC_ERROR_FAILED_EXT_ACCESS);
                 m_REGS[E_PROC_REG_EXT_IN] = m_ports.at(m_REGS[ins_low]).bytes[_temp32];
             break;
             case E_PROC_KINS_EXTWRITE:
                 _temp = getExtData();
                 y = m_REGS[(_temp >> 8) & 0xFF], z = m_REGS[_temp & 0xFF];
-                if(m_REGS[ins_low] >= m_ports.size()) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+                if(m_REGS[ins_low] >= m_ports.size()) interrupt(E_PROC_ERROR_FAILED_EXT_ACCESS);
                 _temp32 = (y << 16) & z;
-                if(_temp32 >= m_ports[m_REGS[ins_low]].size) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+                if(_temp32 >= m_ports[m_REGS[ins_low]].size) interrupt(E_PROC_ERROR_FAILED_EXT_ACCESS);
                 m_ports[m_REGS[ins_low]].bytes[_temp32] = m_REGS[E_PROC_REG_EXT_OUT];
             break;
 
@@ -76,7 +76,7 @@ void Processor::executeNextInstruction() {
                 printFlush();
             break;
 
-            default: throw E_PROC_ERROR_BAD_INS;
+            default: interrupt(E_PROC_ERROR_BAD_INS);
         }
     }
     // ALU processes are just built different.
@@ -138,10 +138,10 @@ void Processor::executeNextInstruction() {
             break;
 
             case E_PROC_INS_RAISE:
-                throw (ins_low & 0x3F);
+                throw (ins_low & 0x3F) + 1;
             break;
 
-            default: throw E_PROC_ERROR_BAD_INS;
+            default: interrupt(E_PROC_ERROR_BAD_INS);
         }
     }
 };
@@ -212,7 +212,7 @@ void Processor::reset() {
 }
 
 uint16_t Processor::getReg(uint8_t reg) {
-    if(!(m_flags & E_PROC_FLAG_KERNEL) && !(reg & 0x80)) throw E_PROC_ERROR_MEM_ACC;
+    if(!(m_flags & E_PROC_FLAG_KERNEL) && !(reg & 0x80)) interrupt(E_PROC_ERROR_MEM_ACC);
     return m_REGS[reg];
 }
 uint16_t Processor::priv_getReg(uint8_t reg) {
@@ -221,7 +221,7 @@ uint16_t Processor::priv_getReg(uint8_t reg) {
 
 void Processor::setReg(uint8_t reg, uint16_t value)
 {
-    if(!(m_flags & E_PROC_FLAG_KERNEL) && !(reg & 0x80)) throw E_PROC_ERROR_MEM_ACC;
+    if(!(m_flags & E_PROC_FLAG_KERNEL) && !(reg & 0x80)) interrupt(E_PROC_ERROR_MEM_ACC);
     priv_setReg(reg, value);
 }
 void Processor::priv_setReg(uint8_t reg, uint16_t value) {
@@ -248,12 +248,12 @@ void Processor::printAppend(char c) {
 }
 
 void Processor::stackPush(uint16_t x) {
-    if(m_REGS[E_PROC_REG_STACK_SIZE] >= 0XFF) throw E_PROC_ERROR_STACK_OVERFLOW;
+    if(m_REGS[E_PROC_REG_STACK_SIZE] >= 0XFF) interrupt(E_PROC_ERROR_STACK_OVERFLOW);
     m_STACK[m_REGS[E_PROC_REG_STACK_SIZE]] = x;
     ++m_REGS[E_PROC_REG_STACK_SIZE];
 }
 uint16_t Processor::stackPop() {
-    if(m_REGS[E_PROC_REG_STACK_SIZE] == 0) throw E_PROC_ERROR_STACK_UNDERFLOW;
+    if(m_REGS[E_PROC_REG_STACK_SIZE] == 0) interrupt(E_PROC_ERROR_STACK_UNDERFLOW);
     return m_STACK[--m_REGS[E_PROC_REG_STACK_SIZE]];
 }
 
@@ -301,7 +301,7 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
             case E_PROC_INS_ALU_GTR: res = a > b; break;
             case E_PROC_INS_ALU_GTEQ: res = a >= b; break;
 
-            default: throw E_PROC_ERROR_BAD_INS;
+            default: interrupt(E_PROC_ERROR_BAD_INS);
         }
         setALUFlag((res & 0x80 != a & 0x80) && (a & 0x80 == b & 0x80), E_PROC_ALU_FLAG_OVERFLOW);
         setReg(x, res);
@@ -347,7 +347,7 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
                 res = reinterpret_cast<uint32_t&>(_temp);
             break;
             
-            default: throw E_PROC_ERROR_BAD_INS;
+            default: interrupt(E_PROC_ERROR_BAD_INS);
         }
         setReg(x, res >> 16);
         setReg(x+1, res & 0xFFFF);
@@ -370,9 +370,14 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
             case E_PROC_INS_ALU_LSSI: priv_setReg(
                 x, reinterpret_cast<int16_t&>(a) < reinterpret_cast<int16_t&>(b)); break;
 
-            default: throw E_PROC_ERROR_BAD_INS;
+            default: interrupt(E_PROC_ERROR_BAD_INS);
         }
     }
+}
+
+void Processor::interrupt(PROC_ERRORS err) {
+    stackPush(m_program_counter);
+    throw err;
 }
 
 // I journeyed to the top of the mountain seeking truth.

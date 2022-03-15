@@ -20,22 +20,21 @@ JMP error ; TIMER_TICK
 JMP error ; BAD_MEM_ACCESS
 JMP error ; STACK_OVERFLOW
 JMP error ; STACK_UNDERFLOW
-JMP error ; STACK_OVERFLOW
 JMP error ; BAD_INS
 JMP END_FILE ; FAILED_EXT_ACCESS
 
 error:
+
+shutdown:
     SHUTDOWN
 
 END_FILE:
     PRINTFLUSH
     INC CURRENT_BUFFER
 
-    SUB _TEMP CURRENT_BUFFER NUM_EXT_BUFF
-    CJMP _TEMP END_FILE_cont
-    SHUTDOWN
+    GTEQ _TEMP CURRENT_BUFFER NUM_EXT_BUFF
+    CJMP _TEMP shutdown
 
-END_FILE_cont:
     SET CURRENT_BYTE_A 0
     SET CURRENT_BYTE_B 0
     POP _TEMP ; Pop from the return stack so we can pick our own entry point
