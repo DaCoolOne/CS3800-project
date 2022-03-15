@@ -354,16 +354,21 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
     }
     // Single register modification.
     else {
+        uint16_t a = getReg(x), b = getExtData();
         switch(opcode) {
-            case E_PROC_INS_ALU_XORI: priv_setReg(x, getReg(x) ^ getExtData()); break;
-            case E_PROC_INS_ALU_ANDI: priv_setReg(x, getReg(x) & getExtData()); break;
-            case E_PROC_INS_ALU_ORI: priv_setReg(x, getReg(x) | getExtData()); break;
+            case E_PROC_INS_ALU_XORI: priv_setReg(x, a ^ b); break;
+            case E_PROC_INS_ALU_ANDI: priv_setReg(x, a & b); break;
+            case E_PROC_INS_ALU_ORI: priv_setReg(x, a | b); break;
 
-            case E_PROC_INS_ALU_EQI: priv_setReg(x, getReg(x) == getExtData()); break;
-            case E_PROC_INS_ALU_GTRI: priv_setReg(x, getReg(x) > getExtData()); break;
-            case E_PROC_INS_ALU_GTEQI: priv_setReg(x, getReg(x) >= getExtData()); break;
-            case E_PROC_INS_ALU_LSEQI: priv_setReg(x, getReg(x) <= getExtData()); break;
-            case E_PROC_INS_ALU_LSSI: priv_setReg(x, getReg(x) < getExtData()); break;
+            case E_PROC_INS_ALU_EQI: priv_setReg(x, a == b); break;
+            case E_PROC_INS_ALU_GTRI: priv_setReg(
+                x, reinterpret_cast<int16_t&>(a) > reinterpret_cast<int16_t&>(b)); break;
+            case E_PROC_INS_ALU_GTEQI: priv_setReg(
+                x, reinterpret_cast<int16_t&>(a) >= reinterpret_cast<int16_t&>(b)); break;
+            case E_PROC_INS_ALU_LSEQI: priv_setReg(
+                x, reinterpret_cast<int16_t&>(a) <= reinterpret_cast<int16_t&>(b)); break;
+            case E_PROC_INS_ALU_LSSI: priv_setReg(
+                x, reinterpret_cast<int16_t&>(a) < reinterpret_cast<int16_t&>(b)); break;
 
             default: throw E_PROC_ERROR_BAD_INS;
         }
