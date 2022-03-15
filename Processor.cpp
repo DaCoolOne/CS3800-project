@@ -297,6 +297,10 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
             case E_PROC_INS_ALU_BOR: res = a || b; break;
             case E_PROC_INS_ALU_BXOR: res = (!a) != (!b); break;
 
+            case E_PROC_INS_ALU_EQ: res = a == b; break;
+            case E_PROC_INS_ALU_GTR: res = a > b; break;
+            case E_PROC_INS_ALU_GTEQ: res = a >= b; break;
+
             default: throw E_PROC_ERROR_BAD_INS;
         }
         setALUFlag((res & 0x80 != a & 0x80) && (a & 0x80 == b & 0x80), E_PROC_ALU_FLAG_OVERFLOW);
@@ -354,6 +358,12 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
             case E_PROC_INS_ALU_XORI: priv_setReg(x, getReg(x) ^ getExtData()); break;
             case E_PROC_INS_ALU_ANDI: priv_setReg(x, getReg(x) & getExtData()); break;
             case E_PROC_INS_ALU_ORI: priv_setReg(x, getReg(x) | getExtData()); break;
+
+            case E_PROC_INS_ALU_EQI: priv_setReg(x, getReg(x) == getExtData()); break;
+            case E_PROC_INS_ALU_GTRI: priv_setReg(x, getReg(x) > getExtData()); break;
+            case E_PROC_INS_ALU_GTEQI: priv_setReg(x, getReg(x) >= getExtData()); break;
+            case E_PROC_INS_ALU_LSEQI: priv_setReg(x, getReg(x) <= getExtData()); break;
+            case E_PROC_INS_ALU_LSSI: priv_setReg(x, getReg(x) < getExtData()); break;
 
             default: throw E_PROC_ERROR_BAD_INS;
         }

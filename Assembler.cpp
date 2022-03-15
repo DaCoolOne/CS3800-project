@@ -290,6 +290,30 @@ void Assembler::newCommand(std::string cmd) {
                 table[3] = readStr(tokenGroup.at(3));
                 size = 4;
             break;
+            case E_ASM_DIR_GTR:
+                if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_GTR);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = readStr(tokenGroup.at(2));
+                table[3] = readStr(tokenGroup.at(3));
+                size = 4;
+            break;
+            case E_ASM_DIR_EQ:
+                if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_EQ);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = readStr(tokenGroup.at(2));
+                table[3] = readStr(tokenGroup.at(3));
+                size = 4;
+            break;
+            case E_ASM_DIR_GTEQ:
+                if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_GTEQ);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = readStr(tokenGroup.at(2));
+                table[3] = readStr(tokenGroup.at(3));
+                size = 4;
+            break;
             
             case E_ASM_DIR_FADD:
                 if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
@@ -372,6 +396,51 @@ void Assembler::newCommand(std::string cmd) {
                 table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_BNOT);
                 table[1] = readStr(tokenGroup.at(1));
                 size = 2;
+            break;
+            case E_ASM_DIR_EQI:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_EQI);
+                table[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2));
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
+            break;
+            case E_ASM_DIR_GTRI:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_GTRI);
+                table[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2));
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
+            break;
+            case E_ASM_DIR_GTEQI:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_GTEQI);
+                table[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2));
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
+            break;
+            case E_ASM_DIR_LSSI:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_LSSI);
+                table[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2));
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
+            break;
+            case E_ASM_DIR_LSEQI:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_LSEQI);
+                table[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2));
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
             break;
 
             case E_ASM_DIR_RAISE:
