@@ -34,6 +34,14 @@ Reg 0x00 -> Page stack size.
 
 Reg 0x01 -> Stack size.
 
+Reg 0x02 -> EXT_BUFFER_IN, most recently read word from ext buffer.
+
+Reg 0x03 -> EXT_BUFFER_OUT, word to be written to EXT file.
+
+Reg 0x04 -> ALU status register.
+
+Reg 0x05 -> Number of external devices.
+
 Reg 0xFF -> Always 0xFF. Writing to this register is a NOP.
 
 ## Bytecode. A word is an 8 bit op code followed by an 8 bit specifier and an optional 16 bit address or value.
@@ -45,7 +53,7 @@ CJMP 0000 0001 xxxx xxxx yyyy yyyy yyyy yyyy - Jump to literal position if Reg X
 
 JMP  0000 0001 1111 1111 yyyy yyyy yyyy yyyy - Jump to literal position
 
-REGJMP 0000 1000 xxxx xxxx - Jump to literal position in register. (TODO)
+REGJMP 0000 1111 xxxx xxxx - Jump to literal position in register. (TODO)
 
 ### Direct Reg manip
 SET 0000 0010 xxxx xxxx yyyy yyyy yyyy yyyy - Literal set reg x to y.
@@ -55,6 +63,8 @@ MOV 0000 0011 xxxx xxxx 0000 0000 yyyy yyyy - Move Register y to x.
 SWP 0000 0011 xxxx xxxx 0000 0001 yyyy yyyy - Swap regs x and y.
 
 LD 0000 1000 xxxx xxxx - Load value from memory at reg x to reg x
+
+ST 0000 1001 xxxx xxxx ---- ---- yyyy yyyy - Store value in reg x at reg y
 
 ### Functions
 CALL 0000 0100 ---- ---- yyyy yyyy yyyy yyyy - Call function at address, place return value in reg
@@ -91,9 +101,9 @@ Literal ALU operations:
 
 XORI - Bitwise xor with a literal value. Bitwise not can be run using XORI R 0xFF
 
-ORI - Bitwise or with a literal value.
-
 ANDI - Bitwise and with a literal value.
+
+ORI - Bitwise or with a literal value.
 
 BNOT - Binary not, does not have a y argument.
 
@@ -103,15 +113,19 @@ RAISE 0011 1111 --xx xxxx - Throw interrupt X+1.
 
 ## Kernel mode functions, processor must be in kernel mode.
 
-UNLOCK  1000 0001 xxxx xxxx - Unlock the last X pages of memory. Place last unlocked page into the accumulator.
+LOCK   1000 0001 xxxx xxxx - Lock the last X pages of memory. Place last unlocked page into the accumulator.
 
-LOCK    1000 0000 xxxx xxxx - Lock page X of memory. Locked pages cannot be accessed by the processor.
+UNLOCK 1000 0000 xxxx xxxx - Unlock page X of memory. Locked pages cannot be accessed by the processor.
 
 PUSH 1000 0010 xxxx xxxx - Push data in Reg X to stack
 
-POP  1000 0010 xxxx xxxx - Pop data from stack, place in Reg X
+POP  1000 0011 xxxx xxxx - Pop data from stack, place in Reg X
 
-USR_ADDR 1000 1000 xxxx xxxx - Convert the address in reg X from user space to kernel space.
+USR_ADDR 1000 0100 xxxx xxxx - Convert the address in reg X from user space to kernel space.
+
+EXTFETCH 1000 0101 xxxx xxxx yyyy yyyy zzzz zzzz - Read device Reg[X] at address Reg[Y] & Reg[Z], place into EXT_BUFFER_IN. Raise FAILED_EXT_ACCESS if file could not be found.
+
+EXTWRITE 1000 0110 xxxx xxxx yyyy yyyy zzzz zzzz - Write to device Reg[X] at address Reg[Y] & Reg[Z], place into EXT_BUFFER_OUT.
 
 PRINTH 1111 1100 xxxx xxxx - Print high bits of register X
 
@@ -163,7 +177,9 @@ and corresponds to the following table:
 
 0x000A -> BAD_INS
 
-0x000C - 0x0080 -> USER_DEFINED_1 - USER_DEFINED_XX
+0x000C -> FAILED_EXT_ACCESS (Typically thrown when reached EOF)
+
+0x000E - 0x0080 -> USER_DEFINED_1 - USER_DEFINED_XX
 
 These can be accessed in kernel-lisp scripts by writing function definitions.
 

@@ -1,5 +1,6 @@
 
 
+#include <fstream>
 #include "Processor.h"
 
 uint16_t Processor::getExtData() {
@@ -17,7 +18,9 @@ void Processor::executeNextInstruction() {
         // Cannot execute kernel instructions when not in kernel mode.
         if(!(m_flags & E_PROC_FLAG_KERNEL)) throw E_PROC_ERROR_BAD_INS;
 
+        uint16_t y, z;
         uint16_t _temp;
+        uint32_t _temp32;
         switch(static_cast<PROC_KERN_INSTRUCTIONS>(ins_high))
         {
             case E_PROC_KINS_LOCK:
@@ -38,6 +41,23 @@ void Processor::executeNextInstruction() {
 
             case E_PROC_KINS_USR_ADDR:
                 // Todo
+            break;
+
+            case E_PROC_KINS_EXTFETCH:
+                _temp = getExtData();
+                y = m_REGS[(_temp >> 8) & 0xFF], z = m_REGS[_temp & 0xFF];
+                if(m_REGS[ins_low] >= m_ports.size()) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+                _temp32 = (y << 16) | z;
+                if(_temp32 >= m_ports[m_REGS[ins_low]].size) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+                m_REGS[E_PROC_REG_EXT_IN] = m_ports.at(m_REGS[ins_low]).bytes[_temp32];
+            break;
+            case E_PROC_KINS_EXTWRITE:
+                _temp = getExtData();
+                y = m_REGS[(_temp >> 8) & 0xFF], z = m_REGS[_temp & 0xFF];
+                if(m_REGS[ins_low] >= m_ports.size()) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+                _temp32 = (y << 16) & z;
+                if(_temp32 >= m_ports[m_REGS[ins_low]].size) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+                m_ports[m_REGS[ins_low]].bytes[_temp32] = m_REGS[E_PROC_REG_EXT_OUT];
             break;
 
             case E_PROC_KINS_SHUTDOWN:
@@ -93,10 +113,14 @@ void Processor::executeNextInstruction() {
             break;
 
             case E_PROC_INS_INC:
-                priv_setReg(ins_low, getReg(ins_low) + 1);
+                _TEMP = getReg(ins_low);
+                priv_setReg(ins_low, ++_TEMP);
+                setALUFlag(_TEMP == 0x00, E_PROC_ALU_FLAG_OVERFLOW);
             break;
             case E_PROC_INS_DEC:
-                priv_setReg(ins_low, getReg(ins_low) - 1);
+                _TEMP = getReg(ins_low);
+                priv_setReg(ins_low, --_TEMP);
+                setALUFlag(_TEMP == 0xFFFF, E_PROC_ALU_FLAG_OVERFLOW);
             break;
 
             case E_PROC_INS_CALL:
@@ -155,7 +179,9 @@ void Processor::step() {
     }
     // Interupts
     catch(PROC_ERRORS e) {
-        std::cout << "ERROR! " << e << std::endl;
+        if(e == E_PROC_ERROR_BAD_INS) {
+            std::cout << "BAD INS! " << e << std::endl;
+        }
         // Enter kernel mode on interupt.
         m_flags |= E_PROC_FLAG_KERNEL;
 
@@ -182,6 +208,7 @@ void Processor::reset() {
     m_program_counter = 0x00;
     for(uint8_t i = 0; i < 0xFF; i ++) { m_REGS[i] = 0; }
     m_REGS[255] = 0xFF;
+    m_REGS[E_PROC_REG_NUM_PORT] = m_ports.size();
 }
 
 uint16_t Processor::getReg(uint8_t reg) {
@@ -200,6 +227,14 @@ void Processor::setReg(uint8_t reg, uint16_t value)
 void Processor::priv_setReg(uint8_t reg, uint16_t value) {
     if(reg == 255) return;
     m_REGS[reg] = value;
+}
+void Processor::setALUFlag(bool value, uint8_t bit) {
+    if(value) {
+        m_REGS[E_PROC_REG_ALU_STATUS] |= (1 << bit);
+    }
+    else {
+        m_REGS[E_PROC_REG_ALU_STATUS] &= ~(1 << bit);
+    }
 }
 
 void Processor::stackPush(uint16_t x) {
@@ -222,6 +257,8 @@ void Processor::POP(uint8_t x) {
 // The ALU component.
 void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
 {
+    priv_setReg(E_PROC_REG_ALU_STATUS, 0x00);
+
     // Special case.
     if(opcode == E_PROC_INS_ALU_BNOT) {
         priv_setReg(x, !getReg(x)); // We can use priv here because getReg performs a memcheck
@@ -231,26 +268,28 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
     // Normal ALU operations
     if(opcode < E_PROC_INS_ALU_START_FLOAT) {
         uint16_t ext = getExtData();
-        uint16_t res = getReg(ext >> 8), b = getReg(ext & 0xFF);
+        uint16_t a = getReg(ext >> 8), b = getReg(ext & 0xFF);
+        uint16_t res;
         switch(opcode) {
-            case E_PROC_INS_ALU_ADD: res += b; break;
-            case E_PROC_INS_ALU_SUB: res -= b; break;
-            case E_PROC_INS_ALU_DIV: res /= b; break;
-            case E_PROC_INS_ALU_MOD: res %= b; break;
+            case E_PROC_INS_ALU_ADD: res = a + b; break;
+            case E_PROC_INS_ALU_SUB: res = a - b; break;
+            case E_PROC_INS_ALU_DIV: res = a / b; break;
+            case E_PROC_INS_ALU_MOD: res = a % b; break;
 
-            case E_PROC_INS_ALU_RSHIFT: res = res >> b; break;
-            case E_PROC_INS_ALU_LSHIFT: res = res << b; break;
+            case E_PROC_INS_ALU_RSHIFT: res = a >> b; break;
+            case E_PROC_INS_ALU_LSHIFT: res = a << b; break;
 
-            case E_PROC_INS_ALU_AND: res &= b; break;
-            case E_PROC_INS_ALU_OR: res |= b; break;
-            case E_PROC_INS_ALU_XOR: res ^= b; break;
+            case E_PROC_INS_ALU_AND: res = a & b; break;
+            case E_PROC_INS_ALU_OR: res = a | b; break;
+            case E_PROC_INS_ALU_XOR: res = a ^ b; break;
 
-            case E_PROC_INS_ALU_BAND: res = res && b; break;
-            case E_PROC_INS_ALU_BOR: res = res || b; break;
-            case E_PROC_INS_ALU_BXOR: res = (!res) != (!b); break;
+            case E_PROC_INS_ALU_BAND: res = a && b; break;
+            case E_PROC_INS_ALU_BOR: res = a || b; break;
+            case E_PROC_INS_ALU_BXOR: res = (!a) != (!b); break;
 
             default: throw E_PROC_ERROR_BAD_INS;
         }
+        setALUFlag((res & 0x80 != a & 0x80) && (a & 0x80 == b & 0x80), E_PROC_ALU_FLAG_OVERFLOW);
         setReg(x, res);
     }
     // Special cases. output = 32 bit, inputs = 16 bit
@@ -326,4 +365,37 @@ void Processor::load(std::istream& s) {
 }
 // I nodded in appreciation of the beauty of his words.
 // Even though in my heart I realized I had no idea what they meant.
+
+
+// Stackoverflow : https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
+#include <sys/stat.h>
+long GetFileSize(std::string filename)
+{
+    struct stat stat_buf;
+    int rc = stat(filename.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
+
+// Load a file as an io port.
+void Processor::newPort(std::string fname) {
+    long fsize = GetFileSize(fname);
+    if(fsize < 0 || fsize >= 0xFFFFFFFF) throw E_PROC_ERROR_FAILED_EXT_ACCESS;
+    IO_Port a;
+    a.size = fsize;
+    a.bytes = new uint8_t[a.size];
+    std::ifstream data(fname, std::ios::binary);
+    char c;
+    uint32_t i = 0;
+    while(data.get(c)) {
+        a.bytes[i] = reinterpret_cast<uint8_t&>(c);
+        ++i;
+    }
+    addPort(a);
+    data.close();
+}
+
+void Processor::addPort(IO_Port& port) {
+    m_ports.push_back(port);
+    m_REGS[E_PROC_REG_NUM_PORT] = m_ports.size();
+}
 

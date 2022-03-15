@@ -152,6 +152,14 @@ void Assembler::newCommand(std::string cmd) {
                 table[1] = readStr(tokenGroup.at(1));
                 size = 2;
             break;
+            case E_ASM_DIR_ST:
+                if(tokenGroup.size() != 3) throw RESPONSE_CODE_WRONG_NUMBER_ARGS;
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ST);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = 0x0;
+                table[3] = readStr(tokenGroup.at(1));
+                size = 4;
+            break;
 
             case E_ASM_DIR_CALL:
                 if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
@@ -401,6 +409,23 @@ void Assembler::newCommand(std::string cmd) {
                 table[0] = static_cast<uint8_t>(E_PROC_KINS_USR_ADDR);
                 table[1] = readStr(tokenGroup.at(1));
                 size = 2;
+            break;
+
+            case E_ASM_DIR_EXTFETCH:
+                if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_KINS_EXTFETCH);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = readStr(tokenGroup.at(2));
+                table[3] = readStr(tokenGroup.at(3));
+                size = 4;
+            break;
+            case E_ASM_DIR_EXTWRITE:
+                if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_KINS_EXTWRITE);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = readStr(tokenGroup.at(2));
+                table[3] = readStr(tokenGroup.at(3));
+                size = 4;
             break;
             
             case E_ASM_DIR_PRINTL:

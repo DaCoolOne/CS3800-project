@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdint>
+#include <vector>
 #include "ProcessorConsts.h"
 
 const uint16_t Processor_MEMORY_MAX_SIZE = 65535; // Max addressable by 16 bits
@@ -12,10 +13,20 @@ enum PROC_FLAGS {
     E_PROC_FLAG_KERNEL = 0x1,
 };
 
+// IO ports are basically always files right?
+// ... right?
+struct IO_Port {
+    uint32_t size;
+    uint8_t * bytes;
+    IO_Port(): bytes(nullptr) {}
+};
+
 class Processor {
     uint16_t m_program_counter = 0;
     
     bool m_running = true;
+
+    std::vector<IO_Port> m_ports;
 
     uint16_t m_REGS[256]; // Registers.
 
@@ -44,6 +55,8 @@ class Processor {
     uint16_t getExtData();
     void executeNextInstruction();
 
+    void addPort(IO_Port& port);
+
     void UNLOCK(uint8_t x);
     void LOCK(uint8_t x);
 
@@ -58,6 +71,7 @@ class Processor {
 
     uint16_t priv_getReg(uint8_t reg);
     void priv_setReg(uint8_t reg, uint16_t value);
+    void setALUFlag(bool value, uint8_t bit);
     
     void ALU(PROC_INSTRUCTIONS opcode, uint8_t x);
     void reset();
@@ -68,7 +82,13 @@ public:
     void step();
     void run();
     void load(std::istream& s);
+    void newPort(std::string fname);
     Processor() { reset(); }
+    ~Processor() {
+        for(auto p : m_ports) {
+            delete[] p.bytes;
+        }
+    }
 };
 
 #endif

@@ -15,6 +15,7 @@ enum ASM_DIRECTIVES {
     E_ASM_DIR_MOV,
     E_ASM_DIR_SWP, // Swap
     E_ASM_DIR_LD,
+    E_ASM_DIR_ST,
 
     E_ASM_DIR_INC,
     E_ASM_DIR_DEC,
@@ -54,6 +55,8 @@ enum ASM_DIRECTIVES {
     E_ASM_DIR_PUSH,
     E_ASM_DIR_POP,
     E_ASM_DIR_USR_ADDR,
+    E_ASM_DIR_EXTFETCH,
+    E_ASM_DIR_EXTWRITE,
     E_ASM_DIR_PRINTL,
     E_ASM_DIR_PRINTH,
     E_ASM_DIR_PRINTFLUSH,
@@ -79,6 +82,7 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DIR_MOV, "MOV" },
     { E_ASM_DIR_SWP, "SWP" },
     { E_ASM_DIR_LD, "LD" },
+    { E_ASM_DIR_ST, "ST" },
 
     { E_ASM_DIR_CALL, "CALL" },
     { E_ASM_DIR_RET, "RET" },
@@ -109,11 +113,14 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DIR_ANDI, "ANDI" },
     { E_ASM_DIR_NOT, "NOT" },
     { E_ASM_DIR_RAISE, "RAISE" },
+
     { E_ASM_DIR_UNLOCK, "UNLOCK" },
     { E_ASM_DIR_LOCK, "LOCK" },
     { E_ASM_DIR_PUSH, "PUSH" },
     { E_ASM_DIR_POP, "POP" },
     { E_ASM_DIR_USR_ADDR, "USR_ADDR" },
+    { E_ASM_DIR_EXTFETCH, "EXTFETCH" },
+    { E_ASM_DIR_EXTWRITE, "EXTWRITE" },
     { E_ASM_DIR_PRINTL, "PRINTL" },
     { E_ASM_DIR_PRINTH, "PRINTH" },
     { E_ASM_DIR_PRINTFLUSH, "PRINTFLUSH" },
@@ -136,6 +143,7 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "MOV", E_ASM_DIR_MOV },
     { "SWP", E_ASM_DIR_SWP },
     { "LD", E_ASM_DIR_LD },
+    { "ST", E_ASM_DIR_ST },
 
     { "CALL", E_ASM_DIR_CALL },
     { "RET", E_ASM_DIR_RET },
@@ -166,11 +174,14 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "ANDI", E_ASM_DIR_ANDI },
     { "NOT", E_ASM_DIR_NOT },
     { "RAISE", E_ASM_DIR_RAISE },
+
     { "UNLOCK", E_ASM_DIR_UNLOCK },
     { "LOCK", E_ASM_DIR_LOCK },
     { "PUSH", E_ASM_DIR_PUSH },
     { "POP", E_ASM_DIR_POP },
     { "USR_ADDR", E_ASM_DIR_USR_ADDR },
+    { "EXTFETCH", E_ASM_DIR_EXTFETCH },
+    { "EXTWRITE", E_ASM_DIR_EXTWRITE },
     { "PRINTL", E_ASM_DIR_PRINTL },
     { "PRINTH", E_ASM_DIR_PRINTH },
     { "PRINTFLUSH", E_ASM_DIR_PRINTFLUSH },
