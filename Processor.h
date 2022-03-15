@@ -9,6 +9,8 @@
 
 const uint16_t Processor_MEMORY_MAX_SIZE = 65535; // Max addressable by 16 bits
 
+const uint16_t Processor_PRINT_BUFFER_SIZE = 1024;
+
 enum PROC_FLAGS {
     E_PROC_FLAG_KERNEL = 0x1,
 };
@@ -37,6 +39,9 @@ class Processor {
     uint16_t m_memory[Processor_MEMORY_MAX_SIZE]; // Memory.
 
     uint8_t m_flags = 0;
+
+    char m_printBuffer[Processor_PRINT_BUFFER_SIZE+1];
+    uint16_t printSize = 0;
 
     // Gets the address at addr
     uint16_t getUsrAddr(uint16_t addr) {
@@ -75,6 +80,9 @@ class Processor {
     
     void ALU(PROC_INSTRUCTIONS opcode, uint8_t x);
     void reset();
+
+    void printAppend(char c);
+    void printFlush();
 
 public:
     bool isRunning() { return m_running; }

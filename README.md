@@ -131,7 +131,7 @@ PRINTH 1111 1100 xxxx xxxx - Print high bits of register X
 
 PRINTL 1111 1101 xxxx xxxx - Print low bits of register X
 
-PRINTFLUSH 1111 1110 ---- ---- Flush print buffer.
+PRINTFLUSH 1111 1110 ---- ---- Flush print buffer. The print buffer is also flushed whenever a new line is printed or the print buffer runs out of space.
 
 SHUTDOWN 1111 1111 xxxx xxxx - Shutdown the machine. (Optional: machine returns status code xxxx xxxx?)
 

@@ -66,14 +66,14 @@ void Processor::executeNextInstruction() {
 
             case E_PROC_KINS_PRINTL:
                 _temp = m_REGS[ins_low] & 0xFF;
-                std::cout << reinterpret_cast<char&>(_temp);
+                printAppend(reinterpret_cast<char&>(_temp));
             break;
             case E_PROC_KINS_PRINTH:
                 _temp = (m_REGS[ins_low] >> 8) & 0xFF;
-                std::cout << reinterpret_cast<char&>(_temp);
+                printAppend(reinterpret_cast<char&>(_temp));
             break;
             case E_PROC_KINS_PRINTFLUSH:
-                std::cout << std::flush;
+                printFlush();
             break;
 
             default: throw E_PROC_ERROR_BAD_INS;
@@ -235,6 +235,16 @@ void Processor::setALUFlag(bool value, uint8_t bit) {
     else {
         m_REGS[E_PROC_REG_ALU_STATUS] &= ~(1 << bit);
     }
+}
+
+void Processor::printFlush() {
+    m_printBuffer[printSize++] = '\0';
+    std::cout << m_printBuffer << std::flush;
+    printSize = 0;
+}
+void Processor::printAppend(char c) {
+    m_printBuffer[printSize++] = c;
+    if(c == '\n' || printSize >= Processor_PRINT_BUFFER_SIZE) printFlush();
 }
 
 void Processor::stackPush(uint16_t x) {
