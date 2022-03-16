@@ -54,6 +54,8 @@ enum ASM_DIRECTIVES {
     E_ASM_DIR_GTEQI,
     E_ASM_DIR_LSSI,
     E_ASM_DIR_LSEQI,
+    E_ASM_DIR_RSHIFTI,
+    E_ASM_DIR_LSHIFTI,
 
     E_ASM_DIR_RAISE,
 
@@ -123,6 +125,13 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DIR_ORI, "ORI" },
     { E_ASM_DIR_ANDI, "ANDI" },
     { E_ASM_DIR_NOT, "NOT" },
+    { E_ASM_DIR_EQI, "EQI" },
+    { E_ASM_DIR_GTRI, "GTRI" },
+    { E_ASM_DIR_GTEQI, "GTEQI" },
+    { E_ASM_DIR_LSSI, "LSSI" },
+    { E_ASM_DIR_LSEQI, "LSEQI" },
+    { E_ASM_DIR_RSHIFTI, "RSHIFTI" },
+    { E_ASM_DIR_LSHIFTI, "LSHIFTI" },
     { E_ASM_DIR_RAISE, "RAISE" },
 
     { E_ASM_DIR_UNLOCK, "UNLOCK" },
@@ -187,6 +196,13 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "ORI", E_ASM_DIR_ORI },
     { "ANDI", E_ASM_DIR_ANDI },
     { "NOT", E_ASM_DIR_NOT },
+    { "EQI", E_ASM_DIR_EQI },
+    { "GTRI", E_ASM_DIR_GTRI },
+    { "GTEQI", E_ASM_DIR_GTEQI },
+    { "LSSI", E_ASM_DIR_LSSI },
+    { "LSEQI", E_ASM_DIR_LSEQI },
+    { "RSHIFTI", E_ASM_DIR_RSHIFTI },
+    { "LSHIFTI", E_ASM_DIR_LSHIFTI },
     { "RAISE", E_ASM_DIR_RAISE },
 
     { "UNLOCK", E_ASM_DIR_UNLOCK },
@@ -207,6 +223,7 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
 
     { ".ALIAS", E_ASM_DOT_ALIAS },
     { ".TEXT", E_ASM_DOT_TEXT },
+    { ".DATA", E_ASM_DOT_DATA },
     { ".ORG", E_ASM_DOT_ORG },
 };
 

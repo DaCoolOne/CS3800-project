@@ -103,7 +103,7 @@ void Assembler::newCommand(std::string cmd) {
                 if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_SET_LITERAL);
                 table[1] = static_cast<uint8_t>(readStr(tokenGroup.at(1)));
-                _temp = readStr(tokenGroup.at(2));
+                _temp = readStr(tokenGroup.at(2), 2, 2);
                 table[2] = _temp >> 8;
                 table[3] = _temp & 0xFF;
                 size = 4;
@@ -161,7 +161,7 @@ void Assembler::newCommand(std::string cmd) {
                 table[0] = static_cast<uint8_t>(E_PROC_INS_ST);
                 table[1] = readStr(tokenGroup.at(1));
                 table[2] = 0x0;
-                table[3] = readStr(tokenGroup.at(1));
+                table[3] = readStr(tokenGroup.at(2));
                 size = 4;
             break;
 
@@ -436,6 +436,24 @@ void Assembler::newCommand(std::string cmd) {
             case E_ASM_DIR_LSEQI:
                 if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_LSEQI);
+                table[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2));
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
+            break;
+            case E_ASM_DIR_RSHIFTI:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_RSHIFTI);
+                table[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2));
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
+            break;
+            case E_ASM_DIR_LSHIFTI:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_LSHIFTI);
                 table[1] = readStr(tokenGroup.at(1));
                 _temp = readStr(tokenGroup.at(2));
                 table[2] = _temp >> 8;

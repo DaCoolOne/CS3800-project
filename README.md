@@ -120,9 +120,13 @@ LSSI - Computes Reg[x] < y
 
 LSEQI - Computes Reg[x] <= y
 
+RSHIFTI - Computes Reg[x] >> y
+
+LSHIFTI - Computes Reg[x] << y
+
 ### Interupts
 
-RAISE 0011 1111 --xx xxxx - Throw interrupt X+1. (In assembly you trow the error that corresponds to the error table, e.g, RAISE 3 will raise a stack overflow).
+RAISE 0011 1111 --xx xxxx - Throw interrupt X+1. (In assembly you throw the error that corresponds to the error table, e.g, RAISE 3 will raise a stack overflow).
 
 ## Kernel mode functions, processor must be in kernel mode.
 
@@ -167,6 +171,7 @@ There are a few functions that are not supported natively by the processor that 
 `HALT` - Stops the processor.
 
 ## Process slots
+
 
 
 ## Memory layout

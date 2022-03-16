@@ -136,6 +136,11 @@ void Processor::executeNextInstruction() {
                 reg1 = getReg(ins_low);
                 priv_setReg(ins_low, m_memory[getAddress(reg1)]);
             break;
+            case E_PROC_INS_ST:
+                _TEMP = getExtData();
+                reg1 = getReg(_TEMP & 0xFF);
+                m_memory[getAddress(reg1)] = getReg(ins_low);
+            break;
 
             case E_PROC_INS_RAISE:
                 throw (ins_low & 0x3F) + 1;
@@ -157,8 +162,10 @@ void Processor::dumpState() {
             std::cout << "   " << i << ": " << m_REGS[i] << std::endl;
         }
     }
+
+    std::cout << "Print Buffer: " << m_printBuffer << std::endl;
     
-    std::cout << "INSTRUCTION_PTR: " << m_program_counter << std::endl;
+    std::cout << "INSTRUCTION_PTR: " << m_program_counter << '/' << (m_program_counter * 2) << std::endl;
     for(uint16_t i = m_program_counter; i < m_program_counter + 4; i ++) {
         std::cout << "   " << i << ": " << m_memory[i] << std::endl;
     }
@@ -369,6 +376,9 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
                 x, reinterpret_cast<int16_t&>(a) <= reinterpret_cast<int16_t&>(b)); break;
             case E_PROC_INS_ALU_LSSI: priv_setReg(
                 x, reinterpret_cast<int16_t&>(a) < reinterpret_cast<int16_t&>(b)); break;
+
+            case E_PROC_INS_ALU_RSHIFTI: priv_setReg(x, a >> b); break;
+            case E_PROC_INS_ALU_LSHIFTI: priv_setReg(x, a << b); break;
 
             default: interrupt(E_PROC_ERROR_BAD_INS);
         }

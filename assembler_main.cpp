@@ -32,6 +32,9 @@ int main(int argc, char** argv) {
 
         return e.code;
     }
+    catch(ASSEMBLER_RESPOSE_CODES e) {
+        std::cout << "ERROR! " << ASM_ERROR_NAME(e) << std::endl;
+    }
 
     input.close();
     output.close();
