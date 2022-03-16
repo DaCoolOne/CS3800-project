@@ -144,9 +144,9 @@ EXTFETCH 1000 0101 xxxx xxxx yyyy yyyy zzzz zzzz - Read device Reg[X] at address
 
 EXTWRITE 1000 0110 xxxx xxxx yyyy yyyy zzzz zzzz - Write to device Reg[X] at address Reg[Y] & Reg[Z], place into EXT_BUFFER_OUT.
 
-PRINTH 1111 1100 xxxx xxxx - Print high bits of register X
+PRINTH 1111 1101 xxxx xxxx - Print high bits of register X
 
-PRINTL 1111 1101 xxxx xxxx - Print low bits of register X
+PRINTL 1111 1100 xxxx xxxx - Print low bits of register X
 
 PRINTFLUSH 1111 1110 ---- ---- Flush print buffer. The print buffer is also flushed whenever a new line is printed or the print buffer runs out of space.
 
