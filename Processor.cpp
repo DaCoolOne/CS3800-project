@@ -9,6 +9,8 @@ uint16_t Processor::getExtData() {
 };
 
 void Processor::executeNextInstruction() {
+    m_REGS[E_PROC_REG_PREV_INS] = m_program_counter;
+
     uint16_t addr = getAddress(m_program_counter++);
     uint16_t instruction = m_memory[addr];
     uint8_t ins_high = instruction >> 8;
@@ -220,20 +222,25 @@ void Processor::reset() {
 }
 
 uint16_t Processor::getReg(uint8_t reg) {
-    if(!(m_flags & E_PROC_FLAG_KERNEL) && !(reg & 0x80)) interrupt(E_PROC_ERROR_MEM_ACC);
+    if(!(m_flags & E_PROC_FLAG_KERNEL) && (reg & 0xF0)) interrupt(E_PROC_ERROR_MEM_ACC);
+    if(reg == 0xFF) return 0xFFFF;
+    if(reg >= 69) interrupt(E_PROC_ERROR_BAD_INS);
     return m_REGS[reg];
 }
 uint16_t Processor::priv_getReg(uint8_t reg) {
+    if(reg == 0xFF) return 0xFFFF;
+    if(reg >= 69) interrupt(E_PROC_ERROR_BAD_INS);
     return m_REGS[reg];
 }
 
 void Processor::setReg(uint8_t reg, uint16_t value)
 {
-    if(!(m_flags & E_PROC_FLAG_KERNEL) && !(reg & 0x80)) interrupt(E_PROC_ERROR_MEM_ACC);
+    if(!(m_flags & E_PROC_FLAG_KERNEL) && (reg & 0xF0)) interrupt(E_PROC_ERROR_MEM_ACC);
     priv_setReg(reg, value);
 }
 void Processor::priv_setReg(uint8_t reg, uint16_t value) {
     if(reg == 255) return;
+    if(reg >= 69) interrupt(E_PROC_ERROR_BAD_INS);
     m_REGS[reg] = value;
 }
 void Processor::setALUFlag(bool value, uint8_t bit) {

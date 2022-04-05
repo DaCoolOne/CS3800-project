@@ -26,7 +26,7 @@ You can run the processor with the command:
 
 # Processor specifications
 
-256 registers for storing any data. The bottom 128 regs can only be accessed in Kernel mode.
+69 registers for storing any data. When in user mode, only the bottom 16 regs may be used.
 
 Some of the registers have special meanings:
 

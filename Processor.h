@@ -30,7 +30,7 @@ class Processor {
 
     std::vector<IO_Port> m_ports;
 
-    uint16_t m_REGS[256]; // Registers.
+    uint16_t m_REGS[69]; // Registers.
 
     uint16_t m_STACK[256]; // Function stack.
 
