@@ -9,7 +9,7 @@ uint16_t Processor::getExtData() {
 };
 
 void Processor::executeNextInstruction() {
-    m_REGS[E_PROC_REG_PREV_INS] = m_program_counter;
+    if(!(m_flags & E_PROC_FLAG_KERNEL)) m_REGS[E_PROC_REG_PREV_INS] = m_program_counter;
 
     uint16_t addr = getAddress(m_program_counter++);
     uint16_t instruction = m_memory[addr];
@@ -131,6 +131,10 @@ void Processor::executeNextInstruction() {
                 m_program_counter = _TEMP;
             break;
             case E_PROC_INS_RET:
+                m_program_counter = stackPop();
+            break;
+            case E_PROC_INS_RETI:
+                m_flags &= ~E_PROC_FLAG_KERNEL;
                 m_program_counter = stackPop();
             break;
 
@@ -388,6 +392,8 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
 
             case E_PROC_INS_ALU_RSHIFTI: priv_setReg(x, a >> b); break;
             case E_PROC_INS_ALU_LSHIFTI: priv_setReg(x, a << b); break;
+
+            case E_PROC_INS_ALU_ADDI: priv_setReg(x, a + b); break;
 
             default: interrupt(E_PROC_ERROR_BAD_INS);
         }

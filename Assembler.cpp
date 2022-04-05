@@ -72,31 +72,32 @@ void Assembler::newCommand(std::string cmd) {
 
     if(tokenGroup.size() == 0) return;
 
-    std::string COMMAND = tokenGroup.at(0);
-    while(COMMAND[COMMAND.size()-1] == ':') {
-        std::string label = COMMAND.substr(0,COMMAND.size()-1);
-        if(!isValidIdent(label)) throw RESPONSE_CODE_INVALID_IDENTIFIER;
-        if(m_labels.count(label)) throw RESPONSE_CODE_IDENTIFIER_OVERWRITE;
-        m_labels[label] = bufferSize / 2;
-        resolveIdent(label, bufferSize / 2);
-
-        tokenGroup.pop_back();
-        if(tokenGroup.size() == 0) return;
-        COMMAND = tokenGroup.at(0);
-    }
-
-    // A wizard told me this would work. I believe that wizard.
-    std::transform(COMMAND.begin(), COMMAND.end(), COMMAND.begin(),
-        [](unsigned char c){ return std::toupper(c); });
-
-    // DIRECTIVES, ASSEMBLE
-    unsigned int size;
-    uint8_t table[4];
-    uint16_t _temp;
-    int _s_temp;
-    std::size_t _size_temp;
-    std::size_t _size_temp2;
     try {
+        std::string COMMAND = tokenGroup.at(0);
+        while(COMMAND[COMMAND.size()-1] == ':') {
+            std::string label = COMMAND.substr(0,COMMAND.size()-1);
+            if(!isValidIdent(label)) throw RESPONSE_CODE_INVALID_IDENTIFIER;
+            if(m_labels.count(label)) throw RESPONSE_CODE_IDENTIFIER_OVERWRITE;
+            m_labels[label] = bufferSize / 2;
+            resolveIdent(label, bufferSize / 2);
+
+            tokenGroup.pop_back();
+            if(tokenGroup.size() == 0) return;
+            COMMAND = tokenGroup.at(0);
+        }
+
+        // A wizard told me this would work. I believe that wizard.
+        std::transform(COMMAND.begin(), COMMAND.end(), COMMAND.begin(),
+            [](unsigned char c){ return std::toupper(c); });
+
+        // DIRECTIVES, ASSEMBLE
+        unsigned int size;
+        uint8_t table[4];
+        uint16_t _temp;
+        int _s_temp;
+        std::size_t _size_temp;
+        std::size_t _size_temp2;
+
         ASM_DIRECTIVES a = ASM_STR_TO_DIR.at(COMMAND);
         switch(a) {
             case E_ASM_DIR_SET:
@@ -177,6 +178,12 @@ void Assembler::newCommand(std::string cmd) {
             case E_ASM_DIR_RET:
                 if(tokenGroup.size() != 1) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_RET);
+                table[1] = 0x00;
+                size = 2;
+            break;
+            case E_ASM_DIR_RETI:
+                if(tokenGroup.size() != 1) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_RETI);
                 table[1] = 0x00;
                 size = 2;
             break;
@@ -460,6 +467,15 @@ void Assembler::newCommand(std::string cmd) {
                 table[3] = _temp & 0xFF;
                 size = 4;
             break;
+            case E_ASM_DIR_ADDI:
+                if(tokenGroup.size() != 3) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_ADDI);
+                table[1] = readStr(tokenGroup.at(1));
+                _temp = readStr(tokenGroup.at(2));
+                table[2] = _temp >> 8;
+                table[3] = _temp & 0xFF;
+                size = 4;
+            break;
 
             case E_ASM_DIR_RAISE:
                 if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
@@ -582,7 +598,7 @@ void Assembler::newCommand(std::string cmd) {
             
             case E_ASM_DOT_DATA:
                 for(int i = 1; i < tokenGroup.size(); i ++) {
-                    _temp = readStr(tokenGroup.at(1));
+                    _temp = readStr(tokenGroup.at(i), 2, 0);
                     table[0] = _temp >> 8;
                     table[1] = _temp & 0xFF;
                     buffer(reinterpret_cast<char*>(table), 2);

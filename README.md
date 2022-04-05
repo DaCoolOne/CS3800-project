@@ -30,19 +30,21 @@ You can run the processor with the command:
 
 Some of the registers have special meanings:
 
-Reg 0x00 -> Page stack size.
+Reg 0x10 -> Page stack size.
 
-Reg 0x01 -> Stack size.
+Reg 0x11 -> Stack size.
 
-Reg 0x02 -> EXT_BUFFER_IN, most recently read word from ext buffer.
+Reg 0x12 -> EXT_BUFFER_IN, most recently read word from ext buffer.
 
-Reg 0x03 -> EXT_BUFFER_OUT, word to be written to EXT file.
+Reg 0x13 -> EXT_BUFFER_OUT, word to be written to EXT file.
 
-Reg 0x04 -> ALU status register.
+Reg 0x14 -> ALU status register.
 
-Reg 0x05 -> Number of external devices.
+Reg 0x15 -> Number of external devices.
 
-Reg 0xFF -> Always 0xFF. Writing to this register is a NOP.
+Reg 0x16 -> The most recent instruction executed in user mode. This is useful for times when a user command triggers some interrupt that causes the instruction to fail (e.g, bad memory access). The kernel can take steps to remedy this failure and return the program's execution so that it attempts the instruction again (and hopefully doesn't fail this time).
+
+Reg 0xFF -> A virtual register that is always 0xFF. Writing to this register is a NOP.
 
 ## Bytecode. A word is an 8 bit op code followed by an 8 bit specifier and an optional 16 bit address or value.
 
@@ -69,7 +71,9 @@ ST 0000 1001 xxxx xxxx ---- ---- yyyy yyyy - Store value in reg x at reg y
 ### Functions
 CALL 0000 0100 ---- ---- yyyy yyyy yyyy yyyy - Call function at address, place return value in reg
 
-RET 0000 0101 ---- ---- - Return from function with value in reg
+RET 0000 0101 ---- ---- - Return from function
+
+RETI 0001 0101 ---- ---- - Return from function and enter user mode
 
 INC 0000 0110 xxxx xxxx - Inc register.
 

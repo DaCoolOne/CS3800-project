@@ -7,9 +7,68 @@ from typing import Optional
 
 
 __LISP_ASM_HEADER = """
+
+    ; Stack pointer reg
+    .ALIAS __SP 0x0
+
+    ; Regs for allocating additional memory
+    .ALIAS __ALLOC_SIZE 0x1
+    .ALIAS __ALLOC_HEAD 0x2
+    .ALIAS __ALLOC_POSITION 0x3
+    .ALIAS __ALLOC_TEMP  0x4
+    .ALIAS __ALLOC_TEMP2 0x5
+
+    ; General purpose registers
+    .ALIAS __REG_A 0xA
+    .ALIAS __REG_B 0xB
+    .ALIAS __REG_C 0xC
+    .ALIAS __REG_D 0xD
+    .ALIAS __REG_E 0xE
+    .ALIAS __REG_F 0xF
+
+    ; Startup and init
+    SET __SP __STACK_BEGIN
+    SET __ALLOC_HEAD __ALLOC_BEGIN
+    JMP main
+
+    ; Important functions
+
+; Allocate a block of dynamic memory
+__ALLOC_BLOCK:
+    SET __ALLOC_POSITION __ALLOC_HEAD
+__ALLOC_BLOCK_LOOP_START:
+    LD __ALLOC_POSITION
+    MOV __ALLOC_TEMP __ALLOC_POSITION
+    CJMP __ALLOC_POSITION __ALLOC_BLOCK_SPOT_FOUND
+    MOV __ALLOC_TEMP __ALLOC_POSITION
+    MOV __ALLOC_TEMP2 __ALLOC_POSITION
+    LD __ALLOC_TEMP
+    ADDI __ALLOC_TEMP2 0x3
+    LD __ALLOC_TEMP2
+    ADD __ALLOC_TEMP __ALLOC_TEMP __ALLOC_TEMP2
+    SUB __ALLOC_TEMP2 __ALLOC_TEMP __ALLOC_POSITION
+    GTR __ALLOC_TEMP2 __ALLOC_SIZE __ALLOC_TEMP2
+    CJMP __ALLOC_TEMP2 __ALLOC_BLOCK_SPOT_FOUND
+    RJMP __ALLOC_BLOCK_LOOP_START
+__ALLOC_BLOCK_SPOT_FOUND:
+    SET __ALLOC_TEMP 0x0
+
 """
 
-# __SP = 0x
+__LISP_DEFAULT_MAIN = """
+main:
+    RJMP main
+"""
+
+__LISP_ASM_FOOTER = """
+__STACK_BEGIN:
+    ; This will all get overwritten anyways. We just need to buffer the space a little so we don't overwrite the stack when creating dynamic memory
+    .TEXT "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
+
+__ALLOC_BEGIN:
+    ;Sentinel memory node
+    .DATA 0 0 4 1
+"""
 
 @unique
 class TOKEN_TYPE(Enum):
@@ -474,6 +533,13 @@ class Parser:
         self.tree.pop()
 
         self.tree.pop()
+
+class Compiler:
+    def __init__(self, tree: ParseTree) -> None:
+        self.tree = tree
+        self.output = ''
+    def compile(self) -> str:
+        self.output = __LISP_ASM_HEADER
 
 if __name__ == "__main__":
     with open('test.lispp') as f:

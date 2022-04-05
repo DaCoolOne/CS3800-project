@@ -22,6 +22,7 @@ enum ASM_DIRECTIVES {
 
     E_ASM_DIR_CALL,
     E_ASM_DIR_RET,
+    E_ASM_DIR_RETI,
 
     E_ASM_DIR_ADD,
     E_ASM_DIR_SUB,
@@ -57,6 +58,7 @@ enum ASM_DIRECTIVES {
     E_ASM_DIR_LSEQI,
     E_ASM_DIR_RSHIFTI,
     E_ASM_DIR_LSHIFTI,
+    E_ASM_DIR_ADDI,
 
     E_ASM_DIR_RAISE,
 
@@ -97,6 +99,7 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
 
     { E_ASM_DIR_CALL, "CALL" },
     { E_ASM_DIR_RET, "RET" },
+    { E_ASM_DIR_RETI, "RETI" },
 
     { E_ASM_DIR_INC, "INC" },
     { E_ASM_DIR_DEC, "DEC" },
@@ -134,6 +137,7 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DIR_LSEQI, "LSEQI" },
     { E_ASM_DIR_RSHIFTI, "RSHIFTI" },
     { E_ASM_DIR_LSHIFTI, "LSHIFTI" },
+    { E_ASM_DIR_ADDI, "ADDI" },
     { E_ASM_DIR_RAISE, "RAISE" },
 
     { E_ASM_DIR_UNLOCK, "UNLOCK" },
@@ -169,6 +173,7 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
 
     { "CALL", E_ASM_DIR_CALL },
     { "RET", E_ASM_DIR_RET },
+    { "RETI", E_ASM_DIR_RETI },
     
     { "INC", E_ASM_DIR_INC },
     { "DEC", E_ASM_DIR_DEC },
@@ -206,6 +211,7 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "LSEQI", E_ASM_DIR_LSEQI },
     { "RSHIFTI", E_ASM_DIR_RSHIFTI },
     { "LSHIFTI", E_ASM_DIR_LSHIFTI },
+    { "ADDI", E_ASM_DIR_ADDI },
     { "RAISE", E_ASM_DIR_RAISE },
 
     { "UNLOCK", E_ASM_DIR_UNLOCK },
