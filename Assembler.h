@@ -25,6 +25,7 @@ enum ASM_DIRECTIVES {
 
     E_ASM_DIR_ADD,
     E_ASM_DIR_SUB,
+    E_ASM_DIR_LMUL,
     E_ASM_DIR_DIV,
     E_ASM_DIR_LSHIFT,
     E_ASM_DIR_RSHIFT,
@@ -102,6 +103,7 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
 
     { E_ASM_DIR_ADD, "ADD" },
     { E_ASM_DIR_SUB, "SUB" },
+    { E_ASM_DIR_LMUL, "LMUL" },
     { E_ASM_DIR_DIV, "DIV" },
     { E_ASM_DIR_LSHIFT, "LSHIFT" },
     { E_ASM_DIR_RSHIFT, "RSHIFT" },
@@ -173,6 +175,7 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
 
     { "ADD", E_ASM_DIR_ADD },
     { "SUB", E_ASM_DIR_SUB },
+    { "LMUL", E_ASM_DIR_LMUL },
     { "DIV", E_ASM_DIR_DIV },
     { "LSHIFT", E_ASM_DIR_LSHIFT },
     { "RSHIFT", E_ASM_DIR_RSHIFT },

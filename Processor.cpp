@@ -163,6 +163,7 @@ void Processor::dumpState() {
         }
     }
 
+    m_printBuffer[printSize] = '\0';
     std::cout << "Print Buffer: " << m_printBuffer << std::endl;
     
     std::cout << "INSTRUCTION_PTR: " << m_program_counter << '/' << (m_program_counter * 2) << std::endl;
@@ -187,7 +188,7 @@ void Processor::step() {
     // Interupts
     catch(PROC_ERRORS e) {
         if(e == E_PROC_ERROR_BAD_INS) {
-            std::cout << "BAD INS! " << e << std::endl;
+            std::cout << "BAD INS!" << std::endl;
         }
         // Enter kernel mode on interupt.
         m_flags |= E_PROC_FLAG_KERNEL;
@@ -290,6 +291,7 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
         switch(opcode) {
             case E_PROC_INS_ALU_ADD: res = a + b; break;
             case E_PROC_INS_ALU_SUB: res = a - b; break;
+            case E_PROC_INS_ALU_LMUL: res = a * b; break;
             case E_PROC_INS_ALU_DIV: res = a / b; break;
             case E_PROC_INS_ALU_MOD: res = a % b; break;
 

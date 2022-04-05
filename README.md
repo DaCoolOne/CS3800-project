@@ -80,7 +80,7 @@ DEC 0000 0111 xxxx xxxx - Dec register.
 
 The alu operations are as follows:
 
-ADD, SUB, DIV, LSHIFT, RSHIFT, AND, OR, XOR, BAND, BOR, BXOR, MOD, 
+ADD, SUB, LMUL, DIV, LSHIFT, RSHIFT, AND, OR, XOR, BAND, BOR, BXOR, MOD, 
 GTR, EQ, GTEQ
 
 **Note: There is no less than comparison. This is because `LSS X Y Z` can be trivially rewritten `GTR X Z Y`, so there is no reason to write such a command. Same reasoning goes for less than or equal to. There are less than comparisons for the immediate (one reg) instructions, but this is because these commands cannot be reversed easily.**
@@ -169,6 +169,14 @@ There are a few functions that are not supported natively by the processor that 
 `NOP` - Do nothing.
 
 `HALT` - Stops the processor.
+
+Additionally there are several assembler directives which provide additional control over the output binary:
+
+`.ALIAS` - Assigns an alias to a specific data element
+
+`.DATA` - Writes pure binary data into memory.
+
+`.TEXT` - Writes ASCII strings (NTCAs) into memory.
 
 ## Process slots
 

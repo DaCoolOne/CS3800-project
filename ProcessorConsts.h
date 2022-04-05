@@ -32,7 +32,7 @@ enum PROC_INSTRUCTIONS {
 
     E_PROC_INS_ALU_ADD = 0x40, // 0100 0000
     E_PROC_INS_ALU_SUB = 0x41,
-    // Missed an instruction :P
+    E_PROC_INS_ALU_LMUL = 0x42,
     E_PROC_INS_ALU_DIV = 0x43,
     E_PROC_INS_ALU_LSHIFT = 0x44,
     E_PROC_INS_ALU_RSHIFT = 0x45,
