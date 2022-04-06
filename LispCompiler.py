@@ -81,7 +81,7 @@ class TOKEN_TYPE(Enum):
     STRING = 7
     IDENTIFIER = 8
     FLOAT = 9
-    # BIN = 10
+    GLOBAL = 10
     EOF = 11
     
     # Tree specific
@@ -102,9 +102,10 @@ class TOKEN_TYPE(Enum):
     ALLOC = 26
 
 class Token:
-    def __init__(self, type: TOKEN_TYPE, value: Optional[str] = None) -> None:
+    def __init__(self, type: TOKEN_TYPE, line: int, value: Optional[str] = None) -> None:
         self.type = type
         self.value = value
+        self.line = line
     def asString(self) -> str:
         if self.value is None:
             return self.type.name
@@ -130,15 +131,8 @@ class TokenParser:
         "struct",
         "set",
         "import",
-        "alloc"
-    }
-
-    __RESERVED = {
-        "__PUSH_STACK",
-        "__STACK_MEM",
-        "__SP",
-        "__SP_BOTTOM",
-        "__SP2",
+        "alloc",
+        "global"
     }
 
     def __init__(self, digestString: str) -> None:
@@ -170,7 +164,7 @@ class TokenParser:
         c: str = self.nextChar()
         is_comment = False
         while True:
-            if c is None: return Token(TOKEN_TYPE.EOF)
+            if c is None: return Token(TOKEN_TYPE.EOF, self.line)
             elif c == '#': is_comment = True
             elif c == '\n': is_comment = False
             
@@ -181,13 +175,13 @@ class TokenParser:
             c: str = self.nextChar()
         
         if c == '(':
-            return Token(TOKEN_TYPE.PAREN_START)
+            return Token(TOKEN_TYPE.PAREN_START, self.getTokenLine())
         elif c == ')':
-            return Token(TOKEN_TYPE.PAREN_END)
+            return Token(TOKEN_TYPE.PAREN_END, self.getTokenLine())
         elif c == '{':
-            return Token(TOKEN_TYPE.BLOCK_START)
+            return Token(TOKEN_TYPE.BLOCK_START, self.getTokenLine())
         elif c == '}':
-            return Token(TOKEN_TYPE.BLOCK_END)
+            return Token(TOKEN_TYPE.BLOCK_END, self.getTokenLine())
         elif c == '"':
             quote = c
             c = self.nextChar()
@@ -209,9 +203,8 @@ class TokenParser:
                 
                 c = self.nextChar()
                 if c is None or c == '\n':
-                    self.stepBack()
-                    raise ParserError(f"Unclosed string", self.line)
-            return Token(TOKEN_TYPE.STRING, s)
+                    raise ParserError(f"Unclosed string", self.getTokenLine())
+            return Token(TOKEN_TYPE.STRING, s, self.getTokenLine())
         
         if c.isdigit():
             if c == '0':
@@ -224,10 +217,10 @@ class TokenParser:
                         s += c
                         c = self.nextChar()
                     if c.isspace():
-                        return Token(TOKEN_TYPE.INT, int(s, 16))
+                        return Token(TOKEN_TYPE.INT, self.getTokenLine(), int(s, 16))
                     elif c in '(){}#':
                         self.stepBack()
-                        return Token(TOKEN_TYPE.INT, int(s, 16))
+                        return Token(TOKEN_TYPE.INT, self.line, int(s, 16))
                     else:
                         raise ParserError(f"Unexpecteed character '{c}'", self.line)
                 elif c == 'b':
@@ -237,10 +230,10 @@ class TokenParser:
                         s += c
                         c = self.nextChar()
                     if c.isspace():
-                        return Token(TOKEN_TYPE.INT, int(s, 2))
+                        return Token(TOKEN_TYPE.INT, self.getTokenLine(), int(s, 2))
                     elif c in '(){}#':
                         self.stepBack()
-                        return Token(TOKEN_TYPE.INT, int(s, 2))
+                        return Token(TOKEN_TYPE.INT, self.line, int(s, 2))
                     else:
                         raise ParserError(f"Unexpecteed character '{c}'", self.line)
             
@@ -251,10 +244,10 @@ class TokenParser:
                 c = self.nextChar()
             
             if c.isspace():
-                return Token(TOKEN_TYPE.INT, int(s))
+                return Token(TOKEN_TYPE.INT, self.getTokenLine(), int(s))
             elif c in '(){}#':
                 self.stepBack()
-                return Token(TOKEN_TYPE.INT, int(s))
+                return Token(TOKEN_TYPE.INT, self.line, int(s))
             else:
                 raise ParserError(f"Unexpecteed character '{c}'", self.line)
 
@@ -270,11 +263,11 @@ class TokenParser:
                 raise ParserError(f"Unexpected character '{c}'", self.line)
             
             if s in TokenParser.__KEYWORDS:
-                return Token(TOKEN_TYPE.KEYWORD, s)
-            elif s in TokenParser.__RESERVED:
+                return Token(TOKEN_TYPE.KEYWORD, self.getTokenLine(), s)
+            elif s.startswith('__'):
                 raise ParserError(f"{s} is a reserved word!", self.line)
             else:
-                return Token(TOKEN_TYPE.IDENTIFIER, s)
+                return Token(TOKEN_TYPE.IDENTIFIER, self.getTokenLine(), s)
         else:
             raise ParserError(f"Unexpected token '{c}'", self.line)
 
@@ -300,7 +293,7 @@ class ParseNode:
 
 class ParseTree:
     def __init__(self) -> None:
-        self.root = ParseNode(Token(TOKEN_TYPE.ROOT))
+        self.root = ParseNode(Token(TOKEN_TYPE.ROOT, 0))
         self.stack = [ self.root ]
     def push(self, token: Token) -> None:
         current = self.stack[-1]
@@ -345,6 +338,9 @@ class Parser:
                 elif self.token.value == "function":
                     self.getToken()
                     self.parse_FUNCTION()
+                elif self.token.value == "global":
+                    self.getToken()
+                    self.parse_GLOBAL()
                 elif self.token.value == "struct":
                     self.getToken()
                     self.parse_STRUCT()
@@ -360,7 +356,7 @@ class Parser:
             raise ParserError("Expected identifier", self.tk_gen.getTokenLine())
     # Parse imports from other files.
     def parse_IMPORT(self):
-        self.tree.push(Token(TOKEN_TYPE.IMPORT))
+        self.tree.push(Token(TOKEN_TYPE.IMPORT, self.tk_gen.getTokenLine()))
         self.parse_IDENTIFIER()
 
         if self.token.type == TOKEN_TYPE.STRING:
@@ -370,14 +366,22 @@ class Parser:
             raise ParserError("Expected string", self.tk_gen.getTokenLine())
         
         self.tree.pop()
+    # Parse global statements
+    def parse_GLOBAL(self):
+        self.tree.push(Token(TOKEN_TYPE.GLOBAL, self.tk_gen.getTokenLine()))
+        self.parse_IDENTIFIER()
+        if self.token.type == TOKEN_TYPE.INT or self.token.type == TOKEN_TYPE.FLOAT or self.token.type == TOKEN_TYPE.STRING:
+            self.tree.shift(self.token)
+            self.getToken()
+        self.tree.pop()
     # Parse set statements
     def parse_SET(self):
-        self.tree.push(Token(TOKEN_TYPE.SET))
+        self.tree.push(Token(TOKEN_TYPE.SET, self.tk_gen.getTokenLine()))
         self.parse_IDENTIFIER()
         self.parse_EXPRESSION()
         self.tree.pop()
     def parse_ALLOC(self):
-        self.tree.push(Token(TOKEN_TYPE.ALLOC))
+        self.tree.push(Token(TOKEN_TYPE.ALLOC, self.tk_gen.getTokenLine()))
         self.parse_IDENTIFIER()
         self.parse_EXPRESSION()
         self.tree.pop()
@@ -387,7 +391,7 @@ class Parser:
         
         self.getToken()
 
-        self.tree.push(Token(TOKEN_TYPE.ARGLIST))
+        self.tree.push(Token(TOKEN_TYPE.ARGLIST, self.tk_gen.getTokenLine()))
 
         while self.token.type == TOKEN_TYPE.IDENTIFIER:
             self.tree.shift(self.token)
@@ -401,7 +405,7 @@ class Parser:
         self.getToken()
 
     def parse_STRUCT(self):
-        self.tree.push(Token(TOKEN_TYPE.STRUCT))
+        self.tree.push(Token(TOKEN_TYPE.STRUCT, self.tk_gen.getTokenLine()))
         self.parse_IDENTIFIER()
         self.parse_ARGLIST()
         self.tree.pop()
@@ -410,7 +414,7 @@ class Parser:
         raise ParserError("Structs are a planned feature and have not been implemented yet!", self.tk_gen.getTokenLine())
     # Parse function statements.
     def parse_FUNCTION(self):
-        self.tree.push(Token(TOKEN_TYPE.FUNCTION))
+        self.tree.push(Token(TOKEN_TYPE.FUNCTION, self.tk_gen.getTokenLine()))
         self.parse_IDENTIFIER()
 
         self.parse_ARGLIST()
@@ -425,28 +429,28 @@ class Parser:
 
     # Parse for loop.
     def parse_WHILE(self):
-        self.tree.push(Token(TOKEN_TYPE.WHILE))
+        self.tree.push(Token(TOKEN_TYPE.WHILE, self.tk_gen.getTokenLine()))
         self.parse_IDENTIFIER()
         self.parse_FUNCTION_CALL()
         self.parse_BLOCK()
         self.tree.pop()
     # Parse if statement.
     def parse_IF(self):
-        self.tree.push(Token(TOKEN_TYPE.IF))
-        self.tree.push(Token(TOKEN_TYPE.IF_COND))
+        self.tree.push(Token(TOKEN_TYPE.IF, self.tk_gen.getTokenLine()))
+        self.tree.push(Token(TOKEN_TYPE.IF_COND, self.tk_gen.getTokenLine()))
         self.parse_FUNCTION_CALL()
         self.parse_BLOCK()
         self.tree.pop()
         while self.token.type == TOKEN_TYPE.KEYWORD:
             if self.token.value == 'elif':
                 self.getToken()
-                self.tree.push(Token(TOKEN_TYPE.IF_COND))
+                self.tree.push(Token(TOKEN_TYPE.IF_COND, self.tk_gen.getTokenLine()))
                 self.parse_FUNCTION_CALL()
                 self.parse_BLOCK()
                 self.tree.pop()
             elif self.token.value == 'else':
                 self.getToken()
-                self.tree.push(Token(TOKEN_TYPE.ELSE_COND))
+                self.tree.push(Token(TOKEN_TYPE.ELSE_COND, self.tk_gen.getTokenLine()))
                 self.parse_BLOCK()
                 self.tree.pop()
             else:
@@ -456,7 +460,7 @@ class Parser:
 
     # Parse for loop.
     def parse_FOR(self):
-        self.tree.push(Token(TOKEN_TYPE.FOR))
+        self.tree.push(Token(TOKEN_TYPE.FOR, self.tk_gen.getTokenLine()))
         self.parse_IDENTIFIER()
         self.parse_FUNCTION_CALL()
         self.parse_FUNCTION_CALL()
@@ -464,7 +468,7 @@ class Parser:
         self.tree.pop()
     # Parse an infinite loop.
     def parse_LOOP(self):
-        self.tree.push(Token(TOKEN_TYPE.LOOP))
+        self.tree.push(Token(TOKEN_TYPE.LOOP, self.tk_gen.getTokenLine()))
         self.parse_BLOCK()
         self.tree.pop()
     # Parse a block
@@ -473,7 +477,7 @@ class Parser:
             raise ParserError("Expected Block", self.tk_gen.getTokenLine())
         self.getToken()
 
-        self.tree.push(Token(TOKEN_TYPE.BLOCK))
+        self.tree.push(Token(TOKEN_TYPE.BLOCK, self.tk_gen.getTokenLine()))
 
         while self.token.type != TOKEN_TYPE.BLOCK_END:
             if self.token.type == TOKEN_TYPE.KEYWORD:
@@ -521,11 +525,11 @@ class Parser:
             raise ParserError("Expected Function Start", self.tk_gen.getTokenLine())
         self.getToken()
 
-        self.tree.push(Token(TOKEN_TYPE.FUNCTION_CALL))
+        self.tree.push(Token(TOKEN_TYPE.FUNCTION_CALL, self.tk_gen.getTokenLine()))
 
         self.parse_IDENTIFIER()
 
-        self.tree.push(Token(TOKEN_TYPE.ARGLIST))
+        self.tree.push(Token(TOKEN_TYPE.ARGLIST, self.tk_gen.getTokenLine()))
         while self.token.type != TOKEN_TYPE.PAREN_END:
             self.parse_EXPRESSION()
         
@@ -541,6 +545,123 @@ class Compiler:
     def compile(self) -> str:
         self.output = __LISP_ASM_HEADER
 
+# Keeps trace of which variables are which.
+class KernelCompilerGlobalVars:
+    def __init__(self) -> None:
+        self.scope = {}
+        self.counter = 0
+
+        self.globalDefs = []
+        self.globalInit = []
+        self.ends = []
+    # Returns the register to use for this variable
+    def newGlobal(self, name: str, value: Optional[int] = None) -> int:
+        if name not in self.scope:
+            self.scope[name] = self.counter
+            self.globalDefs.append(f"    .ALIAS {name} {self.counter}")
+            if value is not None:
+                self.globalInit.append(f"    SET {name} {value}")
+            self.counter += 1
+        return self.scope[name]
+    
+    def constString(self, name: str, data: str) -> str:
+        d_san = data.replace('\\', '\\\\').replace('\0', '\\0').replace('\n', '\\n').replace('\t', '\\t')
+        self.ends.append(f'    .TEXT {name} "{d_san}"')
+
+    def globalCode(self) -> str:
+        return '\n'.join(self.globalDefs)
+
+class CompileKernelMode:
+    
+    __LISP_ASM_KERNEL_HEADER = """
+    ; Interrupts
+    JMP KERNEL_init
+    JMP KERNEL_TimerTick
+    JMP KERNEL_BadMemAccess
+    JMP KERNEL_StackOverflow
+    JMP KERNEL_StackUnderflow
+    JMP KERNEL_BadIns
+    JMP KERNEL_FailedExtAccess
+    JMP KERNEL_UserDefined1
+    JMP KERNEL_UserDefined2
+    JMP KERNEL_UserDefined3
+    JMP KERNEL_UserDefined4
+    JMP KERNEL_UserDefined5
+    JMP KERNEL_UserDefined6
+    JMP KERNEL_UserDefined7
+    JMP KERNEL_UserDefined8
+    JMP KERNEL_UserDefined9
+    JMP KERNEL_UserDefined10
+
+KERNEL_init:
+"""
+
+    def __init__(self, tree: ParseTree) -> None:
+        self.tree = tree
+        self.output = ''
+        self.vars = KernelCompilerGlobalVars()
+
+        self.vars.newGlobal("KERNEL.int_UserReg0")
+        self.vars.newGlobal("KERNEL.int_UserReg1")
+        self.vars.newGlobal("KERNEL.int_UserReg2")
+        self.vars.newGlobal("KERNEL.int_UserReg3")
+        self.vars.newGlobal("KERNEL.int_UserReg4")
+        self.vars.newGlobal("KERNEL.int_UserReg5")
+        self.vars.newGlobal("KERNEL.int_UserReg6")
+        self.vars.newGlobal("KERNEL.int_UserReg7")
+        self.vars.newGlobal("KERNEL.int_UserReg8")
+        self.vars.newGlobal("KERNEL.int_UserReg9")
+        self.vars.newGlobal("KERNEL.int_UserRegA")
+        self.vars.newGlobal("KERNEL.int_UserRegB")
+        self.vars.newGlobal("KERNEL.int_UserRegC")
+        self.vars.newGlobal("KERNEL.int_UserRegD")
+        self.vars.newGlobal("KERNEL.int_UserRegE")
+        self.vars.newGlobal("KERNEL.int_UserRegF")
+        
+        self.vars.newGlobal("KERNEL.int_PageStackSize")
+        self.vars.newGlobal("KERNEL.int_StackSize")
+        self.vars.newGlobal("KERNEL.int_ExtBufferIn")
+        self.vars.newGlobal("KERNEL.int_ExtBufferOut")
+        self.vars.newGlobal("KERNEL.int_AluStatus")
+        self.vars.newGlobal("KERNEL.int_ExtDevices")
+        self.vars.newGlobal("KERNEL.int_LastUserIns")
+
+    def compile(self) -> "CompileKernelMode":
+
+        # Do a quick scan of the file to see if there are any issues, like return statements or function args
+        for node in self.tree.root.children:
+            if node.token.type == TOKEN_TYPE.FUNCTION:
+                if len(node.children[1].children) > 0:
+                    raise ParserError(f"Function {node.children[0].token.value} cannot have arguments in KERNEL mode.")
+                if len(node.children) == 4:
+                    raise ParserError(f"Function {node.children[0].token.value} cannot have returns in KERNEL mode.")
+        
+        # Initialize globals
+        for node in self.tree.root.children:
+            if node.token.type == TOKEN_TYPE.GLOBAL:
+                if len(node.children) == 1:
+                    self.vars.newGlobal(node.children[0].token.value)
+                else:
+                    if node.children[1].token.type == TOKEN_TYPE.INT:
+                        self.vars.newGlobal(node.children[0].token.value, node.children[1].token.value)
+                    elif node.children[1].token.type == TOKEN_TYPE.STRING:
+                        sVal = '__CONSTANTS.' + node.children[0].token.value
+                        self.vars.constString(sVal, node.children[1].token.value)
+                        self.vars.newGlobal(node.children[0].token.value, sVal)
+        
+        self.output = self.vars.globalCode() + '\n\n' + CompileKernelMode.__LISP_ASM_KERNEL_HEADER + '\n'.join(self.vars.globalInit) + '\n\n' + '\n'.join(self.vars.ends)
+
+        # Compile each function
+        for node in self.tree.root.children:
+            if node.token.type == TOKEN_TYPE.IMPORT:
+                pass
+            elif node.token.type == TOKEN_TYPE.FUNCTION:
+                pass
+            elif node.token.type == TOKEN_TYPE.GLOBAL:
+                pass
+
+        return self
+
 if __name__ == "__main__":
     with open('test.lispp') as f:
         tsp = TokenParser(f.read())
@@ -555,4 +676,8 @@ if __name__ == "__main__":
         print(e)
     print('\nParse tree:')
     parser.tree.print()
+
+    print("Generated asm")
+    print("------------------------")
+    print(CompileKernelMode(parser.tree).compile().output)
 

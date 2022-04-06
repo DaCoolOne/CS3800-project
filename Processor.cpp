@@ -149,7 +149,7 @@ void Processor::executeNextInstruction() {
             break;
 
             case E_PROC_INS_RAISE:
-                throw (ins_low & 0x3F) + 1;
+                throw (ins_low & 0x0F) + 1;
             break;
 
             default: interrupt(E_PROC_ERROR_BAD_INS);

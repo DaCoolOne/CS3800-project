@@ -1,0 +1,8 @@
+
+global int_x 3
+
+global str_Writer "Hello World"
+
+function main() {
+    (+ 2 3)
+}

@@ -48,12 +48,6 @@ be done through the string library (planned).
 
 `*int_` `*str_` - Pointers / arrays (planned).
 
-When writing code for the kernel, the first instruction must be to import the standard KERNEL library. The KERNEL library
-includes many preprocessor directives that allow the kernel to deal with interrupts. It also includes a few constants that
-are used by the processor for storing variables and gives access to those values. Additionally, there are several functions
-that are included as well. Furthermore, developing in kernel mode gives you access to a different set of registers that would
-normally be protected.
-
 # Scope
 Scope is tied directly to the functions. Every function has its own scope.
 
@@ -193,6 +187,23 @@ function cartesianProd(vec2i_v) {
 } returns int_res
 ```
 
+`global` - Creates a global variable that is accessible anywhere in the script. If followed by a constant, it
+will initialize the variable as well.
+```
+global int_example 4
+
+function inc() {
+    set int_example (++ int_example)
+}
+
+function main() {
+    for int_i (< int_i 5) (++ int_i) {
+        inc()
+    }
+    set int_example (+ int_example 4)
+}
+```
+
 # Arrays (planned)
 
 ```
@@ -231,4 +242,20 @@ Instead, use a temp variable:
 set int_t (+ int_x 1)
 (+ *int_ARR:int_t 1)
 ```
+
+# Kernel compiling
+
+When writing code for the kernel, the first instruction must be to import the standard KERNEL library. The KERNEL library
+includes many preprocessor directives that allow the kernel to deal with interrupts. It also includes a few constants that
+are used by the processor for storing variables and gives access to those values. Additionally, there are several functions
+that are included as well.
+
+There are a few important restrictions that are added to Kernel mode since the kernel is supposed to run a lot lower level.
+The most important restriction is that any user defined functions may not take any arguments and cannot return any values.
+Any communication between functions must take place using global variables (for anyone curious, this is because kernel mode
+the registers for variable storage).
+
+Additionally, when compiling for the Kernel you cannot call functions recursively. This is to prevent issues involved with
+variables overwriting each other. Attempting to call a function recursively will result in an error message during the
+compiling process.
 

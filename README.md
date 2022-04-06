@@ -1,19 +1,6 @@
 # CS3800-project
 CS3800 project thingy
 
-
-# Lisp compiler
-
-run `make lisp_compiler`
-
-This will generate a file called `./lisp_compiler.exe`.
-
-You can compile lisp to processor instructions using the following command:
-
-`./lisp_compiler.exe FILE_PATH [-o OUTPUT_FILE]`
-
-If compiling for the kernel, add the `--kernel` flag, which changes the processor to compile for kernel mode.
-
 # Processor
 
 run `make processor` (this is the default make option)
@@ -28,21 +15,22 @@ You can run the processor with the command:
 
 69 registers for storing any data. When in user mode, only the bottom 16 regs may be used.
 
-Some of the registers have special meanings:
+Some of the registers have special meanings. First of all, in kernel mode the user registers can be accessed
+using KERNEL.int_UserRegN where N is 0-F (KERNEL.int_UserReg0 KERNEL.int_UserReg1 ... KERNEL.int_UserRegF).
 
-Reg 0x10 -> Page stack size.
+Reg 0x10 -> Page stack size. (KERNEL.int_PageStackSize)
 
-Reg 0x11 -> Stack size.
+Reg 0x11 -> Stack size. (KERNEL.int_StackSize)
 
-Reg 0x12 -> EXT_BUFFER_IN, most recently read word from ext buffer.
+Reg 0x12 -> KERNEL.int_ExtBufferIn, most recently read word from ext buffer.
 
-Reg 0x13 -> EXT_BUFFER_OUT, word to be written to EXT file.
+Reg 0x13 -> KERNEL.int_ExtBufferOut, word to be written to EXT file.
 
-Reg 0x14 -> ALU status register.
+Reg 0x14 -> ALU status register. (KERNEL.int_AluStatus)
 
-Reg 0x15 -> Number of external devices.
+Reg 0x15 -> Number of external devices. (KERNEL.int_ExtDevices)
 
-Reg 0x16 -> The most recent instruction executed in user mode. This is useful for times when a user command triggers some interrupt that causes the instruction to fail (e.g, bad memory access). The kernel can take steps to remedy this failure and return the program's execution so that it attempts the instruction again (and hopefully doesn't fail this time).
+Reg 0x16 -> The most recent instruction executed in user mode. This is useful for times when a user command triggers some interrupt that causes the instruction to fail (e.g, bad memory access). The kernel can take steps to remedy this failure and return the program's execution so that it attempts the instruction again (and hopefully doesn't fail this time). (KERNEL.int_LastUserIns)
 
 Reg 0xFF -> A virtual register that is always 0xFF. Writing to this register is a NOP.
 
@@ -130,7 +118,7 @@ LSHIFTI - Computes Reg[x] << y
 
 ### Interupts
 
-RAISE 0011 1111 --xx xxxx - Throw interrupt X+1. (In assembly you throw the error that corresponds to the error table, e.g, RAISE 3 will raise a stack overflow).
+RAISE 0011 1111 ---- xxxx - Throw interrupt X+1. (In assembly you throw the error that corresponds to the error table, e.g, RAISE 3 will raise a stack overflow).
 
 ## Kernel mode functions, processor must be in kernel mode.
 
@@ -195,21 +183,21 @@ Additionally there are several assembler directives which provide additional con
 Whenever an interupt occurs, the processor enters kernel mode. The function that is executed
 and corresponds to the following table:
 
-0x0000 -> RESET
+0x0000 -> RESET (Cannot write a callback for in lisp)
 
-0x0002 -> TIMER_TICK
+0x0002 -> KERNEL.TimerTick
 
-0x0004 -> BAD_MEM_ACCESS
+0x0004 -> KERNEL.BadMemAccess
 
-0x0006 -> STACK_OVERFLOW
+0x0006 -> KERNEL.StackOverflow
 
-0x0008 -> STACK_UNDERFLOW
+0x0008 -> KERNEL.StackUnderflow
 
-0x000A -> BAD_INS
+0x000A -> KERNEL.BadIns
 
-0x000C -> FAILED_EXT_ACCESS (Typically thrown when reached EOF)
+0x000C -> KERNEL.FailedExtAccess (Typically thrown when reached EOF)
 
-0x000E - 0x0080 -> USER_DEFINED_1 - USER_DEFINED_XX
+0x000E - 0x0022 -> KERNEL.UserDefined1 - KERNEL.UserDefined10
 
 These can be accessed in kernel-lisp scripts by writing function definitions.
 
