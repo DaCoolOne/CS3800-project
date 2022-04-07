@@ -577,6 +577,11 @@ class CompileKernelTreeNode:
         self.deps = deps
         self.minReg = 0
 
+class CompileKernelInstruction:
+    def __init__(self, prod: int) -> None:
+        self.consumes = []
+        self.produces = prod
+
 class CompileKernelTree:
     def __init__(self) -> None:
         self.functions: Dict[str, CompileKernelTreeNode] = {}
@@ -606,8 +611,6 @@ class CompileKernelTree:
         if node.token.type != TOKEN_TYPE.FUNCTION:
             raise "BRUH"
         
-        regsInUse = []
-        maxReg = 0
 
 class CompileKernelMode:
     

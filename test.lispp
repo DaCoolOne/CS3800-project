@@ -9,3 +9,8 @@ function main() {
 function testF() {
     (& int_other 4)
 }
+
+# Every function uses len(arglist) registers to compute the result. Computing
+# one of the args requires x + f(a) where a is the function and x is the offset
+# of that argument.
+
