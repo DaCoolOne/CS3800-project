@@ -1,8 +1,11 @@
 
-global int_x 3
-
-global str_Writer "Hello World"
+global int_other 3
 
 function main() {
-    (+ 2 3)
+    set int_r (+ 2 int_other)
+    (testF)
+}
+
+function testF() {
+    (& int_other 4)
 }

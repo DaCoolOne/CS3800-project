@@ -1,7 +1,7 @@
 # A python implementation of a compiler for lisp, because python is just faster for development cycles and I don't care about compile times :P
 
 from lib2to3.pgen2 import token
-from typing import Union, List
+from typing import Dict, Set, Union, List
 from enum import Enum, unique
 from typing import Optional
 
@@ -204,7 +204,7 @@ class TokenParser:
                 c = self.nextChar()
                 if c is None or c == '\n':
                     raise ParserError(f"Unclosed string", self.getTokenLine())
-            return Token(TOKEN_TYPE.STRING, s, self.getTokenLine())
+            return Token(TOKEN_TYPE.STRING, self.getTokenLine(), s)
         
         if c.isdigit():
             if c == '0':
@@ -553,7 +553,7 @@ class KernelCompilerGlobalVars:
 
         self.globalDefs = []
         self.globalInit = []
-        self.ends = []
+        self.string_consts = []
     # Returns the register to use for this variable
     def newGlobal(self, name: str, value: Optional[int] = None) -> int:
         if name not in self.scope:
@@ -565,11 +565,49 @@ class KernelCompilerGlobalVars:
         return self.scope[name]
     
     def constString(self, name: str, data: str) -> str:
-        d_san = data.replace('\\', '\\\\').replace('\0', '\\0').replace('\n', '\\n').replace('\t', '\\t')
-        self.ends.append(f'    .TEXT {name} "{d_san}"')
+        d_san = data.replace('\\', '\\\\').replace('\0', '\\0').replace('\n', '\\n').replace('\t', '\\t').replace('\'', '\\\'').replace('\"', '\\\"')
+        self.string_consts.append(f'{name}:\n    .TEXT "{d_san}"')
 
     def globalCode(self) -> str:
         return '\n'.join(self.globalDefs)
+
+class CompileKernelTreeNode:
+    def __init__(self, size: int, deps: List[str]) -> None:
+        self.size = size
+        self.deps = deps
+        self.minReg = 0
+
+class CompileKernelTree:
+    def __init__(self) -> None:
+        self.functions: Dict[str, CompileKernelTreeNode] = {}
+    def createFunction(self, name: str, space: int, deps: List[str]) -> None:
+        self.functions[name] = CompileKernelTreeNode(space, deps)
+    def generateRegisters(self, base: str, stack: List[str]) -> None:
+        if base in stack:
+            raise ParserError(f"Function {base} cannot be called recursively!", -1)
+        self.functions[base].minReg = max(self.functions[base].minReg, sum(self.functions[s].size for s in stack))
+        stack2 = stack + [base]
+        for f in self.functions[base].deps:
+            self.generateRegisters(f, stack2)
+    def getRegOffset(self, fname: str) -> None:
+        return self.functions[fname].minReg
+    @staticmethod
+    def findAllFunctionDeps(node: ParseNode, fs: Set[str]) -> None:
+        o = []
+        if node.token.type == TOKEN_TYPE.FUNCTION_CALL:
+            v = node.children[0].token.value
+            if v in fs:
+                o.append(v)
+        for child in node.children:
+            o += CompileKernelTree.findAllFunctionDeps(child, fs)
+        return o
+    @staticmethod
+    def compilePartialBytecode(node: ParseNode) -> None:
+        if node.token.type != TOKEN_TYPE.FUNCTION:
+            raise "BRUH"
+        
+        regsInUse = []
+        maxReg = 0
 
 class CompileKernelMode:
     
@@ -627,14 +665,15 @@ KERNEL_init:
         self.vars.newGlobal("KERNEL.int_LastUserIns")
 
     def compile(self) -> "CompileKernelMode":
+        self.output = ""
 
         # Do a quick scan of the file to see if there are any issues, like return statements or function args
         for node in self.tree.root.children:
             if node.token.type == TOKEN_TYPE.FUNCTION:
                 if len(node.children[1].children) > 0:
-                    raise ParserError(f"Function {node.children[0].token.value} cannot have arguments in KERNEL mode.")
+                    raise ParserError(f"Function {node.children[0].token.value} cannot have arguments in KERNEL mode.", node.token.line)
                 if len(node.children) == 4:
-                    raise ParserError(f"Function {node.children[0].token.value} cannot have returns in KERNEL mode.")
+                    raise ParserError(f"Function {node.children[0].token.value} cannot have returns in KERNEL mode.", node.children[3].token.line)
         
         # Initialize globals
         for node in self.tree.root.children:
@@ -649,16 +688,17 @@ KERNEL_init:
                         self.vars.constString(sVal, node.children[1].token.value)
                         self.vars.newGlobal(node.children[0].token.value, sVal)
         
-        self.output = self.vars.globalCode() + '\n\n' + CompileKernelMode.__LISP_ASM_KERNEL_HEADER + '\n'.join(self.vars.globalInit) + '\n\n' + '\n'.join(self.vars.ends)
+        self.output = self.vars.globalCode() + '\n\n' + CompileKernelMode.__LISP_ASM_KERNEL_HEADER + '\n'.join(self.vars.globalInit) + '\n\n' + '\n'.join(self.vars.string_consts)
+
+        ALL_F = set( node.children[0].token.value for node in self.tree.root.children if node.token.type == TOKEN_TYPE.FUNCTION )
 
         # Compile each function
         for node in self.tree.root.children:
             if node.token.type == TOKEN_TYPE.IMPORT:
                 pass
             elif node.token.type == TOKEN_TYPE.FUNCTION:
-                pass
-            elif node.token.type == TOKEN_TYPE.GLOBAL:
-                pass
+                # Compile the function
+                deps = CompileKernelTree.findAllFunctionDeps(node, ALL_F)
 
         return self
 
@@ -672,12 +712,13 @@ if __name__ == "__main__":
     parser = Parser(tsp)
     try:
         parser.parse_S()
+        print('\nParse tree:')
+        parser.tree.print()
+
+        print("Generated asm")
+        print("------------------------")
+        ckm = CompileKernelMode(parser.tree).compile()
+        # print(ckm.output)
     except ParserError as e:
         print(e)
-    print('\nParse tree:')
-    parser.tree.print()
-
-    print("Generated asm")
-    print("------------------------")
-    print(CompileKernelMode(parser.tree).compile().output)
 
