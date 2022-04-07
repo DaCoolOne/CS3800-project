@@ -577,10 +577,43 @@ class CompileKernelTreeNode:
         self.deps = deps
         self.minReg = 0
 
-class CompileKernelInstruction:
-    def __init__(self, prod: int) -> None:
-        self.consumes = []
-        self.produces = prod
+class CompileKernelFunctionBuilder:
+    def __init__(self, base: ParseNode) -> None:
+        if base.token.type == TOKEN_TYPE.FUNCTION_CALL:
+            self.function = 0
+            arglist = base.children[1].children
+            self.children = [ CompileKernelFunctionBuilder(child) for child in arglist ]
+            lens = [ c.regCount for c in self.children ]
+            lens.sort(reverse=True)
+            self.regCount = max([ len(arglist) ] + [ l + i for i, l in enumerate(lens) ])
+            self.value = base.children[0].token.value
+        elif base.token.type == TOKEN_TYPE.IDENTIFIER:
+            self.regCount = 0
+            self.children = []
+            self.function = 1
+            # self.value =  # Todo: figure out how to calculate this
+        elif base.token.type == TOKEN_TYPE.INT:
+            self.regCount = 1
+            self.children = []
+            self.function = 2
+            self.value: int = base.token.value
+        elif base.token.type == TOKEN_TYPE.STRING:
+            self.regCount = 0
+            self.children = []
+            self.function = 3
+            # self.value =  # Todo: figure out how to calculate this
+        elif base.token.type == TOKEN_TYPE.SET:
+            self.children = [ CompileKernelFunctionBuilder(base.children[1]) ]
+            self.function = 4
+            self.setPos = base.children[1]
+            self.regCount = max(1, self.children[0].regCount)
+            self.value: int = base.token.value
+        elif base.token.type == TOKEN_TYPE.BLOCK:
+            self.function = 5
+            self.children = [ CompileKernelFunctionBuilder(child) for child in base.children ]
+            self.regCount = 0 if len(self.children) == 0 else max(c.regCount for c in self.children)
+        else:
+            raise ParserError(base.token.type, -1)
 
 class CompileKernelTree:
     def __init__(self) -> None:
@@ -702,6 +735,9 @@ KERNEL_init:
             elif node.token.type == TOKEN_TYPE.FUNCTION:
                 # Compile the function
                 deps = CompileKernelTree.findAllFunctionDeps(node, ALL_F)
+                builder = CompileKernelFunctionBuilder(node.children[2])
+
+                print(builder.regCount)
 
         return self
 
