@@ -4,6 +4,7 @@ from lib2to3.pgen2 import token
 from typing import Dict, Set, Union, List
 from enum import Enum, unique
 from typing import Optional
+from unicodedata import name
 
 
 __LISP_ASM_HEADER = """
@@ -538,6 +539,26 @@ class Parser:
 
         self.tree.pop()
 
+class Function:
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        raise NotImplementedError
+
+class SetFunction(Function):
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        return ' '.join("    SET", destReg, argRegs[0])
+
+# Because there are a lot of these
+class BinaryIntFunction(Function):
+    def __init__(self, name: str, rev: bool = False) -> None:
+        self.name = name
+        self.rev = rev
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        if self.rev:
+            return ' '.join("   ", self.name, destReg, argRegs[1], argRegs[0])
+        else:
+            return ' '.join("   ", self.name, destReg, argRegs[0], argRegs[1])
+
+# Todo
 class Compiler:
     def __init__(self, tree: ParseTree) -> None:
         self.tree = tree
@@ -570,6 +591,35 @@ class KernelCompilerGlobalVars:
 
     def globalCode(self) -> str:
         return '\n'.join(self.globalDefs)
+    
+    def isGlobal(self, name: str) -> int:
+        return name in self.scope
+
+class LocalScopeTracker:
+    def __init__(self, globals: KernelCompilerGlobalVars) -> None:
+        self.gl = globals
+        self.regStack = []
+        self.locals = []
+        self.regTop = 0
+        self.maxReg = 0
+    def tempPush(self):
+        self.regStack.append(self.regTop)
+    def tempPop(self):
+        self.regTop = self.regStack.pop()
+    def tempAlloc(self) -> int:
+        rt = self.regTop
+        self.regTop += 1
+        self.maxReg = max(self.maxReg, rt)
+        return rt
+    def isGlobal(self, name: str):
+        return name in self.gl.scope
+    def newLocal(self, name: str):
+        if len(self.regStack) > 0:
+            raise Exception()
+        self.locals.append(name)
+        self.tempAlloc()
+    def getLocal(self, name: str):
+        return self.locals.index(name)
 
 class CompileKernelTreeNode:
     def __init__(self, size: int, deps: List[str]) -> None:
@@ -577,12 +627,13 @@ class CompileKernelTreeNode:
         self.deps = deps
         self.minReg = 0
 
-class CompileKernelFunctionBuilder:
-    def __init__(self, base: ParseNode) -> None:
+"""
+class CompileKernelFunctionCallBuilder:
+    def __init__(self, base: ParseNode, functions: Dict[str, BinaryIntFunction], scope: LocalScopeTracker) -> None:
         if base.token.type == TOKEN_TYPE.FUNCTION_CALL:
-            self.function = 0
+            self.type = 0
             arglist = base.children[1].children
-            self.children = [ CompileKernelFunctionBuilder(child) for child in arglist ]
+            self.children = [ CompileKernelFunctionCallBuilder(child, functions, scope) for child in arglist ]
             lens = [ c.regCount for c in self.children ]
             lens.sort(reverse=True)
             self.regCount = max([ len(arglist) ] + [ l + i for i, l in enumerate(lens) ])
@@ -590,30 +641,82 @@ class CompileKernelFunctionBuilder:
         elif base.token.type == TOKEN_TYPE.IDENTIFIER:
             self.regCount = 0
             self.children = []
-            self.function = 1
-            # self.value =  # Todo: figure out how to calculate this
+            self.type = 1
+            vname = base.token.value
+            if not scope.exists(vname):
+                raise ParserError(f"Unknown identifier {vname}", base.token.line)
+            self.value = scope.getReg(vname)
         elif base.token.type == TOKEN_TYPE.INT:
             self.regCount = 1
-            self.children = []
-            self.function = 2
+            self.type = 2
             self.value: int = base.token.value
         elif base.token.type == TOKEN_TYPE.STRING:
             self.regCount = 0
-            self.children = []
-            self.function = 3
+            self.type = 3
             # self.value =  # Todo: figure out how to calculate this
-        elif base.token.type == TOKEN_TYPE.SET:
-            self.children = [ CompileKernelFunctionBuilder(base.children[1]) ]
-            self.function = 4
-            self.setPos = base.children[1]
-            self.regCount = max(1, self.children[0].regCount)
-            self.value: int = base.token.value
-        elif base.token.type == TOKEN_TYPE.BLOCK:
-            self.function = 5
-            self.children = [ CompileKernelFunctionBuilder(child) for child in base.children ]
-            self.regCount = 0 if len(self.children) == 0 else max(c.regCount for c in self.children)
         else:
             raise ParserError(base.token.type, -1)
+"""
+
+class CompileKernelPartialVar:
+    def __init__(self, index: int, relative: bool = True) -> None:
+        self.index = index
+        self.relative = relative
+    def get(self, offset: int):
+        return offset + self.index if self.relative else self.index
+
+class CompileKernelInstruction:
+    def __init__(self, f: Function, args: List[CompileKernelPartialVar]) -> None:
+        self.function = f
+        self.args = args
+        self.outputReg: CompileKernelPartialVar = None
+    def output(self, offset: int):
+        return self.function.compile(self.outputReg.get(offset), [ a.get(offset) for a in self.args ])
+
+class CompileKernelFunctionBuilder:
+    def __init__(self, base: ParseNode, functions: Dict[str, Function], scope: LocalScopeTracker) -> None:
+        if base.token.type != TOKEN_TYPE.FUNCTION:
+            raise ParserError("Yo, wut", -1)
+        
+        self.insList: List[CompileKernelPartialVar] = []
+        self.regs = 0
+
+        self.functions = functions
+        self.scope = scope
+
+        for child in base.children[2].children:
+            if child.token.type == TOKEN_TYPE.FUNCTION_CALL:
+                self.FUNCTION_CALL(child)
+            elif child.token.type == TOKEN_TYPE.SET:
+                c = self.FUNCTION_CALL(child.children[1])
+    
+    def FUNCTION_CALL(self, base: ParseNode) -> CompileKernelPartialVar:
+        if base.token.type == TOKEN_TYPE.FUNCTION_CALL:
+            self.scope.tempPush()
+            # Todo: pick compute order smartly
+            fname = base.children[0].token.value
+            if fname in self.functions:
+                args = base.children[1].children
+                for arg in args:
+                    self.FUNCTION_CALL(arg)
+                    self.insList[-1].outputReg = CompileKernelPartialVar(self.scope.tempAlloc())
+                self.scope.tempPop()
+            reg = CompileKernelPartialVar(self.scope.tempAlloc())
+            self.insList.append(CompileKernelInstruction(self.functions[fname], [reg]))
+        elif base.token.type == TOKEN_TYPE.INT:
+            self.insList.append(CompileKernelInstruction(self.functions["__INT"], []))
+            reg = CompileKernelPartialVar(0, False)
+        elif base.token.type == TOKEN_TYPE.IDENTIFIER:
+            if self.scope.isGlobal(base.token.value):
+                reg = CompileKernelPartialVar(self.scope.gl.scope[base.token.value], False)
+            else:
+                reg = CompileKernelPartialVar(self.scope.getLocal(base.token.value))
+        else:
+            raise ParserError("Bruh", 1)
+        return reg
+
+    def compile(self):
+        pass
 
 class CompileKernelTree:
     def __init__(self) -> None:
@@ -647,6 +750,23 @@ class CompileKernelTree:
 
 class CompileKernelMode:
     
+    __DECLARED_FUNCTIONS = {
+        "+": BinaryIntFunction("ADD"),
+        "-": BinaryIntFunction("SUB"),
+        "*": BinaryIntFunction("LMUL"),
+        "/": BinaryIntFunction("DIV"),
+        "&": BinaryIntFunction("AND"),
+        "&&": BinaryIntFunction("BAND"),
+        "|": BinaryIntFunction("OR"),
+        "||": BinaryIntFunction("BOR"),
+        "^": BinaryIntFunction("XOR"),
+        ">": BinaryIntFunction("GTR"),
+        ">=": BinaryIntFunction("GTEQ"),
+        "<": BinaryIntFunction("GTR", True),
+        "<=": BinaryIntFunction("GTEQ", True),
+        "=": BinaryIntFunction("EQ"),
+        "__INT": SetFunction(),
+    }
     __LISP_ASM_KERNEL_HEADER = """
     ; Interrupts
     JMP KERNEL_init
@@ -735,9 +855,11 @@ KERNEL_init:
             elif node.token.type == TOKEN_TYPE.FUNCTION:
                 # Compile the function
                 deps = CompileKernelTree.findAllFunctionDeps(node, ALL_F)
-                builder = CompileKernelFunctionBuilder(node.children[2])
+                builder = CompileKernelFunctionBuilder(node, CompileKernelMode.__DECLARED_FUNCTIONS, LocalScopeTracker(self.vars))
 
-                print(builder.regCount)
+                builder.compile()
+
+                # print(builder.regCount)
 
         return self
 
