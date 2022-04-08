@@ -699,43 +699,38 @@ class CompileKernelFunctionBuilder:
                 c = self.FUNCTION_CALL(child.children[1])
                 c.index = scope.newLocal(child.children[0].token.value)
     
-    def FUNCTION_CALL(self, base: ParseNode) -> Tuple[CompileKernelPartialVar, bool]:
+    def FUNCTION_CALL(self, base: ParseNode) -> CompileKernelPartialVar:
         if base.token.type == TOKEN_TYPE.FUNCTION_CALL:
             self.scope.tempPush()
             # Todo: pick compute order smartly
             fname = base.children[0].token.value
-            if fname in self.functions:
-                args = base.children[1].children
-                a = []
-                for arg in args:
-                    pv, needs_mov = self.FUNCTION_CALL(arg)
-                    pv.index = self.scope.tempAlloc()
-                    a.append(pv)
-                self.scope.tempPop()
-                ins = CompileKernelInstruction(self.functions[fname], a)
-                reg = ins.outputReg
-                reg.index = self.scope.tempAlloc()
-                reg.relative = True
-                self.insList.append(ins)
-                needsRelocation = False
-            else:
-                # User defined function
-                reg = CompileKernelPartialVar(self.scope.tempAlloc())
-                needsRelocation = False
-        elif base.token.type == TOKEN_TYPE.INT:
-            ins = CompileKernelInstruction(self.functions["__INT"], [ CompileKernelPartialVar(base.token.value, False) ])
+            args = base.children[1].children
+            a = []
+            for arg in args:
+                if arg.token.type == TOKEN_TYPE.FUNCTION_CALL:
+                    ins = self.FUNCTION_CALL(arg)
+                    ins.index = self.scope.tempAlloc()
+                    a.append(ins)
+                elif arg.token.type == TOKEN_TYPE.INT:
+                    ins = CompileKernelInstruction(self.functions["__INT"], [ CompileKernelPartialVar(arg.token.value, False) ])
+                    self.insList.append(ins)
+                    reg = ins.outputReg
+                    reg.index = self.scope.tempAlloc()
+                    a.append(reg)
+                elif arg.token.type == TOKEN_TYPE.IDENTIFIER:
+                    if self.scope.isGlobal(arg.token.value):
+                        a.append(CompileKernelPartialVar(self.scope.getGlobal(arg.token.value), False))
+                    else:
+                        a.append(CompileKernelPartialVar(self.scope.getLocal(arg.token.value)))
+            self.scope.tempPop()
+            ins = CompileKernelInstruction(self.functions[fname], a)
             reg = ins.outputReg
+            reg.index = self.scope.tempAlloc()
+            reg.relative = True
             self.insList.append(ins)
-            needsRelocation = True
-        elif base.token.type == TOKEN_TYPE.IDENTIFIER:
-            if self.scope.isGlobal(base.token.value):
-                reg = CompileKernelPartialVar(self.scope.getGlobal(base.token.value), False)
-            else:
-                reg = CompileKernelPartialVar(self.scope.getLocal(base.token.value))
-            needsRelocation = False
         else:
             raise ParserError("Bruh", 1)
-        return [ reg, needsRelocation ]
+        return reg
 
     def compile(self, offset: int) -> str:
         return '    ' + '\n    '.join([i.output(offset) for i in self.insList])
