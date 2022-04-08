@@ -1,7 +1,7 @@
 # A python implementation of a compiler for lisp, because python is just faster for development cycles and I don't care about compile times :P
 
 from lib2to3.pgen2 import token
-from typing import Dict, Set, Union, List
+from typing import Dict, Set, Tuple, Union, List
 from enum import Enum, unique
 from typing import Optional
 from unicodedata import name
@@ -544,8 +544,13 @@ class Function:
         raise NotImplementedError
 
 class SetFunction(Function):
+    def __init__(self, name: str = "SET") -> None:
+        self.name = name
     def compile(self, destReg: int, argRegs: List[int]) -> str:
-        return ' '.join("    SET", destReg, argRegs[0])
+        return ' '.join(toStr("    SET", destReg, argRegs[0]))
+
+def toStr(*a):
+    return [ str(_a) for _a in a ]
 
 # Because there are a lot of these
 class BinaryIntFunction(Function):
@@ -554,9 +559,9 @@ class BinaryIntFunction(Function):
         self.rev = rev
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         if self.rev:
-            return ' '.join("   ", self.name, destReg, argRegs[1], argRegs[0])
+            return ' '.join(toStr("   ", self.name, destReg, argRegs[1], argRegs[0]))
         else:
-            return ' '.join("   ", self.name, destReg, argRegs[0], argRegs[1])
+            return ' '.join(toStr("   ", self.name, destReg, argRegs[0], argRegs[1]))
 
 # Todo
 class Compiler:
@@ -592,7 +597,7 @@ class KernelCompilerGlobalVars:
     def globalCode(self) -> str:
         return '\n'.join(self.globalDefs)
     
-    def isGlobal(self, name: str) -> int:
+    def isGlobal(self, name: str) -> bool:
         return name in self.scope
 
 class LocalScopeTracker:
@@ -611,15 +616,18 @@ class LocalScopeTracker:
         self.regTop += 1
         self.maxReg = max(self.maxReg, rt)
         return rt
-    def isGlobal(self, name: str):
-        return name in self.gl.scope
+    def isGlobal(self, name: str) -> bool:
+        return self.gl.isGlobal(name)
     def newLocal(self, name: str):
         if len(self.regStack) > 0:
             raise Exception()
         self.locals.append(name)
-        self.tempAlloc()
+        return self.tempAlloc()
     def getLocal(self, name: str):
         return self.locals.index(name)
+    def getGlobal(self, name: str):
+        print(name, self.gl.scope[name])
+        return self.gl.scope[name]
 
 class CompileKernelTreeNode:
     def __init__(self, size: int, deps: List[str]) -> None:
@@ -663,13 +671,13 @@ class CompileKernelPartialVar:
         self.index = index
         self.relative = relative
     def get(self, offset: int):
-        return offset + self.index if self.relative else self.index
+        return (offset + self.index) if self.relative else self.index
 
 class CompileKernelInstruction:
     def __init__(self, f: Function, args: List[CompileKernelPartialVar]) -> None:
         self.function = f
         self.args = args
-        self.outputReg: CompileKernelPartialVar = None
+        self.outputReg = CompileKernelPartialVar(0)
     def output(self, offset: int):
         return self.function.compile(self.outputReg.get(offset), [ a.get(offset) for a in self.args ])
 
@@ -678,7 +686,7 @@ class CompileKernelFunctionBuilder:
         if base.token.type != TOKEN_TYPE.FUNCTION:
             raise ParserError("Yo, wut", -1)
         
-        self.insList: List[CompileKernelPartialVar] = []
+        self.insList: List[CompileKernelInstruction] = []
         self.regs = 0
 
         self.functions = functions
@@ -689,34 +697,48 @@ class CompileKernelFunctionBuilder:
                 self.FUNCTION_CALL(child)
             elif child.token.type == TOKEN_TYPE.SET:
                 c = self.FUNCTION_CALL(child.children[1])
+                c.index = scope.newLocal(child.children[0].token.value)
     
-    def FUNCTION_CALL(self, base: ParseNode) -> CompileKernelPartialVar:
+    def FUNCTION_CALL(self, base: ParseNode) -> Tuple[CompileKernelPartialVar, bool]:
         if base.token.type == TOKEN_TYPE.FUNCTION_CALL:
             self.scope.tempPush()
             # Todo: pick compute order smartly
             fname = base.children[0].token.value
             if fname in self.functions:
                 args = base.children[1].children
+                a = []
                 for arg in args:
-                    self.FUNCTION_CALL(arg)
-                    self.insList[-1].outputReg = CompileKernelPartialVar(self.scope.tempAlloc())
+                    pv, needs_mov = self.FUNCTION_CALL(arg)
+                    pv.index = self.scope.tempAlloc()
+                    a.append(pv)
                 self.scope.tempPop()
-            reg = CompileKernelPartialVar(self.scope.tempAlloc())
-            self.insList.append(CompileKernelInstruction(self.functions[fname], [reg]))
+                ins = CompileKernelInstruction(self.functions[fname], a)
+                reg = ins.outputReg
+                reg.index = self.scope.tempAlloc()
+                reg.relative = True
+                self.insList.append(ins)
+                needsRelocation = False
+            else:
+                # User defined function
+                reg = CompileKernelPartialVar(self.scope.tempAlloc())
+                needsRelocation = False
         elif base.token.type == TOKEN_TYPE.INT:
-            self.insList.append(CompileKernelInstruction(self.functions["__INT"], []))
-            reg = CompileKernelPartialVar(0, False)
+            ins = CompileKernelInstruction(self.functions["__INT"], [ CompileKernelPartialVar(base.token.value, False) ])
+            reg = ins.outputReg
+            self.insList.append(ins)
+            needsRelocation = True
         elif base.token.type == TOKEN_TYPE.IDENTIFIER:
             if self.scope.isGlobal(base.token.value):
-                reg = CompileKernelPartialVar(self.scope.gl.scope[base.token.value], False)
+                reg = CompileKernelPartialVar(self.scope.getGlobal(base.token.value), False)
             else:
                 reg = CompileKernelPartialVar(self.scope.getLocal(base.token.value))
+            needsRelocation = False
         else:
             raise ParserError("Bruh", 1)
-        return reg
+        return [ reg, needsRelocation ]
 
-    def compile(self):
-        pass
+    def compile(self, offset: int) -> str:
+        return '    ' + '\n    '.join([i.output(offset) for i in self.insList])
 
 class CompileKernelTree:
     def __init__(self) -> None:
@@ -766,6 +788,8 @@ class CompileKernelMode:
         "<=": BinaryIntFunction("GTEQ", True),
         "=": BinaryIntFunction("EQ"),
         "__INT": SetFunction(),
+        "__SET": SetFunction(),
+        "__MOV": SetFunction("MOV"),
     }
     __LISP_ASM_KERNEL_HEADER = """
     ; Interrupts
@@ -857,9 +881,8 @@ KERNEL_init:
                 deps = CompileKernelTree.findAllFunctionDeps(node, ALL_F)
                 builder = CompileKernelFunctionBuilder(node, CompileKernelMode.__DECLARED_FUNCTIONS, LocalScopeTracker(self.vars))
 
-                builder.compile()
-
-                # print(builder.regCount)
+                # Do not overwrite globals
+                print(builder.compile(self.vars.counter))
 
         return self
 
