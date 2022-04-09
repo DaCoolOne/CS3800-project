@@ -1,11 +1,11 @@
 # A python implementation of a compiler for lisp, because python is just faster for development cycles and I don't care about compile times :P
 
-from lib2to3.pgen2 import token
 from typing import Dict, Set, Tuple, Union, List
 from enum import Enum, unique
 from typing import Optional
-from unicodedata import name
 
+__IF_IDENT_CTR = 0
+__LOOP_IDENT_CTR = 0
 
 __LISP_ASM_HEADER = """
 
@@ -157,7 +157,7 @@ class TokenParser:
         if self.digest[self.index] == '\n':
             self.line -= 1
     def getTokenLine(self) -> int:
-        if self.index > 0 and self.digest[self.index] == '\n':
+        if self.index > 0 and self.digest[self.index - 1] == '\n':
             return self.line - 1
         return self.line
     def nextToken(self) -> Token:
@@ -539,7 +539,12 @@ class Parser:
 
         self.tree.pop()
 
+def toStr(*a):
+    return [ str(_a) for _a in a ]
+
 class Function:
+    def getSignature(self) -> Tuple[str, List[str], bool]: # Bool = last arg can be repeated
+        raise NotImplementedError
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         raise NotImplementedError
 
@@ -547,10 +552,28 @@ class SetFunction(Function):
     def __init__(self, name: str = "SET") -> None:
         self.name = name
     def compile(self, destReg: int, argRegs: List[int]) -> str:
-        return ' '.join(toStr("    SET", destReg, argRegs[0]))
+        return ' '.join(toStr(self.name, destReg, argRegs[0]))
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("int", [], False)
 
-def toStr(*a):
-    return [ str(_a) for _a in a ]
+class VoidIntFunction(Function):
+    def __init__(self, name: str) -> None:
+        self.name = name
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        return ' '.join(toStr(self.name, argRegs[0]))
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("", ["int"], False)
+
+class UnaryIntFunction(Function):
+    def __init__(self, name: str, rev: bool = False) -> None:
+        self.name = name
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        if destReg == argRegs[0]:
+            return ' '.join(toStr(self.name, destReg))
+        else:
+            return ' '.join(toStr("MOV", destReg, argRegs[0])) + '\n' + ' '.join(toStr("   ", self.name, destReg))
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("int", ["int"], False)
 
 # Because there are a lot of these
 class BinaryIntFunction(Function):
@@ -559,9 +582,49 @@ class BinaryIntFunction(Function):
         self.rev = rev
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         if self.rev:
-            return ' '.join(toStr("   ", self.name, destReg, argRegs[1], argRegs[0]))
+            return ' '.join(toStr(self.name, destReg, argRegs[1], argRegs[0]))
         else:
-            return ' '.join(toStr("   ", self.name, destReg, argRegs[0], argRegs[1]))
+            return ' '.join(toStr(self.name, destReg, argRegs[0], argRegs[1]))
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("int", ["int","int"], False)
+
+class NnaryIntFunction(Function):
+    def __init__(self, name: str) -> None:
+        self.name = name
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        a = [ ' '.join(toStr(self.name, destReg, argRegs[0], argRegs[1])) ]
+        for i in range(2, len(argRegs), 1):
+            a.append(' '.join(toStr(self.name, destReg, destReg, argRegs[i])))
+        return '\n'.join(a)
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("int", ["int","int"], True)
+
+def GetVariableType(var: str):
+    vname = var.split('.')[-1]
+    if '_' not in vname:
+        return ''
+    return vname.split('_')[0]
+
+class UserFunction(Function):
+    def __init__(self, function: "CompileKernelFunctionBuilder") -> None:
+        self.name = function.base.children[0].token.value
+        self.sig = (function.returns, [ GetVariableType(v) for v in function.args ], False)
+        self.function = function
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        print("USER FUNCTION CALL", destReg, argRegs)
+        a = [  ]
+        for i, arg in enumerate(argRegs):
+            if i + self.function.offset != arg:
+                a.append(f"MOV {i + self.function.offset} {arg}")
+        a.reverse()
+        a.append(f"CALL __FCALL_{self.name}")
+        ret_pos = self.function.getReturnReg() + self.function.offset
+        if destReg != ret_pos:
+            a.append(f"MOV {destReg} {ret_pos}")
+        return '\n    '.join(a)
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return self.sig
+
 
 # Todo
 class Compiler:
@@ -606,7 +669,7 @@ class LocalScopeTracker:
         self.regStack = []
         self.locals = []
         self.regTop = 0
-        self.maxReg = 0
+        #self.maxReg = 0
     def tempPush(self):
         self.regStack.append(self.regTop)
     def tempPop(self):
@@ -614,19 +677,21 @@ class LocalScopeTracker:
     def tempAlloc(self) -> int:
         rt = self.regTop
         self.regTop += 1
-        self.maxReg = max(self.maxReg, rt)
+        #self.maxReg = max(self.maxReg, rt)
         return rt
     def isGlobal(self, name: str) -> bool:
         return self.gl.isGlobal(name)
-    def newLocal(self, name: str):
+    def newLocal(self, name: str) -> int:
         if len(self.regStack) > 0:
             raise Exception()
-        self.locals.append(name)
-        return self.tempAlloc()
-    def getLocal(self, name: str):
+        if name not in self.locals:
+            self.locals.append(name)
+            return self.tempAlloc()
+        else:
+            return self.getLocal(name)
+    def getLocal(self, name: str) -> int:
         return self.locals.index(name)
-    def getGlobal(self, name: str):
-        print(name, self.gl.scope[name])
+    def getGlobal(self, name: str) -> int:
         return self.gl.scope[name]
 
 class CompileKernelTreeNode:
@@ -674,45 +739,145 @@ class CompileKernelPartialVar:
         return (offset + self.index) if self.relative else self.index
 
 class CompileKernelInstruction:
-    def __init__(self, f: Function, args: List[CompileKernelPartialVar]) -> None:
+    def __init__(self, baseF: "CompileKernelFunctionBuilder", f: Function, args: List[CompileKernelPartialVar]) -> None:
         self.function = f
         self.args = args
         self.outputReg = CompileKernelPartialVar(0)
-    def output(self, offset: int):
-        return self.function.compile(self.outputReg.get(offset), [ a.get(offset) for a in self.args ])
+        self.baseF = baseF
+    def output(self):
+        return self.function.compile(self.outputReg.get(self.baseF.offset), [ a.get(self.baseF.offset) for a in self.args ])
+
+class CompileKernelFunctionBuilderDep:
+    def __init__(self, child: "CompileKernelFunctionBuilder", offset: int) -> None:
+        self.child = child
+        self.offset = offset
 
 class CompileKernelFunctionBuilder:
     def __init__(self, base: ParseNode, functions: Dict[str, Function], scope: LocalScopeTracker) -> None:
         if base.token.type != TOKEN_TYPE.FUNCTION:
-            raise ParserError("Yo, wut", -1)
-        
+            raise ParserError("Yo, wut. Call this on a function node you nark", -1)
+
         self.insList: List[CompileKernelInstruction] = []
         self.regs = 0
 
         self.functions = functions
         self.scope = scope
 
-        for child in base.children[2].children:
-            if child.token.type == TOKEN_TYPE.FUNCTION_CALL:
-                self.FUNCTION_CALL(child)
-            elif child.token.type == TOKEN_TYPE.SET:
-                c = self.FUNCTION_CALL(child.children[1])
-                c.index = scope.newLocal(child.children[0].token.value)
+        self.offset = scope.gl.counter
+        self.base = base
+
+        # Construct positions for the return values and the arguments
+        if len(base.children) == 4:
+            self.returns = GetVariableType(base.children[3].token.value)
+        else:
+            self.returns = ""
+        
+        # Construct argument list
+        for a in base.children[1].children:
+            self.scope.newLocal(a.token.value)
+        self.args = [ a.token.value for a in base.children[1].children ]
+
+        self.deps: Set[CompileKernelFunctionBuilderDep] = set()
+
+        self.constructed = False
+
+    def getReturnReg(self):
+        return self.scope.getLocal(self.base.children[3].token.value)
+
+    # Building the function
+    def construct(self, offset: int, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]):
+        global __IF_IDENT_CTR
+        global __LOOP_IDENT_CTR
+
+        self.offset = max(offset, self.offset)
+
+        if not self.constructed:
+            for child in self.base.children[2].children:
+                if child.token.type == TOKEN_TYPE.FUNCTION_CALL:
+                    # Make sure that we intend to discard the function return
+                    fname = child.children[0].token.value
+                    if fname in self.functions:
+                        ret, _, _ = self.functions[fname].getSignature()
+                        if ret != '':
+                            raise ParserError(f"Discarded return value", child.children[-1].token.line)
+                    else:
+                        f = userFunctions[fname]
+                        if f.returns != '':
+                            raise ParserError(f"Discarded return value", child.children[-1].token.line)
+                    self.FUNCTION_CALL(child, userFunctions)
+                elif child.token.type == TOKEN_TYPE.SET:
+                    token = child.children[1].token
+                    if token.type == TOKEN_TYPE.FUNCTION_CALL:
+                        c = self.FUNCTION_CALL(child.children[1], userFunctions)
+                        if c is None:
+                            raise ParserError(f"Expected return value", child.children[1].token.line)
+                        name = child.children[0].token.value
+                        fname = child.children[1].children[0].token.value
+                        if fname in self.functions:
+                            if GetVariableType(name) != self.functions[fname].getSignature()[0]:
+                                raise ParserError(f'Cannot assign type {self.functions[fname].getSignature()[0]} to {GetVariableType(name)}', child.children[0].token.line)
+                        else:
+                            if GetVariableType(name) != userFunctions[fname].returns:
+                                raise ParserError(f'Cannot assign type {userFunctions[fname].returns} to {GetVariableType(name)}', child.children[0].token.line)
+                        if self.scope.isGlobal(name):
+                            c.index = self.scope.getGlobal(name)
+                            c.relative = False
+                        else:
+                            c.index = self.scope.newLocal(name)
+                    elif token.type == TOKEN_TYPE.INT:
+                        ins = CompileKernelInstruction(self, self.functions["__INT"], [ CompileKernelPartialVar(token.value, False) ])
+                        c = ins.outputReg
+                        self.insList.append(ins)
+                        name = child.children[0].token.value
+                        if GetVariableType(name) != 'int':
+                            raise ParserError(f'Incorrect variable type "{GetVariableType(name)}"', child.children[0].token.line)
+                        if self.scope.isGlobal(name):
+                            c.index = self.scope.getGlobal(name)
+                            c.relative = False
+                        else:
+                            c.index = self.scope.newLocal(name)
+                    else:
+                        raise ParserError("Bruh3", 1)
+                elif child.token.type == TOKEN_TYPE.IF:
+                    # Oh boy, this one is fun hehehehehehehehe
+                    c = self.FUNCTION_CALL(child.children[1], userFunctions)
+                else:
+                    raise ParserError("Bruh2", 1)
+                    
+            self.constructed = True
     
-    def FUNCTION_CALL(self, base: ParseNode) -> CompileKernelPartialVar:
+    def FUNCTION_CALL(self, base: ParseNode, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]) -> Optional[CompileKernelPartialVar]:
+        reg: CompileKernelPartialVar = None
         if base.token.type == TOKEN_TYPE.FUNCTION_CALL:
             self.scope.tempPush()
             # Todo: pick compute order smartly
             fname = base.children[0].token.value
             args = base.children[1].children
+
+            f = self.functions[fname] if fname in self.functions else UserFunction(userFunctions[fname])
+            sig_r, sig_a, sig_rep = f.getSignature()
+
             a = []
-            for arg in args:
+            if (not sig_rep and len(args) > len(sig_a)) or len(args) < len(sig_a):
+                raise ParserError(f"Incorrect number of arguments! " +
+                    f"Expected {str(len(sig_a))+'+' if sig_rep else len(sig_a)} got {len(args)}", base.token.line)
+
+            for i, arg in enumerate(args):
+                arg_sig = sig_a[min(i, len(sig_a) - 1)]
                 if arg.token.type == TOKEN_TYPE.FUNCTION_CALL:
-                    ins = self.FUNCTION_CALL(arg)
+                    ins: CompileKernelPartialVar = self.FUNCTION_CALL(arg, userFunctions)
+                    if ins is None:
+                        raise ParserError(f"Expected return value", arg.token.line)
+                    f_ret_type = arg.children[0].token.value
+                    f_ret_type = self.functions[f_ret_type] if f_ret_type in self.functions else UserFunction(userFunctions[f_ret_type])
+                    if f_ret_type.getSignature()[0] != arg_sig:
+                        raise ParserError(f"Incorrect argument type. Expected {arg_sig} got {f_ret_type.getSignature()[0]}", arg.token.line)
                     ins.index = self.scope.tempAlloc()
                     a.append(ins)
                 elif arg.token.type == TOKEN_TYPE.INT:
-                    ins = CompileKernelInstruction(self.functions["__INT"], [ CompileKernelPartialVar(arg.token.value, False) ])
+                    if 'int' != arg_sig:
+                        raise ParserError(f"Incorrect argument type. Expected {arg_sig} got int", arg.token.line)
+                    ins = CompileKernelInstruction(self, self.functions["__INT"], [ CompileKernelPartialVar(arg.token.value, False) ])
                     self.insList.append(ins)
                     reg = ins.outputReg
                     reg.index = self.scope.tempAlloc()
@@ -723,17 +888,25 @@ class CompileKernelFunctionBuilder:
                     else:
                         a.append(CompileKernelPartialVar(self.scope.getLocal(arg.token.value)))
             self.scope.tempPop()
-            ins = CompileKernelInstruction(self.functions[fname], a)
+            
+            if fname not in self.functions:
+                self.deps.add(userFunctions[fname])
+                userFunctions[fname].construct(self.offset + self.scope.regTop, userFunctions)
+            ins = CompileKernelInstruction(self, f, a)
             reg = ins.outputReg
-            reg.index = self.scope.tempAlloc()
-            reg.relative = True
             self.insList.append(ins)
         else:
             raise ParserError("Bruh", 1)
         return reg
 
-    def compile(self, offset: int) -> str:
-        return '    ' + '\n    '.join([i.output(offset) for i in self.insList])
+    def compile(self) -> str:
+        for s in self.scope.locals:
+            print(s, self.scope.getLocal(s))
+        a = [ dep.compile() for dep in self.deps ]
+        a.append(f"""
+__FCALL_{self.base.children[0].token.value}:
+    """ + '\n    '.join([i.output() for i in self.insList]) + "\n    RET")
+        return '\n'.join(a)
 
 class CompileKernelTree:
     def __init__(self) -> None:
@@ -768,15 +941,15 @@ class CompileKernelTree:
 class CompileKernelMode:
     
     __DECLARED_FUNCTIONS = {
-        "+": BinaryIntFunction("ADD"),
+        "+": NnaryIntFunction("ADD"),
         "-": BinaryIntFunction("SUB"),
-        "*": BinaryIntFunction("LMUL"),
+        "*": NnaryIntFunction("LMUL"),
         "/": BinaryIntFunction("DIV"),
-        "&": BinaryIntFunction("AND"),
-        "&&": BinaryIntFunction("BAND"),
-        "|": BinaryIntFunction("OR"),
-        "||": BinaryIntFunction("BOR"),
-        "^": BinaryIntFunction("XOR"),
+        "&": NnaryIntFunction("AND"),
+        "&&": NnaryIntFunction("BAND"),
+        "|": NnaryIntFunction("OR"),
+        "||": NnaryIntFunction("BOR"),
+        "^": NnaryIntFunction("XOR"),
         ">": BinaryIntFunction("GTR"),
         ">=": BinaryIntFunction("GTEQ"),
         "<": BinaryIntFunction("GTR", True),
@@ -785,6 +958,10 @@ class CompileKernelMode:
         "__INT": SetFunction(),
         "__SET": SetFunction(),
         "__MOV": SetFunction("MOV"),
+        "PRINTH": VoidIntFunction("PRINTH"),
+        "PRINTL": VoidIntFunction("PRINTL"),
+        "++": UnaryIntFunction("INC"),
+        "--": UnaryIntFunction("DEC"),
     }
     __LISP_ASM_KERNEL_HEADER = """
     ; Interrupts
@@ -842,14 +1019,6 @@ KERNEL_init:
     def compile(self) -> "CompileKernelMode":
         self.output = ""
 
-        # Do a quick scan of the file to see if there are any issues, like return statements or function args
-        for node in self.tree.root.children:
-            if node.token.type == TOKEN_TYPE.FUNCTION:
-                if len(node.children[1].children) > 0:
-                    raise ParserError(f"Function {node.children[0].token.value} cannot have arguments in KERNEL mode.", node.token.line)
-                if len(node.children) == 4:
-                    raise ParserError(f"Function {node.children[0].token.value} cannot have returns in KERNEL mode.", node.children[3].token.line)
-        
         # Initialize globals
         for node in self.tree.root.children:
             if node.token.type == TOKEN_TYPE.GLOBAL:
@@ -868,16 +1037,29 @@ KERNEL_init:
         ALL_F = set( node.children[0].token.value for node in self.tree.root.children if node.token.type == TOKEN_TYPE.FUNCTION )
 
         # Compile each function
+        FUNCTION_LIST: Dict[str, CompileKernelFunctionBuilder] = {}
+
         for node in self.tree.root.children:
             if node.token.type == TOKEN_TYPE.IMPORT:
                 pass
             elif node.token.type == TOKEN_TYPE.FUNCTION:
                 # Compile the function
-                deps = CompileKernelTree.findAllFunctionDeps(node, ALL_F)
+                # deps = CompileKernelTree.findAllFunctionDeps(node, ALL_F)
                 builder = CompileKernelFunctionBuilder(node, CompileKernelMode.__DECLARED_FUNCTIONS, LocalScopeTracker(self.vars))
 
-                # Do not overwrite globals
-                print(builder.compile(self.vars.counter))
+                FUNCTION_LIST[node.children[0].token.value] = builder
+
+                # print(builder.compile())
+
+        if 'main' not in FUNCTION_LIST:
+            raise ParserError(f"Could not find main function", -1)
+        __MAIN = FUNCTION_LIST['main']
+
+        if len(__MAIN.base.children[1].children) > 0:
+            raise ParserError(f"Main function must have at least one ", -1)
+
+        __MAIN.construct(self.vars.counter, FUNCTION_LIST)
+        print(__MAIN.compile())
 
         return self
 
