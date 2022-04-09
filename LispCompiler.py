@@ -4,8 +4,8 @@ from typing import Dict, Set, Tuple, Union, List
 from enum import Enum, unique
 from typing import Optional
 
-__IF_IDENT_CTR = 0
-__LOOP_IDENT_CTR = 0
+_IF_IDENT_CTR = 0
+_LOOP_IDENT_CTR = 0
 
 __LISP_ASM_HEADER = """
 
@@ -237,7 +237,9 @@ class TokenParser:
                         return Token(TOKEN_TYPE.INT, self.line, int(s, 2))
                     else:
                         raise ParserError(f"Unexpecteed character '{c}'", self.line)
-            
+                
+                c = '0'
+
             # Normal decimal parsing
             s = ''
             while c is not None and c.isdigit():
@@ -428,10 +430,9 @@ class Parser:
 
         self.tree.pop()
 
-    # Parse for loop.
+    # Parse while loop.
     def parse_WHILE(self):
         self.tree.push(Token(TOKEN_TYPE.WHILE, self.tk_gen.getTokenLine()))
-        self.parse_IDENTIFIER()
         self.parse_FUNCTION_CALL()
         self.parse_BLOCK()
         self.tree.pop()
@@ -552,15 +553,35 @@ class SetFunction(Function):
     def __init__(self, name: str = "SET") -> None:
         self.name = name
     def compile(self, destReg: int, argRegs: List[int]) -> str:
-        return ' '.join(toStr(self.name, destReg, argRegs[0]))
+        return ' '.join(toStr("   ", self.name, destReg, argRegs[0]))
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("int", [], False)
+
+class JumpFunction(Function):
+    def __init__(self, tag: str, cond: bool = False) -> None:
+        self.tag = tag
+        self.cond = cond
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        if self.cond:
+            return ' '.join(toStr("    CJMP", argRegs[0], self.tag))
+        else:
+            return ' '.join(toStr("    JMP", self.tag))
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("", ["int"], False) if self.cond else ("", [], False)
+
+class VoidFunction(Function):
+    def __init__(self, name: str) -> None:
+        self.name = name
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        return ' '.join(toStr("   ", self.name))
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("", [], False)
 
 class VoidIntFunction(Function):
     def __init__(self, name: str) -> None:
         self.name = name
     def compile(self, destReg: int, argRegs: List[int]) -> str:
-        return ' '.join(toStr(self.name, argRegs[0]))
+        return ' '.join(toStr("   ", self.name, argRegs[0]))
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("", ["int"], False)
 
@@ -569,9 +590,9 @@ class UnaryIntFunction(Function):
         self.name = name
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         if destReg == argRegs[0]:
-            return ' '.join(toStr(self.name, destReg))
+            return ' '.join(toStr("   ", self.name, destReg))
         else:
-            return ' '.join(toStr("MOV", destReg, argRegs[0])) + '\n' + ' '.join(toStr("   ", self.name, destReg))
+            return ' '.join(toStr("    MOV", destReg, argRegs[0])) + '\n' + ' '.join(toStr("   ", self.name, destReg))
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("int", ["int"], False)
 
@@ -582,9 +603,9 @@ class BinaryIntFunction(Function):
         self.rev = rev
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         if self.rev:
-            return ' '.join(toStr(self.name, destReg, argRegs[1], argRegs[0]))
+            return ' '.join(toStr("   ", self.name, destReg, argRegs[1], argRegs[0]))
         else:
-            return ' '.join(toStr(self.name, destReg, argRegs[0], argRegs[1]))
+            return ' '.join(toStr("   ", self.name, destReg, argRegs[0], argRegs[1]))
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("int", ["int","int"], False)
 
@@ -592,9 +613,9 @@ class NnaryIntFunction(Function):
     def __init__(self, name: str) -> None:
         self.name = name
     def compile(self, destReg: int, argRegs: List[int]) -> str:
-        a = [ ' '.join(toStr(self.name, destReg, argRegs[0], argRegs[1])) ]
+        a = [ ' '.join(toStr("   ", self.name, destReg, argRegs[0], argRegs[1])) ]
         for i in range(2, len(argRegs), 1):
-            a.append(' '.join(toStr(self.name, destReg, destReg, argRegs[i])))
+            a.append(' '.join(toStr("   ", self.name, destReg, destReg, argRegs[i])))
         return '\n'.join(a)
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("int", ["int","int"], True)
@@ -611,7 +632,6 @@ class UserFunction(Function):
         self.sig = (function.returns, [ GetVariableType(v) for v in function.args ], False)
         self.function = function
     def compile(self, destReg: int, argRegs: List[int]) -> str:
-        print("USER FUNCTION CALL", destReg, argRegs)
         a = [  ]
         for i, arg in enumerate(argRegs):
             if i + self.function.offset != arg:
@@ -747,6 +767,12 @@ class CompileKernelInstruction:
     def output(self):
         return self.function.compile(self.outputReg.get(self.baseF.offset), [ a.get(self.baseF.offset) for a in self.args ])
 
+class CompileKernelLiteral:
+    def __init__(self, v: str) -> None:
+        self.v = v
+    def output(self):
+        return self.v
+
 class CompileKernelFunctionBuilderDep:
     def __init__(self, child: "CompileKernelFunctionBuilder", offset: int) -> None:
         self.child = child
@@ -786,66 +812,170 @@ class CompileKernelFunctionBuilder:
 
     # Building the function
     def construct(self, offset: int, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]):
-        global __IF_IDENT_CTR
-        global __LOOP_IDENT_CTR
-
         self.offset = max(offset, self.offset)
 
         if not self.constructed:
-            for child in self.base.children[2].children:
-                if child.token.type == TOKEN_TYPE.FUNCTION_CALL:
-                    # Make sure that we intend to discard the function return
-                    fname = child.children[0].token.value
-                    if fname in self.functions:
-                        ret, _, _ = self.functions[fname].getSignature()
-                        if ret != '':
-                            raise ParserError(f"Discarded return value", child.children[-1].token.line)
-                    else:
-                        f = userFunctions[fname]
-                        if f.returns != '':
-                            raise ParserError(f"Discarded return value", child.children[-1].token.line)
-                    self.FUNCTION_CALL(child, userFunctions)
-                elif child.token.type == TOKEN_TYPE.SET:
-                    token = child.children[1].token
-                    if token.type == TOKEN_TYPE.FUNCTION_CALL:
-                        c = self.FUNCTION_CALL(child.children[1], userFunctions)
-                        if c is None:
-                            raise ParserError(f"Expected return value", child.children[1].token.line)
-                        name = child.children[0].token.value
-                        fname = child.children[1].children[0].token.value
-                        if fname in self.functions:
-                            if GetVariableType(name) != self.functions[fname].getSignature()[0]:
-                                raise ParserError(f'Cannot assign type {self.functions[fname].getSignature()[0]} to {GetVariableType(name)}', child.children[0].token.line)
-                        else:
-                            if GetVariableType(name) != userFunctions[fname].returns:
-                                raise ParserError(f'Cannot assign type {userFunctions[fname].returns} to {GetVariableType(name)}', child.children[0].token.line)
-                        if self.scope.isGlobal(name):
-                            c.index = self.scope.getGlobal(name)
-                            c.relative = False
-                        else:
-                            c.index = self.scope.newLocal(name)
-                    elif token.type == TOKEN_TYPE.INT:
-                        ins = CompileKernelInstruction(self, self.functions["__INT"], [ CompileKernelPartialVar(token.value, False) ])
-                        c = ins.outputReg
-                        self.insList.append(ins)
-                        name = child.children[0].token.value
-                        if GetVariableType(name) != 'int':
-                            raise ParserError(f'Incorrect variable type "{GetVariableType(name)}"', child.children[0].token.line)
-                        if self.scope.isGlobal(name):
-                            c.index = self.scope.getGlobal(name)
-                            c.relative = False
-                        else:
-                            c.index = self.scope.newLocal(name)
-                    else:
-                        raise ParserError("Bruh3", 1)
-                elif child.token.type == TOKEN_TYPE.IF:
-                    # Oh boy, this one is fun hehehehehehehehe
-                    c = self.FUNCTION_CALL(child.children[1], userFunctions)
-                else:
-                    raise ParserError("Bruh2", 1)
-                    
+            self.BLOCK(self.base.children[2], userFunctions)
             self.constructed = True
     
+    def getReturnType(self, node: ParseNode, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]):
+        if node.token.type == TOKEN_TYPE.FUNCTION_CALL:
+            fname = node.children[0].token.value
+            if fname in self.functions:
+                ret, _, _ = self.functions[fname].getSignature()
+                return ret
+            else:
+                f = userFunctions[fname]
+                return f.returns
+        elif node.token.type == TOKEN_TYPE.INT:
+            return 'int'
+        elif node.token.type == TOKEN_TYPE.STRING:
+            return 'str'
+        elif node.token.type == TOKEN_TYPE.IDENTIFIER:
+            return GetVariableType(node.token.value)
+        
+        raise ParserError(f"What {node.token.type.name}", -1)
+
+    def BLOCK(self, base: ParseNode, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]):
+        global _IF_IDENT_CTR    
+        global _LOOP_IDENT_CTR
+
+        if base.token.type != TOKEN_TYPE.BLOCK:
+            raise ParserError("Bruh4", -1)
+
+        for child in base.children:
+            if child.token.type == TOKEN_TYPE.FUNCTION_CALL:
+                # Make sure that we intend to discard the function return
+                ret_type = self.getReturnType(child.children[0], userFunctions)
+                if ret_type != '':
+                    raise ParserError(f"Discarded return value", child.children[-1].token.line)
+                self.FUNCTION_CALL(child, userFunctions)
+            elif child.token.type == TOKEN_TYPE.SET:
+                token = child.children[1].token
+                if token.type == TOKEN_TYPE.FUNCTION_CALL:
+                    ret_type = self.getReturnType(child.children[1], userFunctions)
+                    c = self.FUNCTION_CALL(child.children[1], userFunctions)
+                    if c is None:
+                        raise ParserError(f"Expected return value", child.children[1].token.line)
+                    name = child.children[0].token.value
+                    if GetVariableType(name) != ret_type:
+                        raise ParserError(f'Cannot assign type {ret_type} to {GetVariableType(name)}', child.children[0].token.line)
+                    if self.scope.isGlobal(name):
+                        c.index = self.scope.getGlobal(name)
+                        c.relative = False
+                    else:
+                        c.index = self.scope.newLocal(name)
+                elif token.type == TOKEN_TYPE.INT:
+                    ins = CompileKernelInstruction(self, self.functions["__INT"], [ CompileKernelPartialVar(token.value, False) ])
+                    c = ins.outputReg
+                    self.insList.append(ins)
+                    name = child.children[0].token.value
+                    if GetVariableType(name) != 'int':
+                        raise ParserError(f'Incorrect variable type "{GetVariableType(name)}"', child.children[0].token.line)
+                    if self.scope.isGlobal(name):
+                        c.index = self.scope.getGlobal(name)
+                        c.relative = False
+                    else:
+                        c.index = self.scope.newLocal(name)
+                else:
+                    raise ParserError("Bruh3", 1)
+            
+            elif child.token.type == TOKEN_TYPE.IF:
+                if_id = _IF_IDENT_CTR
+                _IF_IDENT_CTR += 1
+                
+                if_ctr = 0
+
+                for i, val in enumerate(child.children):
+                    if val.token.type == TOKEN_TYPE.IF_COND:
+                        ret_type = self.getReturnType(val.children[0], userFunctions)
+                        if ret_type != "int":
+                            raise ParserError(f"If condition must evaluate to an integer", val.token.line)
+                        
+                        self.scope.tempPush()
+                        c = self.FUNCTION_CALL(val.children[0], userFunctions)
+                        c.index = self.scope.tempAlloc()
+                        self.insList.append(CompileKernelInstruction(self, JumpFunction(f"__IF_{if_id}_C{i}_BODY", True), [c]))
+                        self.scope.tempPop()
+                        
+                        if_ctr += 1
+                    else: # ELSE_COND
+                        self.BLOCK(child.children[-1].children[0], userFunctions)
+                
+                self.insList.append(CompileKernelInstruction(self, JumpFunction(f"__IF_{if_id}_END"), []))
+            
+                for i, val in enumerate(child.children):
+                    if val.token.type == TOKEN_TYPE.IF_COND:
+                        self.insList.append(CompileKernelLiteral(f"__IF_{if_id}_C{i}_BODY:"))
+                        self.BLOCK(val.children[1], userFunctions)
+                        if i < if_ctr - 1:
+                            self.insList.append(CompileKernelInstruction(self, JumpFunction(f"__IF_{if_id}_END"), []))
+                
+                self.insList.append(CompileKernelLiteral(f"__IF_{if_id}_END:"))
+
+            elif child.token.type == TOKEN_TYPE.WHILE:
+                loop_id = _LOOP_IDENT_CTR
+                _LOOP_IDENT_CTR += 1
+                
+                ret_type = self.getReturnType(child.children[0], userFunctions)
+                if ret_type != "int":
+                    raise ParserError(f"While condition must evaluate to an integer", child.token.line)
+                    
+                self.insList.append(CompileKernelInstruction(self, JumpFunction(f"__LOOP_{loop_id}_EVAL"), []))
+                self.insList.append(CompileKernelLiteral(f"__LOOP_{loop_id}_BODY:"))
+                self.BLOCK(child.children[1], userFunctions)
+                self.insList.append(CompileKernelLiteral(f"__LOOP_{loop_id}_EVAL:"))
+                self.scope.tempPush()
+                c = self.FUNCTION_CALL(child.children[0], userFunctions)
+                c.index = self.scope.tempAlloc()
+                self.insList.append(CompileKernelInstruction(self, JumpFunction(f"__LOOP_{loop_id}_BODY", True), [c]))
+                self.scope.tempPop()
+            
+            elif child.token.type == TOKEN_TYPE.LOOP:
+                loop_id = _LOOP_IDENT_CTR
+                _LOOP_IDENT_CTR += 1
+                
+                self.insList.append(CompileKernelLiteral(f"__LOOP_{loop_id}_BODY:"))
+                self.BLOCK(child.children[0], userFunctions)
+                self.insList.append(CompileKernelInstruction(self, JumpFunction(f"__LOOP_{loop_id}_BODY"), []))
+
+            elif child.token.type == TOKEN_TYPE.FOR:
+                loop_id = _LOOP_IDENT_CTR
+                _LOOP_IDENT_CTR += 1
+                
+                vname = child.children[0].token.value
+                if GetVariableType(vname) != "int":
+                    raise ParserError(f"For loop variable must be an integer", child.token.line)
+                
+                if vname not in self.scope.locals:
+                    ins = CompileKernelInstruction(self, self.functions['__INT'], [CompileKernelPartialVar(0, False)])
+                    ins.outputReg.index = self.scope.newLocal(vname)
+                    self.insList.append(ins)
+
+                ret_type = self.getReturnType(child.children[1], userFunctions)
+                if ret_type != "int":
+                    raise ParserError(f"If condition must evaluate to an integer", child.token.line)
+                ret_type = self.getReturnType(child.children[2], userFunctions)
+                if ret_type != "int":
+                    raise ParserError(f"If generator must evaluate to an integer", child.token.line)
+                
+                self.insList.append(CompileKernelInstruction(self, JumpFunction(f"__LOOP_{loop_id}_EVAL"), []))
+                
+                self.insList.append(CompileKernelLiteral(f"__LOOP_{loop_id}_BODY:"))
+                self.BLOCK(child.children[3], userFunctions)
+                c = self.FUNCTION_CALL(child.children[2], userFunctions)
+                c.index = self.scope.getLocal(vname)
+
+                self.insList.append(CompileKernelLiteral(f"__LOOP_{loop_id}_EVAL:"))
+                self.scope.tempPush()
+                c = self.FUNCTION_CALL(child.children[1], userFunctions)
+                c.index = self.scope.tempAlloc()
+                self.scope.tempPop()
+                self.insList.append(CompileKernelInstruction(self, JumpFunction(f"__LOOP_{loop_id}_BODY", True), [c]))
+
+            else:
+                raise ParserError("Bruh2", 1)
+
     def FUNCTION_CALL(self, base: ParseNode, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]) -> Optional[CompileKernelPartialVar]:
         reg: CompileKernelPartialVar = None
         if base.token.type == TOKEN_TYPE.FUNCTION_CALL:
@@ -900,12 +1030,10 @@ class CompileKernelFunctionBuilder:
         return reg
 
     def compile(self) -> str:
-        for s in self.scope.locals:
-            print(s, self.scope.getLocal(s))
         a = [ dep.compile() for dep in self.deps ]
         a.append(f"""
 __FCALL_{self.base.children[0].token.value}:
-    """ + '\n    '.join([i.output() for i in self.insList]) + "\n    RET")
+""" + '\n'.join([i.output() for i in self.insList]) + "\n    RET")
         return '\n'.join(a)
 
 class CompileKernelTree:
@@ -960,6 +1088,7 @@ class CompileKernelMode:
         "__MOV": SetFunction("MOV"),
         "PRINTH": VoidIntFunction("PRINTH"),
         "PRINTL": VoidIntFunction("PRINTL"),
+        "PRINTFLUSH": VoidFunction("PRINTFLUSH"),
         "++": UnaryIntFunction("INC"),
         "--": UnaryIntFunction("DEC"),
     }

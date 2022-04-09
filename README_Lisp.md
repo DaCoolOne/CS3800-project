@@ -68,10 +68,10 @@ function main() {
 called if the first function evaluates to any value that isn't zero. This second function can also be an anonymous function block
 defined with `{}`.
 
-`elseif` - declares an elseif statement. Should be followed by two expressions, the first is an evaluator and the second is only
-called if the first evaluates to non-zero. Should be preceeded by an if or elseif statement.
+`elif` - declares an elif statement. Should be followed by two expressions, the first is an evaluator and the second is only
+called if the first evaluates to non-zero. Should be preceeded by an if or elif statement.
 
-`else` - declares an else statement. Should be followed by an expression and preceeded by an if or elseif statement.
+`else` - declares an else statement. Should be followed by an expression and preceeded by an if or elif statement.
 
 ```
 import stdio "stdio"
@@ -108,11 +108,11 @@ function main() {
 ```
 
 `for` -  declares a for loop. A for loop has three arguments and a block. The first is an identifier/iterator (which will be declared
-to 0 if it doesn't exist yet), the next is a comparitor, and the third is an updater.
+to 0 if it doesn't exist yet), the next is a comparitor, and the third is a generator.
 
 Every iteration of the for loop, the loop checks the comparitor. If the value of the comparitor is not zero, then the loop body is
-executed. After execution of the loop, the iterator will loop back to the updater and set the iterator to the value returned by the
-updater. This loop continues until the comparitor returns 0.
+executed. After execution of the loop, the iterator will loop back to the generator and set the iterator to the value returned by the
+generator. This loop continues until the comparitor returns 0.
 
 ```
 import stdio "stdio"
@@ -251,11 +251,9 @@ are used by the processor for storing variables and gives access to those values
 that are included as well.
 
 There are a few important restrictions that are added to Kernel mode since the kernel is supposed to run a lot lower level.
-The most important restriction is that any user defined functions may not take any arguments and cannot return any values.
-Any communication between functions must take place using global variables (for anyone curious, this is because kernel mode
-the registers for variable storage).
+The most important restriction is that when compiling for the Kernel you cannot call functions recursively. This is to prevent
+issues involved with variables overwriting each other. Attempting to call a function recursively will result in an error message
+during the compiling process.
 
-Additionally, when compiling for the Kernel you cannot call functions recursively. This is to prevent issues involved with
-variables overwriting each other. Attempting to call a function recursively will result in an error message during the
-compiling process.
+Additionally, in kernel mode the alloc instruction is disabled. Any arrays must be declared globally.
 

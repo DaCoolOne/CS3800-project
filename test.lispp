@@ -1,16 +1,11 @@
 
-global int_other 3
 
 function main() {
-    set int_r (+ 2 int_other)
-    (testF)
+    for int_x (< int_x 10) (++ int_x) {
+        for int_y (< int_y 10) (++ int_y) {
+            (PRINTL int_x)
+            (PRINTL int_y)
+        }
+    }
 }
-
-function testF() {
-    (& int_other 4)
-}
-
-# Every function uses len(arglist) registers to compute the result. Computing
-# one of the args requires x + f(a) where a is the function and x is the offset
-# of that argument.
 
