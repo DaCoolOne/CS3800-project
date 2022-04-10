@@ -985,7 +985,7 @@ class CompileKernelFunctionBuilder:
             args = base.children[1].children
 
             f = self.functions[fname] if fname in self.functions else UserFunction(userFunctions[fname])
-            sig_r, sig_a, sig_rep = f.getSignature()
+            _, sig_a, sig_rep = f.getSignature()
 
             a = []
             if (not sig_rep and len(args) > len(sig_a)) or len(args) < len(sig_a):
@@ -1029,9 +1029,14 @@ class CompileKernelFunctionBuilder:
             raise ParserError("Bruh", 1)
         return reg
 
-    def compile(self) -> str:
+    def compile(self, isInterrupt: bool = False) -> str:
         a = [ dep.compile() for dep in self.deps ]
-        a.append(f"""
+        if isInterrupt:
+            a.append(f"""
+{self.base.children[0].token.value}:
+""" + '\n'.join([i.output() for i in self.insList]) + "\n    RETI")
+        else:
+            a.append(f"""
 __FCALL_{self.base.children[0].token.value}:
 """ + '\n'.join([i.output() for i in self.insList]) + "\n    RET")
         return '\n'.join(a)
@@ -1092,28 +1097,26 @@ class CompileKernelMode:
         "++": UnaryIntFunction("INC"),
         "--": UnaryIntFunction("DEC"),
     }
-    __LISP_ASM_KERNEL_HEADER = """
-    ; Interrupts
-    JMP KERNEL_init
-    JMP KERNEL_TimerTick
-    JMP KERNEL_BadMemAccess
-    JMP KERNEL_StackOverflow
-    JMP KERNEL_StackUnderflow
-    JMP KERNEL_BadIns
-    JMP KERNEL_FailedExtAccess
-    JMP KERNEL_UserDefined1
-    JMP KERNEL_UserDefined2
-    JMP KERNEL_UserDefined3
-    JMP KERNEL_UserDefined4
-    JMP KERNEL_UserDefined5
-    JMP KERNEL_UserDefined6
-    JMP KERNEL_UserDefined7
-    JMP KERNEL_UserDefined8
-    JMP KERNEL_UserDefined9
-    JMP KERNEL_UserDefined10
 
-KERNEL_init:
-"""
+    __LISP_ASM_KERNEL_INTERRUPTS = [
+        "KERNEL.init",
+        "KERNEL.TimerTick",
+        "KERNEL.BadMemAccess",
+        "KERNEL.StackOverflow",
+        "KERNEL.StackUnderflow",
+        "KERNEL.BadIns",
+        "KERNEL.FailedExtAccess",
+        "KERNEL.UserDefined1",
+        "KERNEL.UserDefined2",
+        "KERNEL.UserDefined3",
+        "KERNEL.UserDefined4",
+        "KERNEL.UserDefined5",
+        "KERNEL.UserDefined6",
+        "KERNEL.UserDefined7",
+        "KERNEL.UserDefined8",
+        "KERNEL.UserDefined9",
+        "KERNEL.UserDefined10",
+    ]
 
     def __init__(self, tree: ParseTree) -> None:
         self.tree = tree
@@ -1160,8 +1163,6 @@ KERNEL_init:
                         sVal = '__CONSTANTS.' + node.children[0].token.value
                         self.vars.constString(sVal, node.children[1].token.value)
                         self.vars.newGlobal(node.children[0].token.value, sVal)
-        
-        self.output = self.vars.globalCode() + '\n\n' + CompileKernelMode.__LISP_ASM_KERNEL_HEADER + '\n'.join(self.vars.globalInit) + '\n\n' + '\n'.join(self.vars.string_consts)
 
         ALL_F = set( node.children[0].token.value for node in self.tree.root.children if node.token.type == TOKEN_TYPE.FUNCTION )
 
@@ -1188,7 +1189,28 @@ KERNEL_init:
             raise ParserError(f"Main function must have at least one ", -1)
 
         __MAIN.construct(self.vars.counter, FUNCTION_LIST)
-        print(__MAIN.compile())
+
+        interrupts = [
+            (i if i in FUNCTION_LIST else 'KERNEL.defaultInterrupt')
+            for i in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS
+        ]
+        interrupts[0] = 'KERNEL.init'
+
+        self.output = self.vars.globalCode() + '\n\n    ' + '\n    '.join(f"JMP {i}" for i in interrupts) + '\n'.join(self.vars.globalInit) + '\n' + '\n'.join(self.vars.string_consts)
+
+        for interrupt in interrupts:
+            if interrupt in FUNCTION_LIST:
+                FUNCTION_LIST[interrupt].construct(self.vars.counter, FUNCTION_LIST)
+
+        for interrupt in interrupts:
+            if interrupt in FUNCTION_LIST:
+                self.output += FUNCTION_LIST[interrupt].compile(True)
+
+        if 'KERNEL.defaultInterrupt' not in FUNCTION_LIST:
+            self.output += """\nKERNEL.defaultInterrupt:
+    RETI"""
+
+        self.output += __MAIN.compile()
 
         return self
 
@@ -1208,7 +1230,7 @@ if __name__ == "__main__":
         print("Generated asm")
         print("------------------------")
         ckm = CompileKernelMode(parser.tree).compile()
-        # print(ckm.output)
+        print(ckm.output)
     except ParserError as e:
         print(e)
 
