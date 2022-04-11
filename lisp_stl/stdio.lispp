@@ -3,7 +3,17 @@
 import utils "utils"
 
 function printN(int_n) {
-    
+    set int_largeDigit 1
+    while (< int_largeDigit (/ int_n 10)) {
+        set int_largeDigit (* int_largeDigit 10)
+    }
+    while (> int_largeDigit 0) {
+        set int_digit (/ int_n int_largeDigit)
+        (PRINTL (+ int_digit 0x30))
+        set int_n (- int_n (* int_digit int_largeDigit))
+        set int_largeDigit (/ int_largeDigit 10)
+    }
+    (PRINTFLUSH)
 }
 
 function print(str_s) {
