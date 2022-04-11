@@ -193,7 +193,7 @@ function main() {
 }
 ```
 
-Functions can also be recursive, like so:
+Recursive functions are a planned feature, and furthermore are not allowed in KERNEL mode.
 ```
 import stdio "stdio"
 
