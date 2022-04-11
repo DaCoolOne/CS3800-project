@@ -1,9 +1,9 @@
 
 
-import utils "utils.lispp"
+import utils "utils"
 
 function printN(int_n) {
-
+    
 }
 
 function print(str_s) {
@@ -14,5 +14,6 @@ function print(str_s) {
         set int_index (++ int_index)
         set int_a (utils.getChar str_s int_index)
     }
+    (PRINTFLUSH)
 }
 

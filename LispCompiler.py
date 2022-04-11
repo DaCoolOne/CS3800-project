@@ -636,9 +636,7 @@ class NnaryIntFunction(Function):
 class GetStrPairFunction(Function):
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         a = []
-        if destReg != argRegs[0]:
-            a.append(' '.join(toStr("    MOV", destReg, argRegs[0])))
-        a.append(' '.join(toStr("    ADD", destReg, destReg, argRegs[1])))
+        a.append(' '.join(toStr("    ADD", destReg, argRegs[0], argRegs[1])))
         a.append(' '.join(toStr("    LD", destReg)))
         return '\n'.join(a)
     def getSignature(self) -> Tuple[str, List[str], bool]:
@@ -699,7 +697,7 @@ class KernelCompilerGlobalVars:
         if name not in self.scope:
             self.scope[name] = self.counter
             if value is not None:
-                self.globalInit.append(f"    SET {name} {value}\n")
+                self.globalInit.append(f"    SET {self.counter} {value}\n")
             self.counter += 1
         return self.scope[name]
     
@@ -1169,6 +1167,7 @@ class CompileKernelMode:
         "-": BinaryIntFunction("SUB"),
         "*": NnaryIntFunction("LMUL"),
         "/": BinaryIntFunction("DIV"),
+        "%": BinaryIntFunction("MOD"),
         "&": NnaryIntFunction("AND"),
         "&&": NnaryIntFunction("BAND"),
         "|": NnaryIntFunction("OR"),
@@ -1202,23 +1201,23 @@ class CompileKernelMode:
     }
 
     __LISP_ASM_KERNEL_INTERRUPTS = [
-        "0_init",
-        "0_TimerTick",
-        "0_BadMemAccess",
-        "0_StackOverflow",
-        "0_StackUnderflow",
-        "0_BadIns",
-        "0_FailedExtAccess",
-        "0_UserDefined1",
-        "0_UserDefined2",
-        "0_UserDefined3",
-        "0_UserDefined4",
-        "0_UserDefined5",
-        "0_UserDefined6",
-        "0_UserDefined7",
-        "0_UserDefined8",
-        "0_UserDefined9",
-        "0_UserDefined10",
+        "__INIT",
+        "__FCALL_0_TimerTick",
+        "__FCALL_0_BadMemAccess",
+        "__FCALL_0_StackOverflow",
+        "__FCALL_0_StackUnderflow",
+        "__FCALL_0_BadIns",
+        "__FCALL_0_FailedExtAccess",
+        "__FCALL_0_UserDefined1",
+        "__FCALL_0_UserDefined2",
+        "__FCALL_0_UserDefined3",
+        "__FCALL_0_UserDefined4",
+        "__FCALL_0_UserDefined5",
+        "__FCALL_0_UserDefined6",
+        "__FCALL_0_UserDefined7",
+        "__FCALL_0_UserDefined8",
+        "__FCALL_0_UserDefined9",
+        "__FCALL_0_UserDefined10",
     ]
 
     __IMPORT_DEPTH = 1
@@ -1303,9 +1302,9 @@ class CompileKernelMode:
                     raise ParserError(f"Invalid import name {prefix}", node.token.line)
 
                 if '.' not in path:
-                    path = 'lisp_stl/' + path + '.lispp'
-                
-                fullPath = os.path.abspath(os.path.join(basePath, path))
+                    fullPath = os.path.join(os.path.dirname(__file__), 'lisp_stl', path + '.lispp')
+                else:
+                    fullPath = os.path.abspath(os.path.join(basePath, path))
                 if fullPath not in CompileKernelMode.__IMPORT_FILES:
                     with open(fullPath) as f:
                         token_parser = TokenParser(f.read())
@@ -1345,13 +1344,13 @@ class CompileKernelMode:
         __MAIN.construct(self.vars.counter, self.FUNCTION_LIST)
 
         interrupts = [
-            (i if i in self.FUNCTION_LIST else '0_defaultInterrupt')
+            (i if i in self.FUNCTION_LIST else '__INTER_0_defaultInterrupt')
             for i in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS
         ]
-        interrupts[0] = '0_init'
+        interrupts[0] = '__INIT'
 
         self.output = '\n    ' + '\n    '.join(f"JMP {i}" for i in interrupts)
-        self.output += '\n\n0_init:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_main\n    SHUTDOWN 0\n'
+        self.output += '\n__INIT:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_1_main\n    SHUTDOWN\n'
 
         for interrupt in interrupts:
             if interrupt in self.FUNCTION_LIST:
@@ -1361,13 +1360,13 @@ class CompileKernelMode:
             if interrupt in self.FUNCTION_LIST:
                 self.output += self.FUNCTION_LIST[interrupt].compile(True)
 
-        if '0_defaultInterrupt' not in self.FUNCTION_LIST:
-            self.output += """\n0_defaultInterrupt:
+        if '__INTER_0_defaultInterrupt' not in self.FUNCTION_LIST:
+            self.output += """\n__INTER_0_defaultInterrupt:
     RETI\n"""
 
         self.output += __MAIN.compile()
         
-        self.output += '\n' + '\n'.join(self.vars.string_consts)
+        self.output += '\n\n' + '\n'.join(self.vars.string_consts)
 
         CompileKernelMode.__IMPORT_DEPTH = 1
         CompileKernelMode.__IMPORT_FILES = {}
