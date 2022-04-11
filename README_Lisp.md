@@ -64,8 +64,8 @@ The full list of primative instructions are listed in the table below:
 | %       | Computes and returns a mod b                         |
 | &       | Returns bitwise and of a and b                       |
 | &&      | Returns binary and of a and b                        |
-| |       | Returns bitwise or of a and b                        |
-| ||      | Returns binary or of a and b                         |
+| \|      | Returns bitwise or of a and b                        |
+| \|\|    | Returns binary or of a and b                         |
 | ^       | Returns bitwise xor of a and b                       |
 | >       | Returns 1 if a > b, else returns 0                   |
 | >=      | Returns 1 if a >= b, else returns 0                  |
