@@ -225,6 +225,14 @@ void Assembler::newCommand(std::string cmd) {
                 table[3] = readStr(tokenGroup.at(3));
                 size = 4;
             break;
+            case E_ASM_DIR_LMUL:
+                if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_LMUL);
+                table[1] = readStr(tokenGroup.at(1));
+                table[2] = readStr(tokenGroup.at(2));
+                table[3] = readStr(tokenGroup.at(3));
+                size = 4;
+            break;
             case E_ASM_DIR_LSHIFT:
                 if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_ALU_LSHIFT);

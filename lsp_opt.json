@@ -1,0 +1,4 @@
+{
+    "src": "test.lispp",
+    "dest": "test.asm"
+}

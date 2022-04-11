@@ -1,0 +1,11 @@
+
+
+import stdio "stdio"
+
+function main() {
+    (stdio.printN 532)
+    (stdio.newline)
+    (stdio.printHex 0x1D2)
+    (stdio.newline)
+}
+

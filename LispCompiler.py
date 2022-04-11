@@ -1,5 +1,6 @@
 # A python implementation of a compiler for lisp, because python is just faster for development cycles and I don't care about compile times :P
 
+import json
 import os
 from typing import Dict, Set, Tuple, Union, List, Optional
 from enum import Enum, unique
@@ -1311,7 +1312,7 @@ class CompileKernelMode:
                     
                     parser = Parser(token_parser)
                     parser.parse_S()
-                    parser.tree.print()
+                    # parser.tree.print()
 
                     imported = CompileKernelMode(parser.tree, fullPath, self.imports)
                     
@@ -1374,24 +1375,48 @@ class CompileKernelMode:
         return self
 
 if __name__ == "__main__":
-    FULL_PATH = os.path.abspath('test.lispp')
+    inputFile = None
+    outputFile = None
+
+    if os.path.exists("lsp_opt.json"):
+        with open("lsp_opt.json") as f:
+            opt = json.load(f)
+        
+        if 'src' in opt:
+            inputFile = opt['src']
+        if 'dest' in opt:
+            outputFile = opt['dest']
+
+    if inputFile is None:
+        inputFile = input("Source file: ")
+    if outputFile is None:
+        outputFile = input("Output file: ")
+
+    if os.path.abspath(inputFile) == os.path.abspath(outputFile):
+        raise Exception(f"Source and destination may not overlap!")
+
+    FULL_PATH = os.path.abspath(inputFile)
 
     with open(FULL_PATH) as f:
         tsp = TokenParser(f.read())
-    print("Parsing program:")
-    print('-----------------------')
-    print(tsp.digest)
-    print('-----------------------')
+    #print("Parsing program:")
+    #print('-----------------------')
+    #print(tsp.digest)
+    #print('-----------------------')
     parser = Parser(tsp)
     try:
         parser.parse_S()
-        print('\nParse tree:')
-        parser.tree.print()
+        #print('\nParse tree:')
+        #parser.tree.print()
 
         ckm = CompileKernelMode(parser.tree, FULL_PATH).initGlobals().compile().buildAsm()
-        print("Generated asm")
-        print("------------------------")
-        print(ckm.output)
+        #print("Generated asm")
+        #print("------------------------")
+        #print(ckm.output)
+
+        with open(outputFile, 'w') as f:
+            f.write(ckm.output)
+
     except ParserError as e:
         print(e)
 

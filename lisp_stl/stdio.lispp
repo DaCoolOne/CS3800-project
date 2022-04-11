@@ -13,6 +13,28 @@ function printN(int_n) {
         set int_n (- int_n (* int_digit int_largeDigit))
         set int_largeDigit (/ int_largeDigit 10)
     }
+}
+
+function printHex(int_n) {
+    set int_largeDigit 0xF000
+    for int_c (< int_c 4) (++ int_c) {
+        set int_digit (>> (& int_largeDigit int_n) (<< (- 3 int_c) 2))
+        if (< int_digit 9) {
+            (PRINTL (+ int_digit 0x30))
+        }
+        else {
+            (PRINTL (+ int_digit 0x26))
+        }
+        set int_largeDigit (>> int_largeDigit 4)
+    }
+}
+
+# Newline flushes the buffer automagically
+function newline() {
+    (PRINTL 0xA)
+}
+
+function flush() {
     (PRINTFLUSH)
 }
 
@@ -24,6 +46,5 @@ function print(str_s) {
         set int_index (++ int_index)
         set int_a (utils.getChar str_s int_index)
     }
-    (PRINTFLUSH)
 }
 
