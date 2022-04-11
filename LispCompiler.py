@@ -1,8 +1,8 @@
 # A python implementation of a compiler for lisp, because python is just faster for development cycles and I don't care about compile times :P
 
-from typing import Dict, Set, Tuple, Union, List
+import os
+from typing import Dict, Set, Tuple, Union, List, Optional
 from enum import Enum, unique
-from typing import Optional
 
 _IF_IDENT_CTR = 0
 _LOOP_IDENT_CTR = 0
@@ -594,13 +594,18 @@ class VoidInt3Function(Function):
         return ("", ["int", "int", "int"], False)
 
 class UnaryIntFunction(Function):
-    def __init__(self, name: str, rev: bool = False) -> None:
+    def __init__(self, name: str = None, rev: bool = False) -> None:
         self.name = name
     def compile(self, destReg: int, argRegs: List[int]) -> str:
-        if destReg == argRegs[0]:
-            return ' '.join(toStr("   ", self.name, destReg))
+        if self.name is None:
+            if destReg == argRegs[0]: return ''
+            else:
+                return ' '.join(toStr("    MOV", destReg, argRegs[0]))
         else:
-            return ' '.join(toStr("    MOV", destReg, argRegs[0])) + '\n' + ' '.join(toStr("   ", self.name, destReg))
+            if destReg == argRegs[0]:
+                return ' '.join(toStr("   ", self.name, destReg))
+            else:
+                return ' '.join(toStr("    MOV", destReg, argRegs[0])) + '\n' + ' '.join(toStr("   ", self.name, destReg))
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("int", ["int"], False)
 
@@ -628,15 +633,30 @@ class NnaryIntFunction(Function):
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("int", ["int","int"], True)
 
+class GetStrPairFunction(Function):
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        a = []
+        if destReg != argRegs[0]:
+            a.append(' '.join(toStr("    MOV", destReg, argRegs[0])))
+        a.append(' '.join(toStr("    ADD", destReg, destReg, argRegs[1])))
+        a.append(' '.join(toStr("    LD", destReg)))
+        return '\n'.join(a)
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("int", ["str", "int"], False)
+
 def GetVariableType(var: str):
     vname = var.split('.')[-1]
     if '_' not in vname:
         return ''
     return vname.split('_')[0]
 
+# Computes the actual name of the variable
+def GetVariableName(var: str):
+    pass
+
 class UserFunction(Function):
     def __init__(self, function: "CompileKernelFunctionBuilder") -> None:
-        self.name = function.base.children[0].token.value
+        self.name = function.imports.getTaggedName(function.base.children[0].token.value)
         self.sig = (function.returns, [ GetVariableType(v) for v in function.args ], False)
         self.function = function
     def compile(self, destReg: int, argRegs: List[int]) -> str:
@@ -646,10 +666,11 @@ class UserFunction(Function):
                 a.append(f"MOV {i + self.function.offset} {arg}")
         a.reverse()
         a.append(f"CALL __FCALL_{self.name}")
-        ret_pos = self.function.getReturnReg() + self.function.offset
-        if destReg != ret_pos:
-            a.append(f"MOV {destReg} {ret_pos}")
-        return '\n    '.join(a)
+        if self.sig[0] != "":
+            ret_pos = self.function.getReturnReg() + self.function.offset
+            if destReg != ret_pos:
+                a.append(f"MOV {destReg} {ret_pos}")
+        return '    '+'\n    '.join(a)
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return self.sig
 
@@ -668,25 +689,28 @@ class KernelCompilerGlobalVars:
         self.scope = {}
         self.counter = 0
 
-        self.globalDefs = []
         self.globalInit = []
         self.string_consts = []
+        self.global_str_count = 0
+        self.str_map: Dict[str, str] = {}
+
     # Returns the register to use for this variable
     def newGlobal(self, name: str, value: Optional[int] = None) -> int:
         if name not in self.scope:
             self.scope[name] = self.counter
-            self.globalDefs.append(f"    .ALIAS {name} {self.counter}")
             if value is not None:
-                self.globalInit.append(f"    SET {name} {value}")
+                self.globalInit.append(f"    SET {name} {value}\n")
             self.counter += 1
         return self.scope[name]
     
-    def constString(self, name: str, data: str) -> str:
+    def constString(self, data: str) -> str:
+        if data in self.str_map:
+            return self.str_map[data]
+        name = f"__STR_CONST_{self.global_str_count}"
+        self.global_str_count += 1
         d_san = data.replace('\\', '\\\\').replace('\0', '\\0').replace('\n', '\\n').replace('\t', '\\t').replace('\'', '\\\'').replace('\"', '\\\"')
         self.string_consts.append(f'{name}:\n    .TEXT "{d_san}"')
-
-    def globalCode(self) -> str:
-        return '\n'.join(self.globalDefs)
+        return name
     
     def isGlobal(self, name: str) -> bool:
         return name in self.scope
@@ -786,8 +810,33 @@ class CompileKernelFunctionBuilderDep:
         self.child = child
         self.offset = offset
 
+class CompileKernelImportTree:
+    def __init__(self) -> None:
+        self.importOrder = []
+        self.tree: Dict[str, Dict[str, str]] = {}
+    def newImport(self, importPath: str) -> None:
+        self.importOrder.append(importPath)
+        self.tree[importPath] = {}
+    def link(self, start: str, end: str, name: str) -> None:
+        self.tree[start][name] = end
+    def getTaggedName(self, start: str, var: str) -> str:
+        if '.' in var:
+            i = var.index('.')
+            return self.getTaggedName(self.tree[start][var[0:i]],var[i+1:])
+        else:
+            return str(self.importOrder.index(start)) + '_' + var
+
+class CompileKernelImportTreeNode:
+    def __init__(self, tree: CompileKernelImportTree, fp: str) -> None:
+        self.tree = tree
+        self.fp = fp
+    def getTaggedName(self, var: str) -> str:
+        return self.tree.getTaggedName(self.fp, var)
+    def link(self, end: str, name: str) -> None:
+        self.tree.link(self.fp, end, name)
+
 class CompileKernelFunctionBuilder:
-    def __init__(self, base: ParseNode, functions: Dict[str, Function], scope: LocalScopeTracker) -> None:
+    def __init__(self, base: ParseNode, functions: Dict[str, Function], scope: LocalScopeTracker, imports: CompileKernelImportTreeNode) -> None:
         if base.token.type != TOKEN_TYPE.FUNCTION:
             raise ParserError("Yo, wut. Call this on a function node you nark", -1)
 
@@ -799,6 +848,8 @@ class CompileKernelFunctionBuilder:
 
         self.offset = scope.gl.counter
         self.base = base
+
+        self.imports = imports
 
         # Construct positions for the return values and the arguments
         if len(base.children) == 4:
@@ -828,13 +879,9 @@ class CompileKernelFunctionBuilder:
     
     def getReturnType(self, node: ParseNode, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]):
         if node.token.type == TOKEN_TYPE.FUNCTION_CALL:
-            fname = node.children[0].token.value
-            if fname in self.functions:
-                ret, _, _ = self.functions[fname].getSignature()
-                return ret
-            else:
-                f = userFunctions[fname]
-                return f.returns
+            fname, f = self.getFunction(node.children[0].token.value, userFunctions)
+            ret, _, _ = f.getSignature()
+            return ret
         elif node.token.type == TOKEN_TYPE.INT:
             return 'int'
         elif node.token.type == TOKEN_TYPE.STRING:
@@ -864,7 +911,7 @@ class CompileKernelFunctionBuilder:
                     ret_type = self.getReturnType(child.children[1], userFunctions)
                     c = self.FUNCTION_CALL(child.children[1], userFunctions)
                     if c is None:
-                        raise ParserError(f"Expected return value", child.children[1].token.line)
+                        raise ParserError(f"Expected return value", token.line)
                     name = child.children[0].token.value
                     if GetVariableType(name) != ret_type:
                         raise ParserError(f'Cannot assign type {ret_type} to {GetVariableType(name)}', child.children[0].token.line)
@@ -879,6 +926,26 @@ class CompileKernelFunctionBuilder:
                     self.insList.append(ins)
                     name = child.children[0].token.value
                     if GetVariableType(name) != 'int':
+                        raise ParserError(f'Incorrect variable type "{GetVariableType(name)}"', child.children[0].token.line)
+                    if self.scope.isGlobal(name):
+                        c.index = self.scope.getGlobal(name)
+                        c.relative = False
+                    else:
+                        c.index = self.scope.newLocal(name)
+                elif token.type == TOKEN_TYPE.IDENTIFIER:
+                    name = child.children[0].token.value
+                    name2 = child.children[1].token.value
+                    if self.scope.isGlobal(name2):
+                        ins = CompileKernelInstruction(self, self.functions["__MOV"], [
+                            CompileKernelPartialVar(self.scope.getGlobal(name2), False)
+                        ])
+                    else:
+                        ins = CompileKernelInstruction(self, self.functions["__MOV"], [
+                            CompileKernelPartialVar(self.scope.getLocal(name2))
+                        ])
+                    c = ins.outputReg
+                    self.insList.append(ins)
+                    if GetVariableType(name) != GetVariableType(name2):
                         raise ParserError(f'Incorrect variable type "{GetVariableType(name)}"', child.children[0].token.line)
                     if self.scope.isGlobal(name):
                         c.index = self.scope.getGlobal(name)
@@ -984,15 +1051,21 @@ class CompileKernelFunctionBuilder:
             else:
                 raise ParserError("Bruh2", 1)
 
+    def getFunction(self, fname: str, userFunctions) -> Tuple[str, Function]:
+        if fname in self.functions:
+            return fname, self.functions[fname]
+        else:
+            fname = self.imports.getTaggedName(fname)
+            return fname, UserFunction(userFunctions[fname])
+
     def FUNCTION_CALL(self, base: ParseNode, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]) -> Optional[CompileKernelPartialVar]:
         reg: CompileKernelPartialVar = None
         if base.token.type == TOKEN_TYPE.FUNCTION_CALL:
             self.scope.tempPush()
             # Todo: pick compute order smartly
-            fname = base.children[0].token.value
+            fname, f = self.getFunction(base.children[0].token.value, userFunctions)
             args = base.children[1].children
 
-            f = self.functions[fname] if fname in self.functions else UserFunction(userFunctions[fname])
             _, sig_a, sig_rep = f.getSignature()
 
             a = []
@@ -1006,8 +1079,7 @@ class CompileKernelFunctionBuilder:
                     ins: CompileKernelPartialVar = self.FUNCTION_CALL(arg, userFunctions)
                     if ins is None:
                         raise ParserError(f"Expected return value", arg.token.line)
-                    f_ret_type = arg.children[0].token.value
-                    f_ret_type = self.functions[f_ret_type] if f_ret_type in self.functions else UserFunction(userFunctions[f_ret_type])
+                    _, f_ret_type = self.getFunction(arg.children[0].token.value, userFunctions)
                     if f_ret_type.getSignature()[0] != arg_sig:
                         raise ParserError(f"Incorrect argument type. Expected {arg_sig} got {f_ret_type.getSignature()[0]}", arg.token.line)
                     ins.index = self.scope.tempAlloc()
@@ -1025,6 +1097,18 @@ class CompileKernelFunctionBuilder:
                         a.append(CompileKernelPartialVar(self.scope.getGlobal(arg.token.value), False))
                     else:
                         a.append(CompileKernelPartialVar(self.scope.getLocal(arg.token.value)))
+                elif arg.token.type == TOKEN_TYPE.STRING:
+                    if 'str' != arg_sig:
+                        raise ParserError(f"Incorrect argument type. Expected {arg_sig} got str", arg.token.line)
+                    ins = CompileKernelInstruction(self, self.functions["__INT"], [
+                        CompileKernelPartialVar(self.scope.gl.constString(arg.token.value), False)
+                    ])
+                    self.insList.append(ins)
+                    reg = ins.outputReg
+                    reg.index = self.scope.tempAlloc()
+                    a.append(reg)
+                else:
+                    raise ParserError("Bruh4", -1)
             self.scope.tempPop()
             
             if fname not in self.functions:
@@ -1045,7 +1129,7 @@ class CompileKernelFunctionBuilder:
 """ + '\n'.join([i.output() for i in self.insList]) + "\n    RETI")
         else:
             a.append(f"""
-__FCALL_{self.base.children[0].token.value}:
+__FCALL_{self.imports.getTaggedName(self.base.children[0].token.value)}:
 """ + '\n'.join([i.output() for i in self.insList]) + "\n    RET")
         return '\n'.join(a)
 
@@ -1077,7 +1161,6 @@ class CompileKernelTree:
     def compilePartialBytecode(node: ParseNode) -> None:
         if node.token.type != TOKEN_TYPE.FUNCTION:
             raise "BRUH"
-        
 
 class CompileKernelMode:
     
@@ -1095,6 +1178,8 @@ class CompileKernelMode:
         ">=": BinaryIntFunction("GTEQ"),
         "<": BinaryIntFunction("GTR", True),
         "<=": BinaryIntFunction("GTEQ", True),
+        ">>": BinaryIntFunction("RSHIFT"),
+        "<<": BinaryIntFunction("LSHIFT"),
         "=": BinaryIntFunction("EQ"),
         "__INT": SetFunction(),
         "__SET": SetFunction(),
@@ -1111,58 +1196,84 @@ class CompileKernelMode:
         "EXTWRITE": VoidInt3Function("EXTWRITE"),
         "PRINTFLUSH": VoidFunction("PRINTFLUSH"),
         "++": UnaryIntFunction("INC"),
+        "i": UnaryIntFunction(),
         "--": UnaryIntFunction("DEC"),
+        "GetStrPair": GetStrPairFunction(),
     }
 
     __LISP_ASM_KERNEL_INTERRUPTS = [
-        "KERNEL.init",
-        "KERNEL.TimerTick",
-        "KERNEL.BadMemAccess",
-        "KERNEL.StackOverflow",
-        "KERNEL.StackUnderflow",
-        "KERNEL.BadIns",
-        "KERNEL.FailedExtAccess",
-        "KERNEL.UserDefined1",
-        "KERNEL.UserDefined2",
-        "KERNEL.UserDefined3",
-        "KERNEL.UserDefined4",
-        "KERNEL.UserDefined5",
-        "KERNEL.UserDefined6",
-        "KERNEL.UserDefined7",
-        "KERNEL.UserDefined8",
-        "KERNEL.UserDefined9",
-        "KERNEL.UserDefined10",
+        "0_init",
+        "0_TimerTick",
+        "0_BadMemAccess",
+        "0_StackOverflow",
+        "0_StackUnderflow",
+        "0_BadIns",
+        "0_FailedExtAccess",
+        "0_UserDefined1",
+        "0_UserDefined2",
+        "0_UserDefined3",
+        "0_UserDefined4",
+        "0_UserDefined5",
+        "0_UserDefined6",
+        "0_UserDefined7",
+        "0_UserDefined8",
+        "0_UserDefined9",
+        "0_UserDefined10",
     ]
 
-    def __init__(self, tree: ParseTree) -> None:
+    __IMPORT_DEPTH = 1
+    __IMPORT_FILES: Dict[str, int] = {}
+
+    def __init__(self, tree: ParseTree, filePath: str, imports: CompileKernelImportTree = None) -> None:
         self.tree = tree
         self.output = ''
         self.vars = KernelCompilerGlobalVars()
 
-        self.vars.newGlobal("KERNEL.int_UserReg0")
-        self.vars.newGlobal("KERNEL.int_UserReg1")
-        self.vars.newGlobal("KERNEL.int_UserReg2")
-        self.vars.newGlobal("KERNEL.int_UserReg3")
-        self.vars.newGlobal("KERNEL.int_UserReg4")
-        self.vars.newGlobal("KERNEL.int_UserReg5")
-        self.vars.newGlobal("KERNEL.int_UserReg6")
-        self.vars.newGlobal("KERNEL.int_UserReg7")
-        self.vars.newGlobal("KERNEL.int_UserReg8")
-        self.vars.newGlobal("KERNEL.int_UserReg9")
-        self.vars.newGlobal("KERNEL.int_UserRegA")
-        self.vars.newGlobal("KERNEL.int_UserRegB")
-        self.vars.newGlobal("KERNEL.int_UserRegC")
-        self.vars.newGlobal("KERNEL.int_UserRegD")
-        self.vars.newGlobal("KERNEL.int_UserRegE")
-        self.vars.newGlobal("KERNEL.int_UserRegF")
+        self.importTag = str(CompileKernelMode.__IMPORT_DEPTH) + '_'
+        CompileKernelMode.__IMPORT_DEPTH += 1
+
+        self.filePath = filePath
+
+        if imports is None:
+            self.imports = CompileKernelImportTree()
+            self.imports.newImport('KERNEL')
+            self.imports.newImport(filePath)
+        else:
+            self.imports = imports
+            self.imports.newImport(filePath)
         
-        self.vars.newGlobal("KERNEL.int_PageStackSize")
-        self.vars.newGlobal("KERNEL.int_StackSize")
-        self.vars.newGlobal("KERNEL.int_ExtBufferIn")
-        self.vars.newGlobal("KERNEL.int_ExtBufferOut")
-        self.vars.newGlobal("KERNEL.int_AluStatus")
-        self.vars.newGlobal("KERNEL.int_ExtDevices")
-        self.vars.newGlobal("KERNEL.int_LastUserIns")
+        self.compNode = CompileKernelImportTreeNode(self.imports, self.filePath)
+
+        # Compile each function
+        self.FUNCTION_LIST: Dict[str, CompileKernelFunctionBuilder] = {}
+
+    def initGlobals(self) -> "CompileKernelMode":
+        self.vars.newGlobal("0_int_UserReg0")
+        self.vars.newGlobal("0_int_UserReg1")
+        self.vars.newGlobal("0_int_UserReg2")
+        self.vars.newGlobal("0_int_UserReg3")
+        self.vars.newGlobal("0_int_UserReg4")
+        self.vars.newGlobal("0_int_UserReg5")
+        self.vars.newGlobal("0_int_UserReg6")
+        self.vars.newGlobal("0_int_UserReg7")
+        self.vars.newGlobal("0_int_UserReg8")
+        self.vars.newGlobal("0_int_UserReg9")
+        self.vars.newGlobal("0_int_UserRegA")
+        self.vars.newGlobal("0_int_UserRegB")
+        self.vars.newGlobal("0_int_UserRegC")
+        self.vars.newGlobal("0_int_UserRegD")
+        self.vars.newGlobal("0_int_UserRegE")
+        self.vars.newGlobal("0_int_UserRegF")
+        
+        self.vars.newGlobal("0_int_PageStackSize")
+        self.vars.newGlobal("0_int_StackSize")
+        self.vars.newGlobal("0_int_ExtBufferIn")
+        self.vars.newGlobal("0_int_ExtBufferOut")
+        self.vars.newGlobal("0_int_AluStatus")
+        self.vars.newGlobal("0_int_ExtDevices")
+        self.vars.newGlobal("0_int_LastUserIns")
+
+        return self
 
     def compile(self) -> "CompileKernelMode":
         self.output = ""
@@ -1176,66 +1287,97 @@ class CompileKernelMode:
                     if node.children[1].token.type == TOKEN_TYPE.INT:
                         self.vars.newGlobal(node.children[0].token.value, node.children[1].token.value)
                     elif node.children[1].token.type == TOKEN_TYPE.STRING:
-                        sVal = '__CONSTANTS.' + node.children[0].token.value
-                        self.vars.constString(sVal, node.children[1].token.value)
+                        sVal = self.vars.constString(node.children[1].token.value)
                         self.vars.newGlobal(node.children[0].token.value, sVal)
 
         # ALL_F = set( node.children[0].token.value for node in self.tree.root.children if node.token.type == TOKEN_TYPE.FUNCTION )
 
-        # Compile each function
-        FUNCTION_LIST: Dict[str, CompileKernelFunctionBuilder] = {}
-
+        basePath = os.path.dirname(self.filePath)
         for node in self.tree.root.children:
             if node.token.type == TOKEN_TYPE.IMPORT:
-                pass
-            elif node.token.type == TOKEN_TYPE.FUNCTION:
+                # Parse the path to see if this is an stlib
+                path = node.children[1].token.value
+                prefix = node.children[0].token.value
+                
+                if '.' in prefix:
+                    raise ParserError(f"Invalid import name {prefix}", node.token.line)
+
+                if '.' not in path:
+                    path = 'lisp_stl/' + path + '.lispp'
+                
+                fullPath = os.path.abspath(os.path.join(basePath, path))
+                if fullPath not in CompileKernelMode.__IMPORT_FILES:
+                    with open(fullPath) as f:
+                        token_parser = TokenParser(f.read())
+                    
+                    parser = Parser(token_parser)
+                    parser.parse_S()
+                    parser.tree.print()
+
+                    imported = CompileKernelMode(parser.tree, fullPath, self.imports)
+                    
+                    self.compNode.link(fullPath, prefix)
+
+                    imported.vars = self.vars
+                    imported.FUNCTION_LIST = self.FUNCTION_LIST
+                    CompileKernelMode.__IMPORT_FILES[fullPath] = CompileKernelMode.__IMPORT_DEPTH
+                    imported.compile()
+        
+        for node in self.tree.root.children:
+            if node.token.type == TOKEN_TYPE.FUNCTION:
                 # Compile the function
                 # deps = CompileKernelTree.findAllFunctionDeps(node, ALL_F)
-                builder = CompileKernelFunctionBuilder(node, CompileKernelMode.__DECLARED_FUNCTIONS, LocalScopeTracker(self.vars))
+                builder = CompileKernelFunctionBuilder(node, CompileKernelMode.__DECLARED_FUNCTIONS, LocalScopeTracker(self.vars), self.compNode)
 
-                FUNCTION_LIST[node.children[0].token.value] = builder
+                self.FUNCTION_LIST[self.imports.getTaggedName(self.filePath, node.children[0].token.value)] = builder
 
-                # print(builder.compile())
-
-        if 'main' not in FUNCTION_LIST:
+        return self
+        
+    def buildAsm(self) -> "CompileKernelMode":
+        
+        if '1_main' not in self.FUNCTION_LIST:
             raise ParserError(f"Could not find main function", -1)
-        __MAIN = FUNCTION_LIST['main']
+        __MAIN = self.FUNCTION_LIST['1_main']
 
         if len(__MAIN.base.children[1].children) > 0:
             raise ParserError(f"Main function must have at least one ", -1)
 
-        __MAIN.construct(self.vars.counter, FUNCTION_LIST)
+        __MAIN.construct(self.vars.counter, self.FUNCTION_LIST)
 
         interrupts = [
-            (i if i in FUNCTION_LIST else 'KERNEL.defaultInterrupt')
+            (i if i in self.FUNCTION_LIST else '0_defaultInterrupt')
             for i in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS
         ]
-        interrupts[0] = 'KERNEL.init'
+        interrupts[0] = '0_init'
 
-        self.output = '\n' + self.vars.globalCode() + '\n\n    ' + '\n    '.join(f"JMP {i}" for i in interrupts)
-
-        self.output += '\n\nKERNEL.init:\n' + '\n'.join(self.vars.globalInit) + '\n    CALL __FCALL_main\n    SHUTDOWN 0\n'
-
-        for interrupt in interrupts:
-            if interrupt in FUNCTION_LIST:
-                FUNCTION_LIST[interrupt].construct(self.vars.counter, FUNCTION_LIST)
+        self.output = '\n    ' + '\n    '.join(f"JMP {i}" for i in interrupts)
+        self.output += '\n\n0_init:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_main\n    SHUTDOWN 0\n'
 
         for interrupt in interrupts:
-            if interrupt in FUNCTION_LIST:
-                self.output += FUNCTION_LIST[interrupt].compile(True)
+            if interrupt in self.FUNCTION_LIST:
+                self.FUNCTION_LIST[interrupt].construct(self.vars.counter, self.FUNCTION_LIST)
 
-        if 'KERNEL.defaultInterrupt' not in FUNCTION_LIST:
-            self.output += """\nKERNEL.defaultInterrupt:
-    RETI"""
+        for interrupt in interrupts:
+            if interrupt in self.FUNCTION_LIST:
+                self.output += self.FUNCTION_LIST[interrupt].compile(True)
+
+        if '0_defaultInterrupt' not in self.FUNCTION_LIST:
+            self.output += """\n0_defaultInterrupt:
+    RETI\n"""
 
         self.output += __MAIN.compile()
         
         self.output += '\n' + '\n'.join(self.vars.string_consts)
 
+        CompileKernelMode.__IMPORT_DEPTH = 1
+        CompileKernelMode.__IMPORT_FILES = {}
+
         return self
 
 if __name__ == "__main__":
-    with open('test.lispp') as f:
+    FULL_PATH = os.path.abspath('test.lispp')
+
+    with open(FULL_PATH) as f:
         tsp = TokenParser(f.read())
     print("Parsing program:")
     print('-----------------------')
@@ -1247,9 +1389,9 @@ if __name__ == "__main__":
         print('\nParse tree:')
         parser.tree.print()
 
+        ckm = CompileKernelMode(parser.tree, FULL_PATH).initGlobals().compile().buildAsm()
         print("Generated asm")
         print("------------------------")
-        ckm = CompileKernelMode(parser.tree).compile()
         print(ckm.output)
     except ParserError as e:
         print(e)

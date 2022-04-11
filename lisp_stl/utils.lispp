@@ -1,0 +1,30 @@
+
+
+function max(int_a int_b) {
+    if (< int_a int_b) {
+        set int_a int_b
+    }
+} returns int_a
+
+function min(int_a int_b) {
+    if (> int_a int_b) {
+        set int_a int_b
+    }
+} returns int_a
+
+function abs(int_a) {
+    if (> int_a 0x7F) {
+        set int_a (- 0 int_a)
+    }
+} returns int_a
+
+function getChar(str_s int_i) {
+    set int_c (GetStrPair str_s (>> int_i 1))
+    if (& int_i 0x1) {
+        set int_c (& int_c 0xF)
+    }
+    else {
+        set int_c (>> int_c 8)
+    }
+} returns int_c
+

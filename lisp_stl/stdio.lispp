@@ -1,0 +1,18 @@
+
+
+import utils "utils.lispp"
+
+function printN(int_n) {
+
+}
+
+function print(str_s) {
+    set int_index 0
+    set int_a (utils.getChar str_s int_index)
+    while (i int_a) {
+        (PRINTL int_a)
+        set int_index (++ int_index)
+        set int_a (utils.getChar str_s int_index)
+    }
+}
+
