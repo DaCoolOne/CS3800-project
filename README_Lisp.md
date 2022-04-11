@@ -48,8 +48,39 @@ be done through the string library (planned).
 
 `*int_` `*str_` - Pointers / arrays (planned).
 
+# Expressions
+Every expression is written in a lisp-style syntax. This means that every function call is formatted
+like `(function arg1 arg2 arg3)`. For example, the equation `3 + 5 * 7` would be written `(+ 3 (* 5 7))`
+in the lisp-style syntax.
+
+The full list of primative instructions are listed in the table below:
+
+  FNAME  | Description                                          |
+:-------:|:---------------------------------------------------- |
+ +       | Calculates the sum of N numbers                      |
+ -       | Takes two args, a and b, an returns a - b            |
+ *       | Returns the product of N arguments                   |
+ /       | Takes two args, a and b, an returns a / b            |
+ %       | Computes and returns a mod b                         |
+ &       | Returns bitwise and of a and b                       |
+ &&      | Returns binary and of a and b                        |
+ |       | Returns bitwise or of a and b                        |
+ ||      | Returns binary or of a and b                         |
+ ^       | Returns bitwise xor of a and b                       |
+ >       | Returns 1 if a > b, else returns 0                   |
+ >=      | Returns 1 if a >= b, else returns 0                  |
+ <       | Returns 1 if a < b, else returns 0                   |
+ <=      | Returns 1 if a >= b, else returns 0                  |
+ =       | Returns 1 if a = b, else returns 0                   |
+ >>      | Returns a right shifted b times                      |
+ <<      | Returns a left shifted b times                       |
+ ++      | Returns a + 1                                        |
+ --      | Returns a - 1                                        |
+ i       | Identity function, returns a                         |
+
 # Scope
-Scope is tied directly to the functions. Every function has its own scope.
+Scope is tied directly to the functions. Every function has its own scope, and all variables
+declared in that scope are considered arguments to the function
 
 # Keywords
 
