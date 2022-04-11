@@ -578,12 +578,20 @@ class VoidFunction(Function):
         return ("", [], False)
 
 class VoidIntFunction(Function):
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, argLen: int = 1) -> None:
         self.name = name
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         return ' '.join(toStr("   ", self.name, argRegs[0]))
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("", ["int"], False)
+
+class VoidInt3Function(Function):
+    def __init__(self, name: str) -> None:
+        self.name = name
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        return ' '.join(toStr("   ", self.name, argRegs[0], argRegs[1], argRegs[2]))
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("", ["int", "int", "int"], False)
 
 class UnaryIntFunction(Function):
     def __init__(self, name: str, rev: bool = False) -> None:
@@ -1091,8 +1099,16 @@ class CompileKernelMode:
         "__INT": SetFunction(),
         "__SET": SetFunction(),
         "__MOV": SetFunction("MOV"),
+        "RAISE": VoidIntFunction("RAISE"),
         "PRINTH": VoidIntFunction("PRINTH"),
         "PRINTL": VoidIntFunction("PRINTL"),
+        "PUSH": VoidIntFunction("PUSH"),
+        "POP": VoidIntFunction("POP"),
+        "LOCK": VoidIntFunction("LOCK"),
+        "UNLOCK": VoidIntFunction("UNLOCK"),
+        "USRADDR": UnaryIntFunction("USR_ADDR"),
+        "EXTFETCH": VoidInt3Function("EXTFETCH"),
+        "EXTWRITE": VoidInt3Function("EXTWRITE"),
         "PRINTFLUSH": VoidFunction("PRINTFLUSH"),
         "++": UnaryIntFunction("INC"),
         "--": UnaryIntFunction("DEC"),
@@ -1164,7 +1180,7 @@ class CompileKernelMode:
                         self.vars.constString(sVal, node.children[1].token.value)
                         self.vars.newGlobal(node.children[0].token.value, sVal)
 
-        ALL_F = set( node.children[0].token.value for node in self.tree.root.children if node.token.type == TOKEN_TYPE.FUNCTION )
+        # ALL_F = set( node.children[0].token.value for node in self.tree.root.children if node.token.type == TOKEN_TYPE.FUNCTION )
 
         # Compile each function
         FUNCTION_LIST: Dict[str, CompileKernelFunctionBuilder] = {}
@@ -1196,7 +1212,9 @@ class CompileKernelMode:
         ]
         interrupts[0] = 'KERNEL.init'
 
-        self.output = self.vars.globalCode() + '\n\n    ' + '\n    '.join(f"JMP {i}" for i in interrupts) + '\n'.join(self.vars.globalInit) + '\n' + '\n'.join(self.vars.string_consts)
+        self.output = '\n' + self.vars.globalCode() + '\n\n    ' + '\n    '.join(f"JMP {i}" for i in interrupts)
+
+        self.output += '\n\nKERNEL.init:\n' + '\n'.join(self.vars.globalInit) + '\n    CALL __FCALL_main\n    SHUTDOWN 0\n'
 
         for interrupt in interrupts:
             if interrupt in FUNCTION_LIST:
@@ -1211,6 +1229,8 @@ class CompileKernelMode:
     RETI"""
 
         self.output += __MAIN.compile()
+        
+        self.output += '\n' + '\n'.join(self.vars.string_consts)
 
         return self
 

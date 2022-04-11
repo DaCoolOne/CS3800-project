@@ -1,5 +1,7 @@
 
 
+global int_counter 20
+
 function KERNEL.BadIns() {
     (PRINTL 65)
 }
@@ -7,8 +9,8 @@ function KERNEL.BadIns() {
 function main() {
     for int_x (< int_x 10) (++ int_x) {
         for int_y (< int_y 10) (++ int_y) {
-            (PRINTL int_x)
-            (PRINTL int_y)
+            (PRINTL int_counter)
+            set int_counter (++ int_counter)
         }
     }
 }
