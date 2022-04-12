@@ -85,6 +85,7 @@ enum ASM_DIRECTIVES {
     E_ASM_DOT_TEXT,
     E_ASM_DOT_DATA,
     E_ASM_DOT_ORG,
+    E_ASM_DOT_ALLOC,
 };
 
 const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
@@ -160,6 +161,7 @@ const std::map<ASM_DIRECTIVES, std::string> ASM_DIR_TO_STR = {
     { E_ASM_DOT_TEXT, ".TEXT" },
     { E_ASM_DOT_DATA, ".DATA" },
     { E_ASM_DOT_ORG, ".ORG" },
+    { E_ASM_DOT_ALLOC, ".ALLOC" },
 };
 const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { "RJMP", E_ASM_DIR_RJMP },
@@ -234,6 +236,7 @@ const std::map<std::string, ASM_DIRECTIVES> ASM_STR_TO_DIR = {
     { ".TEXT", E_ASM_DOT_TEXT },
     { ".DATA", E_ASM_DOT_DATA },
     { ".ORG", E_ASM_DOT_ORG },
+    { ".ALLOC", E_ASM_DOT_ALLOC },
 };
 
 enum ASSEMBLER_RESPOSE_CODES {

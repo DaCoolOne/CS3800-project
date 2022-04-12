@@ -1,11 +1,26 @@
 
 
 import stdio "stdio"
+import util "utils"
+
+global *int_mem 20
+global str_hi "Hello World"
 
 function main() {
-    (stdio.printN 532)
+    
+    set int_currentChar (util.getChar str_hi 0)
+    for int_c (i int_currentChar) (++ int_c) {
+        (<int> *int_mem (| 0x2F00 int_currentChar) int_c)
+        set int_currentChar (util.getChar str_hi int_c)
+    }
+
+    set int_c 0 for int_c (< int_c 20) (++ int_c) {
+        (stdio.printN ([int] *int_mem int_c))
+        (stdio.newline)
+    }
+
     (stdio.newline)
-    (stdio.printHex 0x1D2)
+    (stdio.print str_hi)
     (stdio.newline)
 }
 

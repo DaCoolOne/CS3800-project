@@ -19,12 +19,16 @@ function abs(int_a) {
 } returns int_a
 
 function getChar(str_s int_i) {
-    set int_c (GetStrPair str_s (>> int_i 1))
+    set int_c ([int] (CastStrIntPtr str_s) (>> int_i 1))
     if (& int_i 0x1) {
         set int_c (& int_c 0xFF)
     }
     else {
         set int_c (>> int_c 8)
     }
+} returns int_c
+
+function strLen(str_s) {
+    for int_c (getChar str_s int_c) (++ int_c) {}
 } returns int_c
 

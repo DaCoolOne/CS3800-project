@@ -170,6 +170,8 @@ Additionally there are several assembler directives which provide additional con
 
 `.TEXT` - Writes ASCII strings (NTCAs) into memory.
 
+`.ALLOC` - Allocates 2 * N bytes of zeros in memory.
+
 ## Process slots
 
 

@@ -216,12 +216,13 @@ struct vec2i (int_x int_y)
 struct vec2 (float_x float_y)
 
 function cartesianProd(vec2i_v) {
-    set int_res (+ vec2i_v.int_x vec2i_v.int_y)
+    set int_res (+ int_x@vec2i_v int_y@vec2i_v)
 } returns int_res
 ```
 
 `global` - Creates a global variable that is accessible anywhere in the script. If followed by a constant, it
 will initialize the variable as well.
+
 ```
 global int_example 4
 
@@ -237,44 +238,40 @@ function main() {
 }
 ```
 
-# Arrays (planned)
+If you initialize a global pointer with a constant, it will allocate an array of that size.
+```
+# Create an array with three elements
+global *int_myArray 3
+```
+
+# Arrays
+
+Arrays can be accessed with the `[]` function, and they can be written to with the `<>` function.
 
 ```
 import stdio "stdio"
 
-function main() {
-    alloc *int_ex 20 # Creates a new int array with 20 elements
+global *int_ex 20 # Creates a new int array with 20 elements
 
+function main() {
     # Initialize the array
     for int_i 20 {
-        set *int_ex:int_i i # Pointers can be decomposed into real values like so.
+        (<> *int_ex int_i i)
     }
 
     # Add eight to the eigth element
-    set *int_ex:8 (+ *int_ex:8 8)
+    (<> *int_ex (+ ([] int_ex 8) 8) 8)
 
     # Print the elements of the array
     for int_i 20 {
-        (stdio.print *int_ex:int_i)
+        (stdio.printN ([] int_ex int_i))
     }
 }
 ```
 
-Since array access is technically a part of the identifier, this leads to some wacky things. For example,
-you can access a 2d array like this:
+Arrays can be made with any value.
 
-`**int_ARRAY:int_x:int_y`
-
-However, accessing an array with a function is forbidden.
-
-`*int_ARR:(+ int_x 1) # Not allowed!`
-
-Instead, use a temp variable:
-
-```
-set int_t (+ int_x 1)
-(+ *int_ARR:int_t 1)
-```
+Note: In kernel mode, all arrays must be declared globally.
 
 # Kernel compiling
 
@@ -289,6 +286,8 @@ issues involved with variables overwriting each other. Attempting to call a func
 during the compiling process.
 
 Additionally, in kernel mode the alloc instruction is disabled. Any arrays must be declared globally.
+
+KERNEL mode also allows you to access the length of the program with the constant `KERNEL.int_BINEND`.
 
 # Standard library
 

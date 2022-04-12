@@ -637,6 +637,16 @@ void Assembler::newCommand(std::string cmd) {
                 }
                 size = 0;
             break;
+            case E_ASM_DOT_ALLOC:
+                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                _s_temp = readStr(tokenGroup.at(1));
+                table[0] = '\0';
+                table[1] = '\0';
+                for(int i = 0; i < _s_temp; i ++) {
+                    buffer(reinterpret_cast<char*>(table), 2);
+                }
+                size = 0;
+            break;
 
             default:
                 std::cerr << "I don't know what to do with this: " << a << std::endl;
