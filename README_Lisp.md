@@ -11,6 +11,8 @@ to make things simpler.
 The most useful struct is a block, written with curly brackets `{}`. These allow you to write sequential groups of function
 calls. These blocks can be used to define functions, control statements, and so much more.
 
+I am naming this variant of lisp `Lisp++` for no particular reason.
+
 ```
 # An example of using the new lisp flavor
 import stdio "stdio"
@@ -287,4 +289,18 @@ issues involved with variables overwriting each other. Attempting to call a func
 during the compiling process.
 
 Additionally, in kernel mode the alloc instruction is disabled. Any arrays must be declared globally.
+
+# Standard library
+
+The standard library, also written in Lisp++, consists of several useful functions, which will be covered here.
+All stl imports do not have a file extension. For example, `import util "utils"` will import the utils stl, while
+`import util "utils.lispp"` will look for a file `utils.lispp` in the cwd.
+
+All stl files are located in the `lisp_stl` subdirectory.
+
+### stdio
+
+
+
+### utils
 

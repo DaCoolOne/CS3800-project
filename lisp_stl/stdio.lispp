@@ -9,7 +9,7 @@ function printN(int_n) {
     }
     while (> int_largeDigit 0) {
         set int_digit (/ int_n int_largeDigit)
-        (PRINTL (+ int_digit 0x30))
+        (KERNEL.PRINTL (+ int_digit 0x30))
         set int_n (- int_n (* int_digit int_largeDigit))
         set int_largeDigit (/ int_largeDigit 10)
     }
@@ -20,10 +20,10 @@ function printHex(int_n) {
     for int_c (< int_c 4) (++ int_c) {
         set int_digit (>> (& int_largeDigit int_n) (<< (- 3 int_c) 2))
         if (< int_digit 9) {
-            (PRINTL (+ int_digit 0x30))
+            (KERNEL.PRINTL (+ int_digit 0x30))
         }
         else {
-            (PRINTL (+ int_digit 0x26))
+            (KERNEL.PRINTL (+ int_digit 0x26))
         }
         set int_largeDigit (>> int_largeDigit 4)
     }
@@ -31,18 +31,18 @@ function printHex(int_n) {
 
 # Newline flushes the buffer automagically
 function newline() {
-    (PRINTL 0xA)
+    (KERNEL.PRINTL 0xA)
 }
 
 function flush() {
-    (PRINTFLUSH)
+    (KERNEL.PRINTFLUSH)
 }
 
 function print(str_s) {
     set int_index 0
     set int_a (utils.getChar str_s int_index)
     while (i int_a) {
-        (PRINTL int_a)
+        (KERNEL.PRINTL int_a)
         set int_index (++ int_index)
         set int_a (utils.getChar str_s int_index)
     }
