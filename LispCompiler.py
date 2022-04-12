@@ -1185,12 +1185,12 @@ class CompileKernelFunctionBuilder:
             a = [ dep.compile() for dep in self.deps ]
             if isInterrupt:
                 a.append(f"""
-    {self.base.children[0].token.value}:
-    """ + '\n'.join([i.output() for i in self.insList]) + "\n    RETI")
+__INTER_{self.imports.getTaggedName(self.base.children[0].token.value, self.base.children[0].token.line)}:
+""" + '\n'.join([i.output() for i in self.insList]) + "\n    RETI")
             else:
                 a.append(f"""
-    __FCALL_{self.imports.getTaggedName(self.base.children[0].token.value, self.base.children[0].token.line)}:
-    """ + '\n'.join([i.output() for i in self.insList]) + "\n    RET")
+__FCALL_{self.imports.getTaggedName(self.base.children[0].token.value, self.base.children[0].token.line)}:
+""" + '\n'.join([i.output() for i in self.insList]) + "\n    RET")
             return '\n'.join(a)
         return ''
 
@@ -1253,6 +1253,8 @@ class CompileKernelMode:
         "KERNEL.EXTFETCH": VoidInt3Function("EXTFETCH"),
         "KERNEL.EXTWRITE": VoidInt3Function("EXTWRITE"),
         "KERNEL.PRINTFLUSH": VoidFunction("PRINTFLUSH"),
+        "KERNEL.RETI": VoidFunction("RETI"),
+        "KERNEL.SETTIMER": VoidIntFunction("SETTIMER"),
         "++": UnaryIntFunction("INC"),
         "i": UnaryIntFunction(),
         "--": UnaryIntFunction("DEC"),
@@ -1267,22 +1269,22 @@ class CompileKernelMode:
 
     __LISP_ASM_KERNEL_INTERRUPTS = [
         "__INIT",
-        "__FCALL_0_TimerTick",
-        "__FCALL_0_BadMemAccess",
-        "__FCALL_0_StackOverflow",
-        "__FCALL_0_StackUnderflow",
-        "__FCALL_0_BadIns",
-        "__FCALL_0_FailedExtAccess",
-        "__FCALL_0_UserDefined1",
-        "__FCALL_0_UserDefined2",
-        "__FCALL_0_UserDefined3",
-        "__FCALL_0_UserDefined4",
-        "__FCALL_0_UserDefined5",
-        "__FCALL_0_UserDefined6",
-        "__FCALL_0_UserDefined7",
-        "__FCALL_0_UserDefined8",
-        "__FCALL_0_UserDefined9",
-        "__FCALL_0_UserDefined10",
+        "0_TimerTick",
+        "0_BadMemAccess",
+        "0_StackOverflow",
+        "0_StackUnderflow",
+        "0_BadIns",
+        "0_FailedExtAccess",
+        "0_UserDefined1",
+        "0_UserDefined2",
+        "0_UserDefined3",
+        "0_UserDefined4",
+        "0_UserDefined5",
+        "0_UserDefined6",
+        "0_UserDefined7",
+        "0_UserDefined8",
+        "0_UserDefined9",
+        "0_UserDefined10",
     ]
 
     __IMPORT_DEPTH = 1
@@ -1301,6 +1303,7 @@ class CompileKernelMode:
             self.imports = CompileKernelImportTree()
             self.imports.newImport('KERNEL')
             self.imports.newImport(filePath)
+            self.imports.link(filePath,'KERNEL','KERNEL')
         else:
             self.imports = imports
             self.imports.newImport(filePath)
@@ -1429,19 +1432,19 @@ class CompileKernelMode:
         __MAIN.construct(self.vars.counter, self.FUNCTION_LIST)
 
         interrupts = [
-            (i if i in self.FUNCTION_LIST else '__INTER_0_defaultInterrupt')
+            (i if i in self.FUNCTION_LIST else '0_defaultInterrupt')
             for i in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS
         ]
-        interrupts[0] = '__INIT'
+        interrupts[0] = 'INIT'
 
-        self.output = '\n    ' + '\n    '.join(f"JMP {i}" for i in interrupts)
-        self.output += '\n__INIT:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_1_main\n    SHUTDOWN\n'
+        self.output = '\n    ' + '\n    '.join(f"JMP __INTER_{i}" for i in interrupts)
+        self.output += '\n__INTER_INIT:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_1_main\n    SHUTDOWN\n'
 
-        for interrupt in interrupts:
+        for interrupt in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS:
             if interrupt in self.FUNCTION_LIST:
                 self.FUNCTION_LIST[interrupt].construct(self.vars.counter, self.FUNCTION_LIST)
 
-        for interrupt in interrupts:
+        for interrupt in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS:
             if interrupt in self.FUNCTION_LIST:
                 self.output += self.FUNCTION_LIST[interrupt].compile(True)
 

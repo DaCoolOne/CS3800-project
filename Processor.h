@@ -40,7 +40,7 @@ class Processor {
 
     uint8_t m_flags = 0;
 
-    uint8_t m_timer_counter = 0;
+    uint16_t m_timer_counter = 0;
 
     char m_printBuffer[Processor_PRINT_BUFFER_SIZE+1];
     uint16_t printSize = 0;

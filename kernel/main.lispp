@@ -1,0 +1,27 @@
+
+
+import stdio "stdio"
+
+# This triggers every 2^16 ticks
+function KERNEL.TimerTick() {
+    (stdio.print "\u")
+    (stdio.newline)
+
+    (KERNEL.SETTIMER 0x8000)
+}
+
+function disableUserMode() {
+    (KERNEL.RETI)
+}
+
+function main() {
+    
+    (stdio.print "Hello World")
+    (stdio.newline)
+
+    # Break us out of kernel mode in a dumb way
+    (disableUserMode)
+
+    loop { }
+}
+

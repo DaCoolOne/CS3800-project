@@ -9,7 +9,15 @@ uint16_t Processor::getExtData() {
 };
 
 void Processor::executeNextInstruction() {
-    if(!(m_flags & E_PROC_FLAG_KERNEL)) m_REGS[E_PROC_REG_PREV_INS] = m_program_counter;
+    // Not in kernel mode
+    if(!(m_flags & E_PROC_FLAG_KERNEL)) {
+        m_timer_counter --;
+        if(m_timer_counter == 0) {
+            throw E_PROC_TIMER_TICK;
+        }
+
+        m_REGS[E_PROC_REG_PREV_INS] = m_program_counter;
+    }
 
     uint16_t addr = getAddress(m_program_counter++);
     uint16_t instruction = m_memory[addr];
@@ -43,6 +51,9 @@ void Processor::executeNextInstruction() {
 
             case E_PROC_KINS_USR_ADDR:
                 // Todo
+            break;
+            case E_PROC_KINS_SETTIMER:
+                m_timer_counter = m_REGS[ins_low];
             break;
 
             case E_PROC_KINS_EXTFETCH:

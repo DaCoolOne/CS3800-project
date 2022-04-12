@@ -526,6 +526,13 @@ void Assembler::newCommand(std::string cmd) {
                 size = 2;
             break;
 
+            case E_ASM_DIR_SETTIMER:
+                if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
+                table[0] = static_cast<uint8_t>(E_PROC_KINS_SETTIMER);
+                table[1] = readStr(tokenGroup.at(1));
+                size = 2;
+            break;
+
             case E_ASM_DIR_EXTFETCH:
                 if(tokenGroup.size() != 4) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_KINS_EXTFETCH);

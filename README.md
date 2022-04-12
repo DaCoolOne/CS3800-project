@@ -136,6 +136,8 @@ EXTFETCH 1000 0101 xxxx xxxx yyyy yyyy zzzz zzzz - Read device Reg[X] at address
 
 EXTWRITE 1000 0110 xxxx xxxx yyyy yyyy zzzz zzzz - Write to device Reg[X] at address Reg[Y] & Reg[Z], place into EXT_BUFFER_OUT.
 
+SETTIMER 1000 0111 xxxx xxxx - Sets the processor's internal timer to Reg[X]. The internal timer determines the next time a TimerInterrupt will be triggered.
+
 PRINTH 1111 1101 xxxx xxxx - Print high bits of register X
 
 PRINTL 1111 1100 xxxx xxxx - Print low bits of register X
