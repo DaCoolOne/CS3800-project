@@ -300,7 +300,23 @@ All stl files are located in the `lisp_stl` subdirectory.
 
 ### stdio
 
+`(stdio.print str)` - Prints a string
 
+`(stdio.printN int)` - Prints out a number
+
+`(stdio.printHex int)` - Prints out a number as hex
+
+`(stdio.flush)` - Flushes the buffer
+
+`(stdio.newline)` - Prints out a new line and flushes the buffer
 
 ### utils
+
+`(utils.max int_a int_b) -> int` - Returns max of a and b
+
+`(utils.min int_a int_b) -> int` - Returns min of a and b
+
+`(utils.abs int_a) -> int` - Returns absolute value of a
+
+`(utils.getChar str int) -> int` - Returns the nth character of a string as an int
 
