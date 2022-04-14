@@ -26,7 +26,7 @@ void Processor::executeNextInstruction() {
 
     if(ins_high & 0x80) {
         // Cannot execute kernel instructions when not in kernel mode.
-        if(!(m_flags & E_PROC_FLAG_KERNEL)) throw E_PROC_ERROR_BAD_INS;
+        if(!(m_flags & E_PROC_FLAG_KERNEL)) interrupt(E_PROC_ERROR_BAD_INS);
 
         uint16_t y, z;
         uint16_t _temp;

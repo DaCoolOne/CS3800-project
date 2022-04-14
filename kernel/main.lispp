@@ -1,13 +1,16 @@
 
 import stdio "stdio"
 
-# Size of Process Array
-global int_psize 20
-
 # Initializes the Process Array
-global *int_proc 20
+const int_procSize 10
+global *int_proc 10
 
-# This triggers every 2^16 ticks
+# Initializes the Memory Address Blocks Array
+const int_memBlocksSize 256
+global *int_memBlocks 256
+
+
+# This triggers every 2^15 ticks
 function KERNEL.TimerTick() {
     (stdio.print "\u")
     (stdio.newline)
@@ -15,32 +18,56 @@ function KERNEL.TimerTick() {
     (KERNEL.SETTIMER 0x8000)
 }
 
-function disableUserMode() {
+function begin() {
     (KERNEL.RETI)
 }
 
 function initializeProcessArray() {
-    for int_i (< int_i int_psize) (++ int_i) {
-        (<int> *int_proc 0 int_i)
+    for int_i (< int_i int_procSize) (++ int_i) {
+        (<> *int_proc -1 int_i)
+    }
+}
+
+function initializeMemoryBlocks() {
+    for int_i (< int_i int_memBlocksSize) (++ int_i) {
+        (<> *int_memBlocks 0 int_i)
     }
 
-    # Print the elements of the array
-    for int_i (< int_i int_psize) (++ int_i) {
-       (stdio.printN ([int] *int_proc int_i))
-       (stdio.print " ")
+    set int_i 0 for int_i (< int_i (>> (addr KERNEL.*int_BINEND) 8)) (++ int_i) {
+        (<> *int_memBlocks 1 int_i)
+    }
+}
+
+function createProcess() {
+    set int_searchingForBlock 1
+    set int_blockIndex -1
+
+    for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
+        if (= ([] *int_proc int_i) -1) {
+            (<> *int_proc 0 int_i)
+            set int_blockIndex int_i
+            set int_searchingForBlock 0
+        }
     }
 
-    (stdio.newline)
+    (stdio.printU int_blockIndex)
+    (stdio.print " ")
 }
 
 function main() {
     (initializeProcessArray)
-    
-    (stdio.print "Hello World")
+    (initializeMemoryBlocks)
+
+    (createProcess)
+    (createProcess)
+    (createProcess)
+    (createProcess)
+    (createProcess)
+
     (stdio.newline)
 
     # Break us out of kernel mode in a dumb way
-    (disableUserMode)
+    # (enableUserMode)
 
     loop { }
 }

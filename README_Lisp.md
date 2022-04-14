@@ -260,11 +260,11 @@ function main() {
     }
 
     # Add eight to the eigth element
-    (<> *int_ex (+ ([] int_ex 8) 8) 8)
+    (<> *int_ex (+ ([] *int_ex 8) 8) 8)
 
     # Print the elements of the array
     for int_i 20 {
-        (stdio.printN ([] int_ex int_i))
+        (stdio.printS ([] *int_ex int_i))
     }
 }
 ```
@@ -301,7 +301,9 @@ All stl files are located in the `lisp_stl` subdirectory.
 
 `(stdio.print str)` - Prints a string
 
-`(stdio.printN int)` - Prints out a number
+`(stdio.printS int)` - Prints out a signed number
+
+`(stdio.printS int)` - Prints out an unsigned number
 
 `(stdio.printHex int)` - Prints out a number as hex
 

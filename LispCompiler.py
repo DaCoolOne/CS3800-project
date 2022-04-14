@@ -104,6 +104,7 @@ class TOKEN_TYPE(Enum):
     ELSE_COND = 24
     STRUCT = 25
     ALLOC = 26
+    CONST = 27
 
 class Token:
     def __init__(self, type: TOKEN_TYPE, line: str, value: Optional[str] = None) -> None:
@@ -138,7 +139,8 @@ class TokenParser:
         "set",
         "import",
         "alloc",
-        "global"
+        "global",
+        "const"
     }
 
     def __init__(self, fname: str, digestString: str) -> None:
@@ -213,7 +215,7 @@ class TokenParser:
                     raise ParserError(f"Unclosed string", self.getTokenLine())
             return Token(TOKEN_TYPE.STRING, self.getTokenLine(), s)
         
-        if c.isdigit():
+        if c.isdigit() or (c == '-' and self.peek().isdigit()):
             if c == '0':
                 s = ''
                 c = self.peek()
@@ -246,8 +248,13 @@ class TokenParser:
                 
                 c = '0'
 
+            if c == '-':
+                s = '-'
+                c = self.nextChar()
+            else:
+                s = ''
+
             # Normal decimal parsing
-            s = ''
             while c is not None and c.isdigit():
                 s += c
                 c = self.nextChar()
@@ -350,6 +357,9 @@ class Parser:
                 elif self.token.value == "global":
                     self.getToken()
                     self.parse_GLOBAL()
+                elif self.token.value == "const":
+                    self.getToken()
+                    self.parse_CONST()
                 elif self.token.value == "struct":
                     self.getToken()
                     self.parse_STRUCT()
@@ -382,6 +392,16 @@ class Parser:
         if self.token.type == TOKEN_TYPE.INT or self.token.type == TOKEN_TYPE.FLOAT or self.token.type == TOKEN_TYPE.STRING:
             self.tree.shift(self.token)
             self.getToken()
+        self.tree.pop()
+    # Parse const statements
+    def parse_CONST(self):
+        self.tree.push(Token(TOKEN_TYPE.CONST, self.tk_gen.getTokenLine()))
+        self.parse_IDENTIFIER()
+        if self.token.type == TOKEN_TYPE.INT or self.token.type == TOKEN_TYPE.FLOAT or self.token.type == TOKEN_TYPE.STRING:
+            self.tree.shift(self.token)
+            self.getToken()
+        else:
+            raise ParserError(f"Expected constant initialization", self.token.line)
         self.tree.pop()
     # Parse set statements
     def parse_SET(self):
@@ -556,8 +576,7 @@ class Function:
         ret, args, ext = self.getSignature()
 
         if (not ext and len(argList) > len(args)) or len(argList) < len(args):
-            raise ParserError(f"Incorrect number of arguments! " +
-                f"Expected {str(len(args))+'+' if ext else len(args)} got {len(argList)}", line)
+            self.throwWrongArgs(len(args), len(argList), ext, line)
 
         for i, a in enumerate(argList):
             expected = args[min(i, len(args) - 1)]
@@ -565,6 +584,10 @@ class Function:
                 self.throwWrongType(expected, a, line)
         
         return ret
+
+    def throwWrongArgs(self, expected: int, got: int, orMore: bool, line: int):
+        raise ParserError(f"Incorrect number of arguments! " +
+            f"Expected {str(expected)+'+' if orMore else expected} got {got}", line)
 
     def throwWrongType(self, expected: str, got: str, line: int):
         if expected == '':
@@ -674,25 +697,38 @@ class TypeCast(Function):
         return (self.out, [self.inp], False)
 
 class ArrayIndexFunction(Function):
-    def __init__(self, _type: str) -> None:
-        self._type = _type
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         a = []
         a.append(' '.join(toStr("    ADD", destReg, argRegs[0], argRegs[1])))
         a.append(' '.join(toStr("    LD", destReg)))
         return '\n'.join(a)
-    def getSignature(self) -> Tuple[str, List[str], bool]:
-        return (self._type, [f"*{self._type}","int"], False)
+    def typeCheck(self, argList: List[str], line: str) -> str:
+        if len(argList) != 2:
+            self.throwWrongArgs(2, len(argList), False, line)
+        _type = argList[0]
+        if not _type.startswith('*'):
+            self.throwWrongType('*T','T',line)
+        if argList[1] != 'int':
+            self.throwWrongType(argList[1],'int')
+        return _type[1:]
+
 class ArraySetFunction(Function):
-    def __init__(self, _type: str) -> None:
-        self._type = _type
     def compile(self, destReg: int, argRegs: List[int]) -> str:
         a = []
         a.append(' '.join(toStr("    ADD", argRegs[3], argRegs[0], argRegs[2])))
         a.append(' '.join(toStr("    ST", argRegs[1], argRegs[3])))
         return '\n'.join(a)
-    def getSignature(self) -> Tuple[str, List[str], bool]:
-        return ("", [f"*{self._type}",self._type,"int"], False)
+    def typeCheck(self, argList: List[str], line: str) -> str:
+        if len(argList) != 3:
+            self.throwWrongArgs(3, len(argList), False, line)
+        _type = argList[0]
+        if not _type.startswith('*'):
+            self.throwWrongType('*T','T',line)
+        if argList[1] != _type[1:]:
+            self.throwWrongType(argList[1],_type[1:])
+        if argList[2] != 'int':
+            self.throwWrongType(argList[1],'int')
+        return ''
     def tempRegs(self):
         return 1
 
@@ -738,15 +774,18 @@ class Compiler:
 # Keeps trace of which variables are which.
 class KernelCompilerGlobalVars:
     def __init__(self) -> None:
-        self.scope = { 'KERNEL.*int_BINEND': '__BINEND' }
+        self.scope = {  }
+
         self.counter = 0
 
         self.globalInit = []
         self.string_consts = []
         self.allocs = []
         self.global_str_count = 0
+        self.global_int_count = 0
         self.alloc_count = 0
         self.str_map: Dict[str, str] = {}
+        self.int_map: Dict[str, Union[str, int]] = { 'KERNEL.*int_BINEND': '__BINEND' }
 
     # Returns the register to use for this variable
     def newGlobal(self, name: str, value: Optional[int] = None) -> int:
@@ -757,6 +796,9 @@ class KernelCompilerGlobalVars:
             self.counter += 1
         return self.scope[name]
     
+    def constInt(self, name: str, data: int):
+        self.int_map[name] = data
+
     def constAlloc(self, size: int) -> str:
         name = f"__ALLOC_{self.alloc_count}"
         self.alloc_count += 1
@@ -771,6 +813,12 @@ class KernelCompilerGlobalVars:
         d_san = data.replace('\\', '\\\\').replace('\0', '\\0').replace('\n', '\\n').replace('\t', '\\t').replace('\'', '\\\'').replace('\"', '\\\"')
         self.string_consts.append(f'{name}:\n    .TEXT "{d_san}"')
         return name
+    
+    def isGlobalConst(self, name: str) -> bool:
+        return name in self.int_map
+
+    def getGlobalConst(self, name: str) -> Union[str, int]:
+        return self.int_map[name]
     
     def isGlobal(self, name: str) -> bool:
         return name in self.scope
@@ -791,6 +839,8 @@ class LocalScopeTracker:
         self.regTop += 1
         #self.maxReg = max(self.maxReg, rt)
         return rt
+    def isConst(self, name: str) -> bool:
+        return self.gl.isGlobalConst(name)
     def isGlobal(self, name: str) -> bool:
         return self.gl.isGlobal(name)
     def newLocal(self, name: str, line: str) -> int:
@@ -984,7 +1034,9 @@ class CompileKernelFunctionBuilder:
                     if GetVariableType(name) != ret_type:
                         raise ParserError(f'Cannot assign type {ret_type} to {GetVariableType(name)}', child.children[0].token.line)
                     c = self.FUNCTION_CALL(child.children[1], userFunctions)
-                    if self.scope.isGlobal(name):
+                    if self.scope.isConst(name):
+                        raise ParserError(f"Cannot set constant", child.children[0].token.line)
+                    elif self.scope.isGlobal(name):
                         c.index = self.scope.getGlobal(name)
                         c.relative = False
                     else:
@@ -996,7 +1048,9 @@ class CompileKernelFunctionBuilder:
                     name = child.children[0].token.value
                     if GetVariableType(name) != 'int':
                         raise ParserError(f'Incorrect variable type "{GetVariableType(name)}"', child.children[0].token.line)
-                    if self.scope.isGlobal(name):
+                    if self.scope.isConst(name):
+                        raise ParserError(f"Cannot set constant", child.children[0].token.line)
+                    elif self.scope.isGlobal(name):
                         c.index = self.scope.getGlobal(name)
                         c.relative = False
                     else:
@@ -1004,7 +1058,11 @@ class CompileKernelFunctionBuilder:
                 elif token.type == TOKEN_TYPE.IDENTIFIER:
                     name = child.children[0].token.value
                     name2 = child.children[1].token.value
-                    if self.scope.isGlobal(name2):
+                    if self.scope.isConst(name2):
+                        ins = CompileKernelInstruction(self, self.functions["__SET"], [
+                            CompileKernelPartialVar(self.scope.gl.getGlobalConst(name2), False)
+                        ])
+                    elif self.scope.isGlobal(name2):
                         ins = CompileKernelInstruction(self, self.functions["__MOV"], [
                             CompileKernelPartialVar(self.scope.getGlobal(name2), False)
                         ])
@@ -1016,7 +1074,9 @@ class CompileKernelFunctionBuilder:
                     self.insList.append(ins)
                     if GetVariableType(name) != GetVariableType(name2):
                         raise ParserError(f'Incorrect variable type "{GetVariableType(name)}"', child.children[0].token.line)
-                    if self.scope.isGlobal(name):
+                    if self.scope.isConst(name):
+                        raise ParserError(f"Cannot set constant", child.children[1].token.line)
+                    elif self.scope.isGlobal(name):
                         c.index = self.scope.getGlobal(name)
                         c.relative = False
                     else:
@@ -1151,7 +1211,13 @@ class CompileKernelFunctionBuilder:
                     reg.index = self.scope.tempAlloc()
                     a.append(reg)
                 elif arg.token.type == TOKEN_TYPE.IDENTIFIER:
-                    if self.scope.isGlobal(arg.token.value):
+                    if self.scope.isConst(arg.token.value):
+                        ins = CompileKernelInstruction(self, self.functions["__INT"], [ CompileKernelPartialVar(self.scope.gl.getGlobalConst(arg.token.value), False) ])
+                        self.insList.append(ins)
+                        reg = ins.outputReg
+                        reg.index = self.scope.tempAlloc()
+                        a.append(reg)
+                    elif self.scope.isGlobal(arg.token.value):
                         a.append(CompileKernelPartialVar(self.scope.getGlobal(arg.token.value), False))
                     else:
                         a.append(CompileKernelPartialVar(self.scope.getLocal(arg.token.value, arg.token.line)))
@@ -1261,10 +1327,8 @@ class CompileKernelMode:
         "CastStrIntPtr": TypeCast('str','*int'),
         "addr": TypeCast('*int','int'),
         "ptr": TypeCast('int', '*int'),
-        "[int]": ArrayIndexFunction('int'),
-        "<int>": ArraySetFunction('int'),
-        "[str]": ArrayIndexFunction('str'),
-        "<str>": ArraySetFunction('str'),
+        "[]": ArrayIndexFunction(),
+        "<>": ArraySetFunction(),
     }
 
     __LISP_ASM_KERNEL_INTERRUPTS = [
@@ -1350,6 +1414,8 @@ class CompileKernelMode:
             if node.token.type == TOKEN_TYPE.GLOBAL:
                 name = node.children[0].token.value
                 ln = node.children[0].token.line
+                if self.vars.isGlobalConst(name):
+                    raise ParserError(f"Conflicting definitions for const/global {name}", ln)
                 if self.vars.isGlobal(name):
                     raise ParserError(f"Conflicting definitions for global {name}", ln)
                 if len(node.children) == 1:
@@ -1369,6 +1435,30 @@ class CompileKernelMode:
                             raise ParserError(f"Cannot assign string to global variable {name}", ln)
                         sVal = self.vars.constString(node.children[1].token.value)
                         self.vars.newGlobal(name, sVal)
+            elif node.token.type == TOKEN_TYPE.CONST:
+                name = node.children[0].token.value
+                ln = node.children[0].token.line
+            
+                if self.vars.isGlobal(name):
+                    raise ParserError(f"Conflicting definitions for const/global {name}", ln)
+                if self.vars.isGlobalConst(name):
+                    raise ParserError(f"Conflicting definitions for constant {name}", ln)
+                
+                if node.children[1].token.type == TOKEN_TYPE.INT:
+                    _type = GetVariableType(name)
+                    if _type == 'int':
+                        self.vars.constInt(name, node.children[1].token.value)
+                    elif _type == '*int':
+                        self.vars.constInt(name, self.vars.constAlloc(node.children[1].token.value))
+                    else:
+                        raise ParserError(f"Cannot assign int to global variable {name}", ln)
+                elif node.children[1].token.type == TOKEN_TYPE.STRING:
+                    _type = GetVariableType(name)
+                    if _type != 'str':
+                        raise ParserError(f"Cannot assign string to global variable {name}", ln)
+                    sVal = self.vars.constString(node.children[1].token.value)
+                    self.vars.constInt(name, sVal)
+                
 
         # ALL_F = set( node.children[0].token.value for node in self.tree.root.children if node.token.type == TOKEN_TYPE.FUNCTION )
 

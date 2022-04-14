@@ -59,7 +59,7 @@ ST 0000 1001 xxxx xxxx ---- ---- yyyy yyyy - Store value in reg x at reg y
 ### Functions
 CALL 0000 0100 ---- ---- yyyy yyyy yyyy yyyy - Call function at address, place return value in reg
 
-RET 0000 0101 ---- ---- - Return from function
+RET  0000 0101 ---- ---- - Return from function
 
 RETI 0001 0101 ---- ---- - Return from function and enter user mode
 

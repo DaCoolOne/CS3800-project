@@ -48,7 +48,7 @@ class Processor {
     // Gets the address at addr
     uint16_t getUsrAddr(uint16_t addr) {
         if((addr >> 8) >= m_REGS[E_PROC_REG_PAGE_STACK_SIZE]) throw E_PROC_ERROR_MEM_ACC;
-        return (m_pageLocks[addr >> 8] << 8) | addr & 0xFF;
+        return (m_pageLocks[addr >> 8] << 8) | (addr & 0xFF);
     }
     uint16_t getAddress(uint16_t addr) {
         if(m_flags & E_PROC_FLAG_KERNEL) {
