@@ -1427,7 +1427,7 @@ class CompileKernelMode:
                         _type = GetVariableType(name)
                         if _type == 'int':
                             self.vars.newGlobal(name, node.children[1].token.value)
-                        elif _type == '*int':
+                        elif _type.startswith('*'):
                             self.vars.newGlobal(name, self.vars.constAlloc(node.children[1].token.value))
                         else:
                             raise ParserError(f"Cannot assign int to global variable {name}", ln)
