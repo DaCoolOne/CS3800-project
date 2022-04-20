@@ -725,9 +725,9 @@ class ArraySetFunction(Function):
         if not _type.startswith('*'):
             self.throwWrongType('*T','T',line)
         if argList[1] != _type[1:]:
-            self.throwWrongType(argList[1],_type[1:])
+            self.throwWrongType(argList[1],_type[1:],line)
         if argList[2] != 'int':
-            self.throwWrongType(argList[1],'int')
+            self.throwWrongType(argList[1],'int',line)
         return ''
     def tempRegs(self):
         return 1
