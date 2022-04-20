@@ -34,11 +34,10 @@ void Processor::executeNextInstruction() {
         switch(static_cast<PROC_KERN_INSTRUCTIONS>(ins_high))
         {
             case E_PROC_KINS_LOCK:
-                m_REGS[E_PROC_REG_PAGE_STACK_SIZE] -= ins_low;
-                m_REGS[ins_low] = m_pageLocks[m_REGS[E_PROC_REG_PAGE_STACK_SIZE] + 1];
+                m_REGS[E_PROC_REG_PAGE_STACK_SIZE] -= m_REGS[ins_low];
             break;
             case E_PROC_KINS_UNLOCK:
-                m_pageLocks[m_REGS[E_PROC_REG_PAGE_STACK_SIZE]] = ins_low;
+                m_pageLocks[m_REGS[E_PROC_REG_PAGE_STACK_SIZE]] = m_REGS[ins_low];
                 ++m_REGS[E_PROC_REG_PAGE_STACK_SIZE];
             break;
 
@@ -50,7 +49,7 @@ void Processor::executeNextInstruction() {
             break;
 
             case E_PROC_KINS_USR_ADDR:
-                // Todo
+                m_REGS[ins_low] = getUsrAddr(m_REGS[ins_low]);
             break;
             case E_PROC_KINS_SETTIMER:
                 m_timer_counter = m_REGS[ins_low];
