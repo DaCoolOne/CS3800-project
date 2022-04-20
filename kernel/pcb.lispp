@@ -1,0 +1,110 @@
+import stdio "stdio"
+
+# Initializes enums for process states
+const int_PROCREADY 0
+const int_PROCRUNNING 1
+const int_PROCBLOCKED 2
+
+# Initializes address constant for PCB STATE
+const int_PCBSTATE 0
+
+# Initializes address constant for the program counter
+const int_PCBPROGRAMCOUNTER 1
+
+# Initializes address constant for the User Registers
+const int_PCBUSRREGS 2
+
+function findOpenProcessSlot() {
+    set int_searchingForBlock 1
+    set int_processIndex -1
+
+    # Finds an open process slot to place process into
+    for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
+        if (= (addr ([] **int_proc int_i)) -1) {
+            set int_processIndex int_i
+            set int_searchingForBlock 0
+        }
+    }
+} returns int_processIndex
+
+function allocateNextBlock(int_processIndex) {
+    set int_searchingForMemory 1
+    set int_memoryIndex -1
+
+    set int_i 0 for int_i (&& int_searchingForMemory (< int_i int_memBlocksSize)) (++ int_i) {
+        if (= ([] *int_memBlocks int_i) 0) {
+            (<> *int_memBlocks (<< int_processIndex 8) int_i)
+            set int_memoryIndex int_i
+            set int_searchingForMemory 0
+        }
+    }
+} returns int_memoryIndex
+
+function setProcessState(int_processIndex int_processState) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress int_processState int_PCBSTATE)
+}
+
+function getProcessState(int_processIndex) {
+    set int_processState ([] ([] **int_proc int_processIndex) int_PCBSTATE)
+} returns int_processState
+
+function setUserRegisters(int_processIndex) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg0 int_PCBUSRREGS)
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg1 (+ int_PCBUSRREGS 1))
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg2 (+ int_PCBUSRREGS 2))
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg3 (+ int_PCBUSRREGS 3))
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg4 (+ int_PCBUSRREGS 4))
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg5 (+ int_PCBUSRREGS 5))
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg6 (+ int_PCBUSRREGS 6))
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg7 (+ int_PCBUSRREGS 7))
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg8 (+ int_PCBUSRREGS 8))
+    (<> *int_pcbBlockAddress KERNEL.int_UserReg9 (+ int_PCBUSRREGS 9))
+    (<> *int_pcbBlockAddress KERNEL.int_UserRegA (+ int_PCBUSRREGS 10))
+    (<> *int_pcbBlockAddress KERNEL.int_UserRegB (+ int_PCBUSRREGS 11))
+    (<> *int_pcbBlockAddress KERNEL.int_UserRegC (+ int_PCBUSRREGS 12))
+    (<> *int_pcbBlockAddress KERNEL.int_UserRegD (+ int_PCBUSRREGS 13))
+    (<> *int_pcbBlockAddress KERNEL.int_UserRegE (+ int_PCBUSRREGS 14))
+    (<> *int_pcbBlockAddress KERNEL.int_UserRegF (+ int_PCBUSRREGS 15))
+}
+
+function setProgramCounter(int_processIndex int_programCounter) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress int_programCounter int_PCBPROGRAMCOUNTER)
+}
+
+function createProcess() {
+    (stdio.print "KERNEL Memory BINEND: ")
+    (stdio.printHex (addr KERNEL.*int_BINEND))
+
+    # Returns the index of a process slot it finds
+    set int_processIndex (findOpenProcessSlot)
+
+    if (= int_processIndex -1) {
+        (stdio.print "ERROR in createProcess(): Could not find process slot.")
+    }
+    else {
+        set int_pcbIndex (allocateNextBlock (++ int_processIndex))
+
+        if (= int_pcbIndex -1) {
+            (stdio.print "ERROR in createProcess(): Could not find memory block to allocate.")
+        }
+        else {
+            (<> **int_proc (ptr (<< int_pcbIndex 8)) int_processIndex)
+            (setProcessState int_processIndex int_PROCREADY)
+            (setUserRegisters int_processIndex)
+            (setProgramCounter int_processIndex 0)
+
+            (stdio.print " Process Index: ")
+            (stdio.printU int_processIndex)
+            
+            (stdio.print " Memory Index: ")
+            (stdio.printU int_pcbIndex)
+
+            (stdio.print " Process State: ")
+            (stdio.printU (getProcessState int_processIndex))
+            (stdio.newline)
+        }
+    }
+}

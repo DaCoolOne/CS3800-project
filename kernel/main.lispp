@@ -1,16 +1,13 @@
-
 import stdio "stdio"
+import pcb "pcb.lispp"
 
 # Initializes the Process Array
 const int_procSize 10
-global *int_proc 10
+global **int_proc 10
 
 # Initializes the Memory Address Blocks Array
 const int_memBlocksSize 256
 global *int_memBlocks 256
-
-# Initializes process state enums
-const int_READY 0
 
 # This triggers every 2^15 ticks
 function KERNEL.TimerTick() {
@@ -28,7 +25,7 @@ function initializeProcessArray() {
 
     # Initializes all of the process indeces to -1
     for int_i (< int_i int_procSize) (++ int_i) {
-        (<> *int_proc -1 int_i)
+        (<> **int_proc (ptr -1) int_i)
     }
 }
 
@@ -45,46 +42,24 @@ function initializeMemoryBlocks() {
     }
 }
 
-function allocateNextBlock() {
-    set int_searchingForMemory 1
-    set int_memoryIndex -1
+# Get block where PCB is located
+# Shift block to be high byte which is block
+# Low byte is const PCB state
+# bitwise or values
+# pass in id of the process
+# Get block where pcb is located
+# Create a value who's high byte is pcb block and low byte is the pcb state
+# ptr convert to pointer
 
-    set int_i 0 for int_i (&& int_searchingForMemory (< int_i int_memBlocksSize)) (++ int_i) {
-        if (= ([] *int_memBlocks int_i) 0) {
-            (<> *int_memBlocks (<< int_processIndex 8) int_i)
-            set int_memoryIndex int_i
-            set int_searchingForMemory 0
-        }
-    }
-} returns int_memoryIndex
-
-function createProcess() {
-    (stdio.print "KERNEL Memory BINEND: ")
-    (stdio.printHex (addr KERNEL.*int_BINEND))
-
-    # Finds an open process slot to place process into
-    for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
-            (<> *int_proc (<< int_pcbIndex 8) int_i)
-            set int_processIndex (++ int_i)
-            set int_searchingForBlock 0
-        }
-    }
-
-    (stdio.print " Process Index: ")
-    (stdio.printU int_processIndex)
-    
-    set int_searchingForMemory 1
-    set int_memoryIndex -1
-}
-
+function main() {
     (initializeProcessArray)
     (initializeMemoryBlocks)
 
-    (createProcess)
-    (createProcess)
-    (createProcess)
-    (createProcess)
-    (createProcess)
+    (pcb.createProcess)
+    (pcb.createProcess)
+    (pcb.createProcess)
+    (pcb.createProcess)
+    (pcb.createProcess)
 
     (stdio.newline)
 
