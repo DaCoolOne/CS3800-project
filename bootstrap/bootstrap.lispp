@@ -35,6 +35,11 @@ function fetchStackToB() {
     set int_TEMPB ([] *int_STACK (- int_STACKPTR int_ARG1))
 }
 
+# int_ARG1 = int_offset
+function sendAToStack() {
+    (<> *int_STACK int_TEMPA (- int_STACKPTR int_ARG1))
+}
+
 function main() {
     (PUSH)
     (POP)
