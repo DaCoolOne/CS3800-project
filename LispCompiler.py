@@ -738,10 +738,6 @@ def GetVariableType(var: str):
         return ''
     return vname.split('_')[0]
 
-# Computes the actual name of the variable
-def GetVariableName(var: str):
-    pass
-
 class UserFunction(Function):
     def __init__(self, function: "CompileKernelFunctionBuilder") -> None:
         self.name = function.imports.getTaggedName(function.base.children[0].token.value, function.base.children[0].token.line)
@@ -970,6 +966,8 @@ class CompileKernelFunctionBuilder:
 
         self.imports = imports
 
+        self.childFunctions: Tuple[int, "CompileKernelFunctionBuilder"] = [ ]
+
         # Construct positions for the return values and the arguments
         if len(base.children) == 4:
             self.returns = GetVariableType(base.children[3].token.value)
@@ -991,7 +989,11 @@ class CompileKernelFunctionBuilder:
 
     # Building the function
     def construct(self, offset: int, userFunctions: Dict[str, "CompileKernelFunctionBuilder"]):
-        self.offset = max(offset, self.offset)
+        if offset > self.offset:
+            diff = offset - self.offset
+            self.offset += diff
+            for f in self.deps:
+                f.construct(f.offset + diff, userFunctions)
 
         if not self.constructed:
             self.BLOCK(self.base.children[2], userFunctions)
