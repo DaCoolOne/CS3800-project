@@ -9,6 +9,8 @@ global *int_proc 10
 const int_memBlocksSize 256
 global *int_memBlocks 256
 
+# Initializes process state enums
+const int_READY 0
 
 # This triggers every 2^15 ticks
 function KERNEL.TimerTick() {
@@ -23,35 +25,60 @@ function begin() {
 }
 
 function initializeProcessArray() {
+
+    # Initializes all of the process indeces to -1
     for int_i (< int_i int_procSize) (++ int_i) {
         (<> *int_proc -1 int_i)
     }
 }
 
 function initializeMemoryBlocks() {
+
+    # Initializes all memBlocks to 0x0000 which means not used
     for int_i (< int_i int_memBlocksSize) (++ int_i) {
         (<> *int_memBlocks 0 int_i)
     }
 
-    set int_i 0 for int_i (< int_i (>> (addr KERNEL.*int_BINEND) 8)) (++ int_i) {
+    # Initializes the first KERNEL.*int_BINEND high byte memBlocks to 0x0001 for Kernel Block
+    set int_i 0 for int_i (<= int_i (>> (addr KERNEL.*int_BINEND) 8)) (++ int_i) {
         (<> *int_memBlocks 1 int_i)
     }
 }
 
 function createProcess() {
-    set int_searchingForBlock 1
-    set int_blockIndex -1
+    (stdio.print "KERNEL Memory BINEND: ")
+    (stdio.printHex (addr KERNEL.*int_BINEND))
 
+    set int_searchingForBlock 1
+    set int_processIndex -1
+
+    # Finds an open process slot to place process into
     for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
         if (= ([] *int_proc int_i) -1) {
             (<> *int_proc 0 int_i)
-            set int_blockIndex int_i
+            set int_processIndex (++ int_i)
             set int_searchingForBlock 0
         }
     }
 
-    (stdio.printU int_blockIndex)
-    (stdio.print " ")
+    (stdio.print " Process Index: ")
+    (stdio.printU int_processIndex)
+    
+
+    set int_searchingForMemory 1
+    set int_memoryIndex -1
+
+    set int_i 0 for int_i (&& int_searchingForMemory (< int_i int_memBlocksSize)) (++ int_i) {
+        if (= ([] *int_memBlocks int_i) 0) {
+            (<> *int_memBlocks (<< int_processIndex 8) int_i)
+            set int_memoryIndex int_i
+            set int_searchingForMemory 0
+        }
+    }
+    
+    (stdio.print " Memory Index: ")
+    (stdio.printU int_memoryIndex)
+    (stdio.newline)
 }
 
 function main() {
