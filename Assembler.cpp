@@ -98,6 +98,8 @@ void Assembler::newCommand(std::string cmd) {
         std::size_t _size_temp;
         std::size_t _size_temp2;
 
+        std::string str;
+
         ASM_DIRECTIVES a = ASM_STR_TO_DIR.at(COMMAND);
         switch(a) {
             case E_ASM_DIR_SET:
@@ -625,6 +627,32 @@ void Assembler::newCommand(std::string cmd) {
                 if(_size_temp == std::string::npos) throw RESPONSE_CODE_INVALID_SYNTAX;
                 _size_temp2 = cmd.find_first_of('"', _size_temp+1);
                 if(_size_temp2 == std::string::npos) throw RESPONSE_CODE_INVALID_SYNTAX;
+
+                str = "";
+                _temp = 0;
+                for(int i = _size_temp + 1; i < _size_temp2 + 1; i ++) {
+                    if(_temp) {
+                        if(cmd.at(i) == 'n') {
+                            str += '\n';
+                        }
+                        else if(cmd.at(i) == 't') {
+                            str += '\t';
+                        }
+                        else {
+                            str += cmd.at(i);
+                        }
+                        _temp = 0;
+                    }
+                    else {
+                        if(cmd.at(i) == '\\') {
+                            _temp = 1;
+                        }
+                        else {
+                            str += cmd.at(i);
+                        }
+                    }
+                }
+
                 for(int i = _size_temp + 1; i < _size_temp2 + 1; i += 2) {
                     table[0] = i >= _size_temp2 ? '\0' : cmd.at(i);
                     table[1] = (i + 1) >= _size_temp2 ? '\0' : cmd.at(i+1);

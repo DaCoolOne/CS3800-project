@@ -58,6 +58,9 @@ int main(int argc, char** argv) {
             else if(nextWord == "dump") {
                 proc.dumpState();
             }
+            else if(nextWord == "call") {
+                proc.stepToCall();
+            }
             else if(nextWord == "exit" || nextWord == "quit" || nextWord == "Quit") {
                 return 0;
             }

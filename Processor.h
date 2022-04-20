@@ -92,6 +92,7 @@ public:
     bool isRunning() { return m_running; }
     void dumpState();
     void step();
+    void stepToCall();
     void run();
     void load(std::istream& s);
     void newPort(std::string fname);

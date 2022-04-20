@@ -222,6 +222,13 @@ void Processor::step() {
     }
 }
 
+void Processor::stepToCall() {
+    step();
+    while(m_memory[getAddress(m_program_counter)] >> 8 != E_PROC_INS_CALL) {
+        step();
+    }
+}
+
 void Processor::run() {
     while(m_running) {
         step();
