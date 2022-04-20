@@ -1,0 +1,11 @@
+
+
+# Print utilities but it's a buffer
+
+const int_PRINTBUFFERSIZE 30
+global *int_printBuffer 30
+
+function print(str_s) {
+    # set 
+    (KERNEL.RAISE 10)
+}

@@ -1,0 +1,17 @@
+
+
+import os "os"
+
+function main() {
+    set a 1
+    set b 0
+    
+    (os.print "Fibonacci Sequence")
+    while (< a 10000) {
+        (os.printN a)
+        set _temp a
+        set a (+ a b)
+        set b _temp
+    }
+}
+
