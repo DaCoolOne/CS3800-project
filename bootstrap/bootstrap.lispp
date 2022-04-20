@@ -1,0 +1,44 @@
+
+
+global int_KERNEL1
+global int_KERNEL2
+
+const int_STACKSIZE 200
+global *int_STACK 200
+global int_STACKPTR -1
+
+global int_TEMPA
+global int_TEMPB
+
+global int_ARG1
+
+# int_ARG1 = int_size
+function PUSH() {
+    set int_STACKPTR (++ int_STACKPTR)
+    set int_STACKPTR (+ int_STACKPTR int_ARG1)
+    (<> *int_STACK (++ int_ARG1) int_STACKPTR)
+}
+
+function POP() {
+    set int_TEMPA ([] *int_STACK int_STACKPTR)
+    set int_TEMPA (++ int_TEMPA)
+    set int_STACKPTR (- int_STACKPTR int_TEMPA)
+}
+
+# int_ARG1 = int_offset
+function fetchStackToA() {
+    set int_TEMPA ([] *int_STACK (- int_STACKPTR int_ARG1))
+}
+
+# int_ARG1 = int_offset
+function fetchStackToB() {
+    set int_TEMPB ([] *int_STACK (- int_STACKPTR int_ARG1))
+}
+
+function main() {
+    (PUSH)
+    (POP)
+    (fetchStackToA)
+    (fetchStackToB)
+}
+

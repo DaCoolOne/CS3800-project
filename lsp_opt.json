@@ -1,4 +1,5 @@
 {
     "src": "kernel/main.lispp",
-    "dest": "kernel.asm"
+    "dest": "kernel.asm",
+    "kernel": true
 }
