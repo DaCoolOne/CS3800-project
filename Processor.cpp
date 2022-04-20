@@ -335,8 +335,8 @@ void Processor::ALU(PROC_INSTRUCTIONS opcode, uint8_t x)
             case E_PROC_INS_ALU_BXOR: res = (!a) != (!b); break;
 
             case E_PROC_INS_ALU_EQ: res = a == b; break;
-            case E_PROC_INS_ALU_GTR: res = a > b; break;
-            case E_PROC_INS_ALU_GTEQ: res = a >= b; break;
+            case E_PROC_INS_ALU_GTR: res = reinterpret_cast<int16_t&>(a) > reinterpret_cast<int16_t&>(b); break;
+            case E_PROC_INS_ALU_GTEQ: res = reinterpret_cast<int16_t&>(a) >= reinterpret_cast<int16_t&>(b); break;
 
             default: interrupt(E_PROC_ERROR_BAD_INS);
         }
