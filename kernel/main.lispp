@@ -45,26 +45,7 @@ function initializeMemoryBlocks() {
     }
 }
 
-function createProcess() {
-    (stdio.print "KERNEL Memory BINEND: ")
-    (stdio.printHex (addr KERNEL.*int_BINEND))
-
-    set int_searchingForBlock 1
-    set int_processIndex -1
-
-    # Finds an open process slot to place process into
-    for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
-        if (= ([] *int_proc int_i) -1) {
-            (<> *int_proc 0 int_i)
-            set int_processIndex (++ int_i)
-            set int_searchingForBlock 0
-        }
-    }
-
-    (stdio.print " Process Index: ")
-    (stdio.printU int_processIndex)
-    
-
+function allocateNextBlock() {
     set int_searchingForMemory 1
     set int_memoryIndex -1
 
@@ -75,13 +56,27 @@ function createProcess() {
             set int_searchingForMemory 0
         }
     }
+} returns int_memoryIndex
+
+function createProcess() {
+    (stdio.print "KERNEL Memory BINEND: ")
+    (stdio.printHex (addr KERNEL.*int_BINEND))
+
+    # Finds an open process slot to place process into
+    for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
+            (<> *int_proc (<< int_pcbIndex 8) int_i)
+            set int_processIndex (++ int_i)
+            set int_searchingForBlock 0
+        }
+    }
+
+    (stdio.print " Process Index: ")
+    (stdio.printU int_processIndex)
     
-    (stdio.print " Memory Index: ")
-    (stdio.printU int_memoryIndex)
-    (stdio.newline)
+    set int_searchingForMemory 1
+    set int_memoryIndex -1
 }
 
-function main() {
     (initializeProcessArray)
     (initializeMemoryBlocks)
 
