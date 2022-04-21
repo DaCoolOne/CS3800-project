@@ -758,15 +758,6 @@ class UserFunction(Function):
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return self.sig
 
-
-# Todo
-class Compiler:
-    def __init__(self, tree: ParseTree) -> None:
-        self.tree = tree
-        self.output = ''
-    def compile(self) -> str:
-        self.output = __LISP_ASM_HEADER
-
 # Keeps trace of which variables are which.
 class KernelCompilerGlobalVars:
     def __init__(self) -> None:
@@ -1287,7 +1278,7 @@ class CompileKernelTree:
             o += CompileKernelTree.findAllFunctionDeps(child, fs)
         return o
 
-class CompileKernelMode:
+class Compiler:
     
     __DECLARED_FUNCTIONS = {
         "+": NnaryIntFunction("ADD"),
@@ -1355,13 +1346,15 @@ class CompileKernelMode:
 
     __IMPORT_DEPTH = 1
 
-    def __init__(self, tree: ParseTree, filePath: str, imports: CompileKernelImportTree = None) -> None:
+    def __init__(self, tree: ParseTree, filePath: str, kernelMode: bool, imports: CompileKernelImportTree = None) -> None:
         self.tree = tree
         self.output = ''
         self.vars = KernelCompilerGlobalVars()
 
-        self.importTag = str(CompileKernelMode.__IMPORT_DEPTH) + '_'
-        CompileKernelMode.__IMPORT_DEPTH += 1
+        self.importTag = str(Compiler.__IMPORT_DEPTH) + '_'
+        Compiler.__IMPORT_DEPTH += 1
+
+        self.kernelMode = kernelMode
 
         self.filePath = filePath
 
@@ -1379,7 +1372,7 @@ class CompileKernelMode:
         # Compile each function
         self.FUNCTION_LIST: Dict[str, CompileKernelFunctionBuilder] = {}
 
-    def initGlobals(self) -> "CompileKernelMode":
+    def initGlobals(self) -> "Compiler":
         self.vars.newGlobal("KERNEL.int_UserReg0")
         self.vars.newGlobal("KERNEL.int_UserReg1")
         self.vars.newGlobal("KERNEL.int_UserReg2")
@@ -1407,7 +1400,7 @@ class CompileKernelMode:
 
         return self
 
-    def compile(self) -> "CompileKernelMode":
+    def compile(self) -> "Compiler":
 
         self.output = ""
 
@@ -1488,7 +1481,7 @@ class CompileKernelMode:
                         parser.parse_S()
                         # parser.tree.print()
 
-                        imported = CompileKernelMode(parser.tree, fullPath, self.imports)
+                        imported = Compiler(parser.tree, fullPath, self.kernelMode, self.imports)
                         
                         self.compNode.link(fullPath, prefix)
 
@@ -1506,13 +1499,13 @@ class CompileKernelMode:
             if node.token.type == TOKEN_TYPE.FUNCTION:
                 # Compile the function
                 # deps = CompileKernelTree.findAllFunctionDeps(node, ALL_F)
-                builder = CompileKernelFunctionBuilder(node, CompileKernelMode.__DECLARED_FUNCTIONS, LocalScopeTracker(self.vars), self.compNode)
+                builder = CompileKernelFunctionBuilder(node, Compiler.__DECLARED_FUNCTIONS, LocalScopeTracker(self.vars), self.compNode)
 
                 self.FUNCTION_LIST[self.imports.getTaggedName(self.filePath, node.children[0].token.value, node.children[0].token.line)] = builder
 
         return self
         
-    def buildAsm(self) -> "CompileKernelMode":
+    def buildAsm(self) -> "Compiler":
         
         if '1_main' not in self.FUNCTION_LIST:
             raise ParserError(f"Could not find main function", -1)
@@ -1525,18 +1518,18 @@ class CompileKernelMode:
 
         interrupts = [
             (i if i in self.FUNCTION_LIST else '0_defaultInterrupt')
-            for i in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS
+            for i in Compiler.__LISP_ASM_KERNEL_INTERRUPTS
         ]
         interrupts[0] = 'INIT'
 
         self.output = '\n    ' + '\n    '.join(f"JMP __INTER_{i}" for i in interrupts)
         self.output += '\n__INTER_INIT:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_1_main\n    SHUTDOWN\n'
 
-        for interrupt in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS:
+        for interrupt in Compiler.__LISP_ASM_KERNEL_INTERRUPTS:
             if interrupt in self.FUNCTION_LIST:
                 self.FUNCTION_LIST[interrupt].construct(self.vars.counter, self.FUNCTION_LIST)
 
-        for interrupt in CompileKernelMode.__LISP_ASM_KERNEL_INTERRUPTS:
+        for interrupt in Compiler.__LISP_ASM_KERNEL_INTERRUPTS:
             if interrupt in self.FUNCTION_LIST:
                 self.output += self.FUNCTION_LIST[interrupt].compile(True)
 
@@ -1548,13 +1541,14 @@ class CompileKernelMode:
         
         self.output += '\n\n' + '\n'.join(self.vars.string_consts) + '\n' + '\n'.join(self.vars.allocs) + '\n__BINEND:'
 
-        CompileKernelMode.__IMPORT_DEPTH = 1
+        Compiler.__IMPORT_DEPTH = 1
 
         return self
 
 if __name__ == "__main__":
     inputFile = None
     outputFile = None
+    kernelMode = None
 
     if os.path.exists("lsp_opt.json"):
         with open("lsp_opt.json") as f:
@@ -1564,7 +1558,11 @@ if __name__ == "__main__":
             inputFile = opt['src']
         if 'dest' in opt:
             outputFile = opt['dest']
+        if 'kernel' in opt:
+            kernelMode = opt['kernel']
 
+    if kernelMode is None:
+        kernelMode = input("Is kernel? (y/n) ") == 'y'
     if inputFile is None:
         inputFile = input("Source file: ")
     if outputFile is None:
@@ -1587,7 +1585,7 @@ if __name__ == "__main__":
         #print('\nParse tree:')
         #parser.tree.print()
 
-        ckm = CompileKernelMode(parser.tree, FULL_PATH).initGlobals().compile().buildAsm()
+        ckm = Compiler(parser.tree, FULL_PATH, kernelMode).initGlobals().compile().buildAsm()
         #print("Generated asm")
         #print("------------------------")
         #print(ckm.output)
