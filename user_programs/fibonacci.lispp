@@ -8,7 +8,7 @@ function main() {
     
     (os.print "Fibonacci Sequence")
     while (< a 10000) {
-        (os.printN a)
+        (os.printU a)
         set _temp a
         set a (+ a b)
         set b _temp

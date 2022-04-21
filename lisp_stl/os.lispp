@@ -2,10 +2,55 @@
 
 # Print utilities but it's a buffer
 
-const int_PRINTBUFFERSIZE 30
-global *int_printBuffer 30
+global int_KERNELARG
+
+import util "utils"
+
+const int_PRINTBUFFERSIZE 19
+global *int_printBuffer 10
+global int_printChar 0
 
 function print(str_s) {
-    # set 
-    (KERNEL.RAISE 10)
+    set int_KERNELARG (addr (CastStrIntPtr str_s))
+
+    # Invoke kernel to print
+    (KERNEL.RAISE 6)
 }
+
+function buffer(int_c) {
+    (util.setChar (CastIntPtrStr *int_printBuffer) int_c int_printChar)
+    set int_printChar (++ int_printChar)
+    if (>= int_printChar int_PRINTBUFFERSIZE) {
+        (bufferflush)
+    }
+}
+
+function bufferflush() {
+    (buffer 0)
+    set int_KERNELARG (addr *int_printBuffer)
+    (KERNEL.RAISE 6)
+    set int_printChar 0
+}
+
+function printS(int_n) {
+    if (>> int_n 15) {
+        (buffer 0x2D) # Print hypen
+        set int_n (- 0 int_n)
+    }
+    (printU int_n)
+}
+
+function printU(int_n) {
+    set int_largeDigit 1
+    while (< int_largeDigit (/ int_n 10)) {
+        set int_largeDigit (* int_largeDigit 10)
+    }
+    while (> int_largeDigit 0) {
+        set int_digit (/ int_n int_largeDigit)
+        (KERNEL.PRINTL (+ int_digit 0x30))
+        set int_n (- int_n (* int_digit int_largeDigit))
+        set int_largeDigit (/ int_largeDigit 10)
+    }
+    (bufferflush)
+}
+

@@ -1318,6 +1318,7 @@ class Compiler:
         "i": UnaryIntFunction(),
         "--": UnaryIntFunction("DEC"),
         "CastStrIntPtr": TypeCast('str','*int'),
+        "CastIntPtrStr": TypeCast('*int','str'),
         "addr": TypeCast('*int','int'),
         "ptr": TypeCast('int', '*int'),
         "[]": ArrayIndexFunction(),

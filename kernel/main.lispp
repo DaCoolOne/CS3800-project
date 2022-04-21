@@ -17,6 +17,12 @@ function KERNEL.TimerTick() {
     (KERNEL.SETTIMER 0x8000)
 }
 
+# Print from a user program
+function KERNEL.UserDefined1() {
+    (stdio.print (CastIntPtrStr (ptr (KERNEL.USRADDR KERNEL.int_UserReg0))))
+    (stdio.newline)
+}
+
 function begin() {
     (KERNEL.RETI)
 }
