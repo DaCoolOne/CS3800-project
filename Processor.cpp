@@ -234,6 +234,12 @@ void Processor::step() {
                 m_program_counter = (e << 1);
         }
     }
+    catch(int e) {
+        // Enter kernel mode on interupt.
+        m_flags |= E_PROC_FLAG_KERNEL;
+        
+        m_program_counter = (e << 1);
+    }
 }
 
 void Processor::stepToCall() {
