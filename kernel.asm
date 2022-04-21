@@ -167,35 +167,35 @@ __LOOP_8_EVAL:
     RET
 
 __FCALL_2_printHex:
-    SET 29 61440
-    SET 30 0
+    SET 30 61440
+    SET 31 0
     JMP __LOOP_7_EVAL
 __LOOP_7_BODY:
-    AND 31 29 28
-    SET 32 3
-    SUB 32 32 30
-    SET 33 2
-    LSHIFT 32 32 33
-    RSHIFT 31 31 32
-    SET 32 9
-    GTEQ 32 32 31
-    CJMP 32 __IF_2_C0_BODY
-    SET 32 55
-    ADD 32 31 32
-    PRINTL 32
+    AND 32 30 29
+    SET 33 3
+    SUB 33 33 31
+    SET 34 2
+    LSHIFT 33 33 34
+    RSHIFT 32 32 33
+    SET 33 9
+    GTEQ 33 33 32
+    CJMP 33 __IF_2_C0_BODY
+    SET 33 55
+    ADD 33 32 33
+    PRINTL 33
     JMP __IF_2_END
 __IF_2_C0_BODY:
-    SET 32 48
-    ADD 32 31 32
-    PRINTL 32
+    SET 33 48
+    ADD 33 32 33
+    PRINTL 33
 __IF_2_END:
-    SET 32 4
-    RSHIFT 29 29 32
-    INC 30
+    SET 33 4
+    RSHIFT 30 30 33
+    INC 31
 __LOOP_7_EVAL:
-    SET 32 4
-    GTR 32 32 30
-    CJMP 32 __LOOP_7_BODY
+    SET 33 4
+    GTR 33 33 31
+    CJMP 33 __LOOP_7_BODY
     RET
 
 __FCALL_3_min:
@@ -398,12 +398,18 @@ __FCALL_4_createProcess:
     CALL __FCALL_2_print
     SET 28 __BINEND
 
+    MOV 29 28
     CALL __FCALL_2_printHex
     SET 28 0
     MOV 37 28
     MOV 36 26
     CALL __FCALL_4_extFetch
     MOV 28 18
+    SET 29 __STR_CONST_2
+    MOV 36 29
+    CALL __FCALL_2_print
+    MOV 29 28
+    CALL __FCALL_2_printHex
     SET 29 8
     RSHIFT 29 18 29
     INC 29
@@ -415,7 +421,7 @@ __FCALL_4_createProcess:
     CALL __FCALL_4_getNumberOfOpenMemBlocks
     GTR 31 31 29
     CJMP 31 __IF_5_C0_BODY
-    SET 31 __STR_CONST_2
+    SET 31 __STR_CONST_3
     MOV 36 31
     CALL __FCALL_2_print
     SET 27 2
@@ -479,15 +485,15 @@ __LOOP_10_EVAL:
     CALL __FCALL_4_setProgramCounter
     MOV 36 30
     CALL __FCALL_4_defaultStack
-    SET 36 __STR_CONST_3
+    SET 36 __STR_CONST_4
     CALL __FCALL_2_print
     MOV 36 30
     CALL __FCALL_2_printU
-    SET 36 __STR_CONST_4
+    SET 36 __STR_CONST_5
     CALL __FCALL_2_print
     MOV 36 31
     CALL __FCALL_2_printU
-    SET 36 __STR_CONST_5
+    SET 36 __STR_CONST_6
     CALL __FCALL_2_print
     MOV 36 30
     CALL __FCALL_4_getProcessState
@@ -496,7 +502,7 @@ __LOOP_10_EVAL:
 __IF_5_END:
     JMP __IF_4_END
 __IF_4_C0_BODY:
-    SET 36 __STR_CONST_6
+    SET 36 __STR_CONST_7
     CALL __FCALL_2_print
     SET 27 1
 __IF_4_END:
@@ -579,15 +585,6 @@ __FCALL_1_main:
     MOV 26 25
     CALL __FCALL_4_createProcess
     MOV 25 27
-    SET 26 __STR_CONST_7
-    MOV 36 26
-    CALL __FCALL_2_print
-    MOV 36 25
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 26 0
-    CALL __FCALL_4_createProcess
-    MOV 25 27
     SET 26 __STR_CONST_8
     MOV 36 26
     CALL __FCALL_2_print
@@ -621,7 +618,16 @@ __FCALL_1_main:
     MOV 36 25
     CALL __FCALL_2_printU
     CALL __FCALL_2_newline
+    SET 26 0
+    CALL __FCALL_4_createProcess
+    MOV 25 27
     SET 26 __STR_CONST_12
+    MOV 36 26
+    CALL __FCALL_2_print
+    MOV 36 25
+    CALL __FCALL_2_printU
+    CALL __FCALL_2_newline
+    SET 26 __STR_CONST_13
     MOV 36 26
     CALL __FCALL_2_print
     CALL __FCALL_4_getNumberOfOpenMemBlocks
@@ -642,17 +648,17 @@ __STR_CONST_0:
 __STR_CONST_1:
     .TEXT "KERNEL Memory BINEND: "
 __STR_CONST_2:
-    .TEXT "ERROR in createProcess(): Not enough memory to load program"
+    .TEXT " Prog Size Byte: "
 __STR_CONST_3:
-    .TEXT " Process Index: "
+    .TEXT "ERROR in createProcess(): Not enough memory to load program"
 __STR_CONST_4:
-    .TEXT " Memory Index: "
+    .TEXT " Process Index: "
 __STR_CONST_5:
-    .TEXT " Process State: "
+    .TEXT " Memory Index: "
 __STR_CONST_6:
-    .TEXT "ERROR in createProcess(): Could not find process slot."
+    .TEXT " Process State: "
 __STR_CONST_7:
-    .TEXT " Creation Status: "
+    .TEXT "ERROR in createProcess(): Could not find process slot."
 __STR_CONST_8:
     .TEXT " Creation Status: "
 __STR_CONST_9:
@@ -662,6 +668,8 @@ __STR_CONST_10:
 __STR_CONST_11:
     .TEXT " Creation Status: "
 __STR_CONST_12:
+    .TEXT " Creation Status: "
+__STR_CONST_13:
     .TEXT "Number of open memory blocks: "
 __ALLOC_0:
     .ALLOC 10

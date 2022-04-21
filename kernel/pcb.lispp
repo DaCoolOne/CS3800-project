@@ -174,6 +174,8 @@ function createProcess(int_diskIndex) {
     (extFetch int_diskIndex 0)
 
     set int_progSize KERNEL.int_ExtBufferIn
+    (stdio.print " Prog Size Byte: ")
+    (stdio.printHex int_progSize)
     set int_numBlocks (++ (>> KERNEL.int_ExtBufferIn 8))
 
     # Returns the index of a process slot it finds

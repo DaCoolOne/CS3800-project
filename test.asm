@@ -5,13 +5,6 @@ __INTER_INIT:
     CALL __FCALL_1_main
     SHUTDOWN
 
-__FCALL_2_print:
-    MOV 6 5
-    MOV 0 6
-    SET 6 6
-    RAISE 6
-    RET
-
 __FCALL_3_setChar:
     MOV 12 9
     SET 13 1
@@ -80,6 +73,13 @@ __LOOP_18_EVAL:
     GTR 8 6 8
     CJMP 8 __LOOP_18_BODY
     CALL __FCALL_2_bufferflush
+    RET
+
+__FCALL_2_print:
+    MOV 6 5
+    MOV 0 6
+    SET 6 6
+    RAISE 6
     RET
 
 __FCALL_1_main:
