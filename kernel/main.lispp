@@ -83,7 +83,7 @@ function main() {
     (stdio.print "LAUNCH PROCESS")
     (stdio.newline)
     (KERNEL.SETTIMER 0x0100)
-    (pcb.unlockMemory 1)
-    (pcb.loadStackAndRun 1)
+    (pcb.unlockMemory 0)
+    (pcb.loadStackAndRun 0)
 
 }

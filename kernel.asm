@@ -86,6 +86,35 @@ __INTER_0_UserDefined1:
 __INTER_0_defaultInterrupt:
     RETI
 
+__FCALL_1_initializeMemoryBlocks:
+    SET 25 0
+    JMP __LOOP_1_EVAL
+__LOOP_1_BODY:
+    SET 26 0
+    ADD 27 24 25
+    ST 26 27
+    INC 25
+__LOOP_1_EVAL:
+    SET 26 256
+    GTR 26 26 25
+    CJMP 26 __LOOP_1_BODY
+    SET 25 0
+    JMP __LOOP_2_EVAL
+__LOOP_2_BODY:
+    SET 26 1
+    ADD 27 24 25
+    ST 26 27
+    INC 25
+__LOOP_2_EVAL:
+    SET 26 __BINEND
+
+    SET 27 8
+    RSHIFT 26 26 27
+    GTEQ 26 26 25
+    CJMP 26 __LOOP_2_BODY
+    RET
+
+
 __FCALL_4_emptyStack:
     POP 28
     JMP __LOOP_13_EVAL
@@ -120,9 +149,9 @@ __LOOP_14_EVAL:
     RETI
     RET
 
-
 __FCALL_4_unlockMemory:
     LOCK 16
+    INC 26
     SET 27 0
     JMP __LOOP_12_EVAL
 __LOOP_12_BODY:
@@ -148,19 +177,34 @@ __LOOP_12_EVAL:
     CJMP 28 __LOOP_12_BODY
     RET
 
-__FCALL_4_extFetch:
-    SET 37 1
-    LSHIFT 37 36 37
-    SET 38 0
-    EXTFETCH 35 38 37
-    MOV 38 18
-    SET 39 0
-    MOV 40 37
-    INC 40
-    EXTFETCH 35 39 40
-    SET 39 8
-    LSHIFT 39 38 39
-    OR 38 39 18
+
+__FCALL_4_getNumberOfOpenMemBlocks:
+    SET 30 0
+    SET 31 0
+    JMP __LOOP_4_EVAL
+__LOOP_4_BODY:
+    ADD 32 24 31
+    LD 32
+    SET 33 0
+    EQ 32 32 33
+    CJMP 32 __IF_1_C0_BODY
+    JMP __IF_1_END
+__IF_1_C0_BODY:
+    INC 30
+__IF_1_END:
+    INC 31
+__LOOP_4_EVAL:
+    SET 32 256
+    GTR 32 32 31
+    CJMP 32 __LOOP_4_BODY
+    RET
+
+__FCALL_4_setProgramCounter:
+    ADD 38 23 36
+    LD 38
+    SET 39 1
+    ADD 40 38 39
+    ST 37 40
     RET
 
 __FCALL_4_getProcessState:
@@ -198,6 +242,34 @@ __LOOP_9_EVAL:
     GTR 38 38 37
     BAND 38 35 38
     CJMP 38 __LOOP_9_BODY
+    RET
+
+__FCALL_4_defaultStack:
+    ADD 37 23 36
+    LD 37
+    SET 38 1
+    SET 39 18
+    ADD 40 37 39
+    ST 38 40
+    SET 38 0
+    SET 39 19
+    ADD 40 37 39
+    ST 38 40
+    RET
+
+__FCALL_4_extFetch:
+    SET 37 1
+    LSHIFT 37 36 37
+    SET 38 0
+    EXTFETCH 35 38 37
+    MOV 38 18
+    SET 39 0
+    MOV 40 37
+    INC 40
+    EXTFETCH 35 39 40
+    SET 39 8
+    LSHIFT 39 38 39
+    OR 38 39 18
     RET
 
 
@@ -359,40 +431,7 @@ __FCALL_4_setProcessState:
     ST 37 40
     RET
 
-__FCALL_4_defaultStack:
-    ADD 37 23 36
-    LD 37
-    SET 38 1
-    SET 39 18
-    ADD 40 37 39
-    ST 38 40
-    SET 38 0
-    SET 39 19
-    ADD 40 37 39
-    ST 38 40
-    RET
 
-
-__FCALL_4_getNumberOfOpenMemBlocks:
-    SET 30 0
-    SET 31 0
-    JMP __LOOP_4_EVAL
-__LOOP_4_BODY:
-    ADD 32 24 31
-    LD 32
-    SET 33 0
-    EQ 32 32 33
-    CJMP 32 __IF_1_C0_BODY
-    JMP __IF_1_END
-__IF_1_C0_BODY:
-    INC 30
-__IF_1_END:
-    INC 31
-__LOOP_4_EVAL:
-    SET 32 256
-    GTR 32 32 31
-    CJMP 32 __LOOP_4_BODY
-    RET
 
 __FCALL_2_printU:
     SET 37 1
@@ -419,14 +458,6 @@ __LOOP_6_EVAL:
     SET 39 0
     GTR 39 37 39
     CJMP 39 __LOOP_6_BODY
-    RET
-
-__FCALL_4_setProgramCounter:
-    ADD 38 23 36
-    LD 38
-    SET 39 1
-    ADD 40 38 39
-    ST 37 40
     RET
 
 __FCALL_4_createProcess:
@@ -583,36 +614,6 @@ __LOOP_0_EVAL:
     RET
 
 
-__FCALL_1_initializeMemoryBlocks:
-    SET 25 0
-    JMP __LOOP_1_EVAL
-__LOOP_1_BODY:
-    SET 26 0
-    ADD 27 24 25
-    ST 26 27
-    INC 25
-__LOOP_1_EVAL:
-    SET 26 256
-    GTR 26 26 25
-    CJMP 26 __LOOP_1_BODY
-    SET 25 0
-    JMP __LOOP_2_EVAL
-__LOOP_2_BODY:
-    SET 26 1
-    ADD 27 24 25
-    ST 26 27
-    INC 25
-__LOOP_2_EVAL:
-    SET 26 __BINEND
-
-    SET 27 8
-    RSHIFT 26 26 27
-    GTEQ 26 26 25
-    CJMP 26 __LOOP_2_BODY
-    RET
-
-
-
 __FCALL_1_main:
     CALL __FCALL_1_initializeProcessArray
     CALL __FCALL_1_initializeMemoryBlocks
@@ -647,9 +648,9 @@ __FCALL_1_main:
     CALL __FCALL_2_newline
     SET 26 256
     SETTIMER 26
-    SET 26 1
+    SET 26 0
     CALL __FCALL_4_unlockMemory
-    SET 26 1
+    SET 26 0
     CALL __FCALL_4_loadStackAndRun
     RET
 

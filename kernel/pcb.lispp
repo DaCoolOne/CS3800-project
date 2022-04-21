@@ -146,6 +146,8 @@ function loadStackAndRun(int_processIndex) {
 function unlockMemory(int_processIndex) {
     (KERNEL.LOCK KERNEL.int_PageStackSize)
 
+    set int_processIndex (++ int_processIndex)
+
     for int_i (< int_i int_memBlocksSize) (++ int_i) {
         if (&& (= (>> ([] *int_memBlocks int_i) 8) int_processIndex) (& ([] *int_memBlocks int_i) 0xFF)) {
             (KERNEL.UNLOCK int_i)
