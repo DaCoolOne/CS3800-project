@@ -49,7 +49,7 @@ function printU(int_n) {
     }
     while (> int_largeDigit 0) {
         set int_digit (/ int_n int_largeDigit)
-        (KERNEL.PRINTL (+ int_digit 0x30))
+        (buffer (+ int_digit 0x30))
         set int_n (- int_n (* int_digit int_largeDigit))
         set int_largeDigit (/ int_largeDigit 10)
     }
