@@ -30,7 +30,7 @@ function buffer(int_c) {
 function bufferflush() {
     (uncheckedBuffer 0)
     set int_KERNELARG (addr *int_printBuffer)
-    (KERNEL.RAISE 6)
+    (KERNEL.RAISE 7)
     set int_printChar 0
 }
 
