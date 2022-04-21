@@ -13,7 +13,7 @@ void Processor::executeNextInstruction() {
     if(!(m_flags & E_PROC_FLAG_KERNEL)) {
         m_timer_counter --;
         if(m_timer_counter == 0) {
-            throw E_PROC_TIMER_TICK;
+            interrupt(E_PROC_TIMER_TICK);
         }
 
         m_REGS[E_PROC_REG_PREV_INS] = m_program_counter;
@@ -173,7 +173,7 @@ void Processor::dumpState() {
         << "--------------- DUMP STATE ----------------" << std::endl;
 
     std::cout << "REGS:" << std::endl;
-    for(int i = 0; i < 255; i ++) {
+    for(int i = 0; i < 69; i ++) {
         if(m_REGS[i] != 0) {
             std::cout << "   " << i << ": " << m_REGS[i] << std::endl;
         }
@@ -182,13 +182,24 @@ void Processor::dumpState() {
     m_printBuffer[printSize] = '\0';
     std::cout << "Print Buffer: " << m_printBuffer << std::endl;
     
+    int processor = m_program_counter;
     std::cout << "INSTRUCTION_PTR: " << m_program_counter << '/' << (m_program_counter * 2) << std::endl;
-    if(!(m_flags & E_PROC_FLAG_KERNEL)) {
-        int k_addr = getAddress(m_program_counter);
-        std::cout << "INS_MEM_PTR: " << k_addr << '/' << (k_addr * 2) << std::endl;
+    std::cout << "Stack:";
+    for(int i = 0; i < m_REGS[E_PROC_REG_STACK_SIZE]; i ++) {
+        std::cout << ' ' << m_STACK[i] ;
     }
-    for(uint16_t i = m_program_counter; i < m_program_counter + 4; i ++) {
-        std::cout << "   " << i << ": " << m_memory[i] << std::endl;
+    std::cout << std::endl;
+    if(!(m_flags & E_PROC_FLAG_KERNEL)) {
+        processor = getUsrAddr(m_program_counter);
+        std::cout << "INS_MEM_PTR: " << processor << '/' << (processor * 2) << std::endl;
+        std::cout << "Unlocked pages:";
+        for(int i = 0; i < m_REGS[E_PROC_REG_PAGE_STACK_SIZE]; i ++) {
+            std::cout << ' ' << m_pageLocks[i];
+        }
+        std::cout << std::endl;
+    }
+    for(uint16_t i = processor, j = 0; j < 4; j ++) {
+        std::cout << "   " << i << ": " << m_memory[i++] << std::endl;
     }
 
     std::cout << "Flags: " << static_cast<int>(m_flags) << std::endl;
