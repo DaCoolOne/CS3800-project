@@ -1,5 +1,6 @@
 # A python implementation of a compiler for lisp, because python is just faster for development cycles and I don't care about compile times :P
 
+import subprocess
 import json
 from ntpath import join
 import os
@@ -1554,10 +1555,15 @@ class Compiler:
         return self
 
 if __name__ == "__main__":
+    print(" ---- Lisp++ compiler v1.0 ---- ")
+
     inputFile = None
     outputFile = None
 
+    outputs: List[str] = []
+
     if os.path.exists("lsp_opt.json"):
+        print("Using settings from lsp_opt.json")
         with open("lsp_opt.json") as f:
             opt = json.load(f)
         
@@ -1572,28 +1578,28 @@ if __name__ == "__main__":
     if outputFile is None:
         outputFile = input("Kernel output file: ")
 
+    outputs.append(outputFile)
+
     if os.path.abspath(inputFile) == os.path.abspath(outputFile):
         raise Exception(f"Source and destination may not overlap!")
+
+    print("Compiling Kernel")
 
     FULL_PATH = os.path.abspath(inputFile)
 
     with open(FULL_PATH) as f:
         tsp = TokenParser(os.path.basename(FULL_PATH), f.read())
     parser = Parser(tsp)
-    try:
-        parser.parse_S()
 
-        ckm = Compiler(parser.tree, FULL_PATH, True).initGlobals().compile().buildAsm()
+    parser.parse_S()
 
-        with open(outputFile, 'w') as f:
-            f.write(ckm.output)
+    ckm = Compiler(parser.tree, FULL_PATH, True).initGlobals().compile().buildAsm()
 
-    except ParserError as e:
-        print(e)
-    
+    with open(outputFile, 'w') as f:
+        f.write(ckm.output)
     
     if 'user' in opt:
-        print("Kernel compiled, compiling user programs")
+        print("Compiling user programs")
         for userP in opt['user']:
             try:
                 print(f"Compiling {userP['src']} to {userP['dest']}")
@@ -1609,9 +1615,28 @@ if __name__ == "__main__":
 
                 with open(userP['dest'], 'w') as f:
                     f.write(ckm.output)
+                
+                outputs.append(userP['dest'])
 
             except ParserError as e:
                 print(e)
             except KeyError as e:
                 print("Key error", e)
+    
+    if 'autoassemble' in opt and opt['autoassemble']:
+        print("Invoking auto-assembler")
+        for o in outputs:
+            print(f"Assemble {o}")
+            subprocess.run(["./assembler.exe", o, o[:o.find('.')]+'.bin'])
+    
+    if 'autorun' in opt and opt['autorun']:
+        try:
+            print("\nStarting processor...")
+            cmd = [ './processor.exe' ]
+            for i,o in enumerate(outputs):
+                cmd.append('-c' if i > 0 else '-f')
+                cmd.append(o[:o.find('.')]+'.bin')
+            subprocess.run(cmd)
+        except KeyboardInterrupt:
+            print("Shutting down...")
 

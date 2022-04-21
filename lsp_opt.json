@@ -1,4 +1,6 @@
 {
+    "autoassemble": true,
+    "autorun": true,
     "kernel": {
         "src": "kernel/main.lispp",
         "dest": "kernel.asm"
