@@ -490,7 +490,7 @@ void Assembler::newCommand(std::string cmd) {
             case E_ASM_DIR_RAISE:
                 if(tokenGroup.size() != 2) { throw RESPONSE_CODE_WRONG_NUMBER_ARGS; }
                 table[0] = static_cast<uint8_t>(E_PROC_INS_RAISE);
-                table[1] = readStr(tokenGroup.at(1)) - 1;
+                table[1] = readStr(tokenGroup.at(1));
                 size = 2;
             break;
 

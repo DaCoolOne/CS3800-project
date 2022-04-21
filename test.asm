@@ -43,7 +43,7 @@ __FCALL_2_bufferflush:
     SET 9 0
     CALL __FCALL_2_uncheckedBuffer
     MOV 9 1
-    SET 10 7
+    SET 10 8
     RAISE 10
     SET 2 0
     RET

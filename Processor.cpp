@@ -159,7 +159,8 @@ void Processor::executeNextInstruction() {
             break;
 
             case E_PROC_INS_RAISE:
-                throw (ins_low & 0x0F) + 1;
+                stackPush(m_program_counter);
+                throw (getReg(ins_low) & 0x0F) + 1;
             break;
 
             default: interrupt(E_PROC_ERROR_BAD_INS);
@@ -276,8 +277,8 @@ void Processor::reset() {
 }
 
 uint16_t Processor::getReg(uint8_t reg) {
-    if(!(m_flags & E_PROC_FLAG_KERNEL) && (reg & 0xF0)) interrupt(E_PROC_ERROR_MEM_ACC);
     if(reg == 0xFF) return 0xFFFF;
+    if(!(m_flags & E_PROC_FLAG_KERNEL) && (reg & 0xF0)) interrupt(E_PROC_ERROR_MEM_ACC);
     if(reg >= 69) interrupt(E_PROC_ERROR_BAD_INS);
     return m_REGS[reg];
 }

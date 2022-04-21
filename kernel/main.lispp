@@ -14,10 +14,16 @@ function KERNEL.TimerTick() {
     # Switch programs
 
     (stdio.print "TIMER TICK")
+    (stdio.newline)
 
     loop { }
 
-    (KERNEL.SETTIMER 0x0004)
+    (KERNEL.SETTIMER 0x0100)
+}
+
+function KERNEL.BadIns() {
+    (stdio.print "Bad Instruction!")
+    (stdio.printHex KERNEL.int_LastUserIns)
 }
 
 # Print from a user program
