@@ -183,6 +183,10 @@ void Processor::dumpState() {
     std::cout << "Print Buffer: " << m_printBuffer << std::endl;
     
     std::cout << "INSTRUCTION_PTR: " << m_program_counter << '/' << (m_program_counter * 2) << std::endl;
+    if(!(m_flags & E_PROC_FLAG_KERNEL)) {
+        int k_addr = getAddress(m_program_counter);
+        std::cout << "INS_MEM_PTR: " << k_addr << '/' << (k_addr * 2) << std::endl;
+    }
     for(uint16_t i = m_program_counter; i < m_program_counter + 4; i ++) {
         std::cout << "   " << i << ": " << m_memory[i] << std::endl;
     }
@@ -225,6 +229,19 @@ void Processor::stepToCall() {
     do {
         step();
     } while(m_memory[getAddress(m_program_counter)] >> 8 != E_PROC_INS_CALL);
+}
+
+void Processor::stepToRetI() {
+    do {
+        step();
+    } while(m_memory[getAddress(m_program_counter)] >> 8 != E_PROC_INS_RETI);
+}
+
+void Processor::stepToSameDepth() {
+    unsigned int depth = m_REGS[E_PROC_REG_STACK_SIZE];
+    do {
+        step();
+    } while(m_REGS[E_PROC_REG_STACK_SIZE] != depth);
 }
 
 void Processor::run() {
@@ -283,7 +300,12 @@ void Processor::printAppend(char c) {
 }
 
 void Processor::stackPush(uint16_t x) {
-    if(m_REGS[E_PROC_REG_STACK_SIZE] >= 0XFF) interrupt(E_PROC_ERROR_STACK_OVERFLOW);
+    if(m_flags & E_PROC_FLAG_KERNEL) {
+        if(m_REGS[E_PROC_REG_STACK_SIZE] >= 0xFF) interrupt(E_PROC_ERROR_STACK_OVERFLOW);
+    }
+    else {
+        if(m_REGS[E_PROC_REG_STACK_SIZE] >= 0x7F) interrupt(E_PROC_ERROR_STACK_OVERFLOW);
+    }
     m_STACK[m_REGS[E_PROC_REG_STACK_SIZE]] = x;
     ++m_REGS[E_PROC_REG_STACK_SIZE];
 }

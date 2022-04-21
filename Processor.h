@@ -93,6 +93,8 @@ public:
     void dumpState();
     void step();
     void stepToCall();
+    void stepToRetI();
+    void stepToSameDepth();
     void run();
     void load(std::istream& s);
     void newPort(std::string fname);

@@ -61,6 +61,12 @@ int main(int argc, char** argv) {
             else if(nextWord == "call") {
                 proc.stepToCall();
             }
+            else if(nextWord == "reti") {
+                proc.stepToRetI();
+            }
+            else if(nextWord == "depth") {
+                proc.stepToSameDepth();
+            }
             else if(nextWord == "exit" || nextWord == "quit" || nextWord == "Quit") {
                 return 0;
             }
