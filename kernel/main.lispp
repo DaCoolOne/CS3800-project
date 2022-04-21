@@ -13,6 +13,8 @@ global *int_memBlocks 256
 function KERNEL.TimerTick() {
     # Switch programs
 
+    (stdio.print "TIMER TICK")
+
     loop { }
 
     (KERNEL.SETTIMER 0x0004)
@@ -67,10 +69,10 @@ function main() {
     (stdio.newline)
 
     set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
 
     (stdio.print "Number of open memory blocks: ")
     (stdio.printU (pcb.getNumberOfOpenMemBlocks))

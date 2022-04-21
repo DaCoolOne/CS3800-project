@@ -135,17 +135,9 @@ function loadStackAndRun(int_processIndex) {
     
     (emptyStack)
 
-    (stdio.print "LOAD STACK ")
-    (stdio.printHex ([] *int_pcbBlockAddress int_PCBSTACKSIZE))
-    (stdio.newline)
-
     set int_stackSize ([] *int_pcbBlockAddress int_PCBSTACKSIZE)
     set int_i int_stackSize for int_i (> int_i 0) (-- int_i) {
         (KERNEL.PUSH ([] *int_pcbBlockAddress (+ int_PCBSTACKSIZE int_i)))
-
-        (stdio.print "Stack push: ")
-        (stdio.printHex ([] *int_pcbBlockAddress (+ int_PCBSTACKSIZE int_i)))
-        (stdio.newline)
     }
 
     (KERNEL.RETI)
@@ -155,7 +147,7 @@ function unlockMemory(int_processIndex) {
     (KERNEL.LOCK KERNEL.int_PageStackSize)
 
     for int_i (< int_i int_memBlocksSize) (++ int_i) {
-        if (= (>> ([] *int_memBlocks int_i) 8) int_processIndex) {
+        if (&& (= (>> ([] *int_memBlocks int_i) 8) int_processIndex) (& ([] *int_memBlocks int_i) 0xFF)) {
             (KERNEL.UNLOCK int_i)
         }
     }
@@ -167,8 +159,12 @@ function setProgramCounter(int_processIndex int_programCounter) {
 }
 
 function extFetch(int_diskIndex int_address) {
-    (KERNEL.EXTFETCH int_diskIndex 0 int_address)
-}
+    set int_addr (<< int_address 1)
+    (KERNEL.EXTFETCH int_diskIndex 0 int_addr)
+    set int_2byte KERNEL.int_ExtBufferIn
+    (KERNEL.EXTFETCH int_diskIndex 0 (++ int_addr))
+    set int_2byte (| (<< int_2byte 8) KERNEL.int_ExtBufferIn)
+} returns int_2byte
 
 function extWrite(int_diskIndex int_address) {
     (KERNEL.EXTWRITE int_diskIndex 0 int_address)
@@ -181,12 +177,12 @@ function createProcess(int_diskIndex) {
     (stdio.printHex (addr KERNEL.*int_BINEND))
 
     # Result placed in KERNEL.int_ExtBufferIn
-    (extFetch int_diskIndex 0)
+    
 
-    set int_progSize KERNEL.int_ExtBufferIn
+    set int_progSize (extFetch int_diskIndex 0)
     (stdio.print " Prog Size Byte: ")
     (stdio.printHex int_progSize)
-    set int_numBlocks (++ (>> KERNEL.int_ExtBufferIn 8))
+    set int_numBlocks (++ (>> int_progSize 8))
 
     # Returns the index of a process slot it finds
     set int_processIndex (findOpenProcessSlot)
@@ -203,14 +199,26 @@ function createProcess(int_diskIndex) {
             
             set int_progByte 1
 
+            (stdio.newline)
+            (stdio.print "Allocating...")
+            (stdio.newline)
             set int_i 1 for int_i (<= int_i int_numBlocks) (++ int_i) {
+                
                 set int_memBlock (allocateNextBlock (++ int_processIndex) int_i)
                 
-                for int_j (< int_j (utils.min (- int_progSize (<< int_i 8)) 256)) (++ int_j) {
-                    (extFetch int_diskIndex int_progByte)
-                    (<> (ptr (<< int_memBlock 8)) KERNEL.int_ExtBufferIn int_j)
+                (stdio.printU int_progSize)
+                (stdio.printU (<< (-- int_i) 8))
+
+                for int_j (< int_j (utils.min (- int_progSize (<< (-- int_i) 8)) 256)) (++ int_j) {
+                    set int_memoryByte (extFetch int_diskIndex int_progByte)
+
+                    (stdio.printHex int_memoryByte) (stdio.print " ")
+
+                    (<> (ptr (<< int_memBlock 8)) int_memoryByte int_j)
                     set int_progByte (++ int_progByte)
                 }
+
+                (stdio.newline)
             }
 
             (<> **int_proc (ptr (<< int_pcbIndex 8)) int_processIndex)
