@@ -13,7 +13,7 @@ void Processor::executeNextInstruction() {
     if(!(m_flags & E_PROC_FLAG_KERNEL)) {
         m_timer_counter --;
         if(m_timer_counter == 0) {
-            throw E_PROC_TIMER_TICK;
+            interrupt(E_PROC_TIMER_TICK);
         }
 
         m_REGS[E_PROC_REG_PREV_INS] = m_program_counter;
@@ -173,7 +173,7 @@ void Processor::dumpState() {
         << "--------------- DUMP STATE ----------------" << std::endl;
 
     std::cout << "REGS:" << std::endl;
-    for(int i = 0; i < 255; i ++) {
+    for(int i = 0; i < 69; i ++) {
         if(m_REGS[i] != 0) {
             std::cout << "   " << i << ": " << m_REGS[i] << std::endl;
         }
@@ -185,7 +185,7 @@ void Processor::dumpState() {
     int processor = m_program_counter;
     std::cout << "INSTRUCTION_PTR: " << m_program_counter << '/' << (m_program_counter * 2) << std::endl;
     if(!(m_flags & E_PROC_FLAG_KERNEL)) {
-        processor = getAddress(m_program_counter);
+        processor = getUsrAddr(m_program_counter);
         std::cout << "INS_MEM_PTR: " << processor << '/' << (processor * 2) << std::endl;
         std::cout << "Unlocked pages:";
         for(int i = 0; i < m_REGS[E_PROC_REG_PAGE_STACK_SIZE]; i ++) {
