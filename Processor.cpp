@@ -182,13 +182,19 @@ void Processor::dumpState() {
     m_printBuffer[printSize] = '\0';
     std::cout << "Print Buffer: " << m_printBuffer << std::endl;
     
+    int processor = m_program_counter;
     std::cout << "INSTRUCTION_PTR: " << m_program_counter << '/' << (m_program_counter * 2) << std::endl;
     if(!(m_flags & E_PROC_FLAG_KERNEL)) {
-        int k_addr = getAddress(m_program_counter);
-        std::cout << "INS_MEM_PTR: " << k_addr << '/' << (k_addr * 2) << std::endl;
+        processor = getAddress(m_program_counter);
+        std::cout << "INS_MEM_PTR: " << processor << '/' << (processor * 2) << std::endl;
+        std::cout << "Unlocked pages:";
+        for(int i = 0; i < m_REGS[E_PROC_REG_PAGE_STACK_SIZE]; i ++) {
+            std::cout << ' ' << m_pageLocks[i];
+        }
+        std::cout << std::endl;
     }
-    for(uint16_t i = m_program_counter; i < m_program_counter + 4; i ++) {
-        std::cout << "   " << i << ": " << m_memory[i] << std::endl;
+    for(uint16_t i = processor, j = 0; j < 4; j ++) {
+        std::cout << "   " << i << ": " << m_memory[i++] << std::endl;
     }
 
     std::cout << "Flags: " << static_cast<int>(m_flags) << std::endl;
