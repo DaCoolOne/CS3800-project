@@ -106,16 +106,18 @@ function loadUserRegisters(int_processIndex) {
 
 # Clear out the old stack:
 function emptyStack() {
+    set int_rval (KERNEL.POP)
     while (i KERNEL.int_StackSize) {
         set int_temp (KERNEL.POP)
     }
+    (KERNEL.PUSH int_rval)
 }
 
 function saveStack(int_processIndex) {
     set *int_pcbBlockAddress ([] **int_proc int_processIndex)
     
     set int_i 0
-    while (i KERNEL.int_StackSize) {
+    while (-- KERNEL.int_StackSize) {
         (<> *int_pcbBlockAddress (KERNEL.POP) (+ int_PCBSTACKSTART int_i))
         set int_i (++ int_i)
     }
@@ -133,9 +135,17 @@ function loadStackAndRun(int_processIndex) {
     
     (emptyStack)
 
+    (stdio.print "LOAD STACK ")
+    (stdio.printHex ([] *int_pcbBlockAddress int_PCBSTACKSIZE))
+    (stdio.newline)
+
     set int_stackSize ([] *int_pcbBlockAddress int_PCBSTACKSIZE)
     set int_i int_stackSize for int_i (> int_i 0) (-- int_i) {
         (KERNEL.PUSH ([] *int_pcbBlockAddress (+ int_PCBSTACKSIZE int_i)))
+
+        (stdio.print "Stack push: ")
+        (stdio.printHex ([] *int_pcbBlockAddress (+ int_PCBSTACKSIZE int_i)))
+        (stdio.newline)
     }
 
     (KERNEL.RETI)
