@@ -699,12 +699,19 @@ void Assembler::newCommand(std::string cmd) {
     }
 }
 
-void Assembler::compile(std::ofstream& out) {
+void Assembler::compile(std::ofstream& out, bool userProg) {
     if(m_to_link.size() > 0) {
         auto link = m_to_link.at(0);
         throw AssemblerErrorAtLine(RESPONSE_CODE_UNKNOWN_IDENTIFIER, link.line);
     }
 
+    if(userProg) {
+        auto _size = bufferSize / 2;
+        char buf[2];
+        buf[1] = (_size & 0xFF);
+        buf[0] = (_size >> 8);
+        out.write(buf, 2);
+    }
     out.write(outputBuffer, bufferSize);
 }
 

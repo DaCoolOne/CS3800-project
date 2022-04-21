@@ -289,7 +289,7 @@ class Assembler
 public:
     Assembler(): outputBuffer(new char[maxBufferSize]) {}
     void newCommand(std::string cmd);
-    void compile(std::ofstream& out);
+    void compile(std::ofstream& out, bool userProg);
 };
 
 #endif

@@ -132,9 +132,9 @@ POP  1000 0011 xxxx xxxx - Pop data from stack, place in Reg X
 
 USR_ADDR 1000 0100 xxxx xxxx - Convert the address in reg X from user space to kernel space.
 
-EXTFETCH 1000 0101 xxxx xxxx yyyy yyyy zzzz zzzz - Read device Reg[X] at address Reg[Y] & Reg[Z], place into EXT_BUFFER_IN. Raise FAILED_EXT_ACCESS if file could not be found.
+EXTFETCH 1000 0101 xxxx xxxx yyyy yyyy zzzz zzzz - Read device Reg[X] at address (Reg[Y] << 16) | Reg[Z], place into EXT_BUFFER_IN (KERNEL.int_ExtBufferIn). Raise FAILED_EXT_ACCESS if file could not be found.
 
-EXTWRITE 1000 0110 xxxx xxxx yyyy yyyy zzzz zzzz - Write to device Reg[X] at address Reg[Y] & Reg[Z], place into EXT_BUFFER_OUT.
+EXTWRITE 1000 0110 xxxx xxxx yyyy yyyy zzzz zzzz - Write to device Reg[X] at address (Reg[Y] << 16) | Reg[Z], place into EXT_BUFFER_OUT (KERNEL.int_ExtBufferOut).
 
 SETTIMER 1000 0111 xxxx xxxx - Sets the processor's internal timer to Reg[X]. The internal timer determines the next time a TimerInterrupt will be triggered.
 

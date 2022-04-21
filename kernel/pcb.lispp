@@ -1,4 +1,5 @@
 import stdio "stdio"
+import utils "utils"
 
 # Initializes enums for process states
 const int_PROCREADY 0
@@ -14,6 +15,10 @@ const int_PCBPROGRAMCOUNTER 1
 # Initializes address constant for the User Registers
 const int_PCBUSRREGS 2
 
+# Starting address for the stack constants
+const int_PCBSTACKSIZE 18
+const int_PCBSTACKSTART 19
+
 function findOpenProcessSlot() {
     set int_searchingForBlock 1
     set int_processIndex -1
@@ -27,18 +32,28 @@ function findOpenProcessSlot() {
     }
 } returns int_processIndex
 
-function allocateNextBlock(int_processIndex) {
+function allocateNextBlock(int_processIndex int_order) {
     set int_searchingForMemory 1
     set int_memoryIndex -1
 
     set int_i 0 for int_i (&& int_searchingForMemory (< int_i int_memBlocksSize)) (++ int_i) {
         if (= ([] *int_memBlocks int_i) 0) {
-            (<> *int_memBlocks (<< int_processIndex 8) int_i)
+            (<> *int_memBlocks (| (<< int_processIndex 8) int_order) int_i)
             set int_memoryIndex int_i
             set int_searchingForMemory 0
         }
     }
 } returns int_memoryIndex
+
+function getNumberOfOpenMemBlocks() {
+    set int_numOpenBlocks 0
+    
+    for int_i (< int_i int_memBlocksSize) (++ int_i) {
+        if (= ([] *int_memBlocks int_i) 0) {
+            set int_numOpenBlocks (++ int_numOpenBlocks)
+        }
+    }
+} returns int_numOpenBlocks
 
 function setProcessState(int_processIndex int_processState) {
     set *int_pcbBlockAddress ([] **int_proc int_processIndex)
@@ -49,7 +64,7 @@ function getProcessState(int_processIndex) {
     set int_processState ([] ([] **int_proc int_processIndex) int_PCBSTATE)
 } returns int_processState
 
-function setUserRegisters(int_processIndex) {
+function saveUserRegisters(int_processIndex) {
     set *int_pcbBlockAddress ([] **int_proc int_processIndex)
     set int_temp 0 (<> *int_pcbBlockAddress KERNEL.int_UserReg0 int_PCBUSRREGS)
     set int_temp (++ int_temp) (<> *int_pcbBlockAddress KERNEL.int_UserReg1 (+ int_PCBUSRREGS int_temp))
@@ -69,32 +84,130 @@ function setUserRegisters(int_processIndex) {
     set int_temp (++ int_temp) (<> *int_pcbBlockAddress KERNEL.int_UserRegF (+ int_PCBUSRREGS int_temp))
 }
 
+function loadUserRegisters(int_processIndex) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    set int_temp 0 set KERNEL.int_UserReg0 ([] *int_pcbBlockAddress int_PCBUSRREGS)
+    set int_temp (++ int_temp) set KERNEL.int_UserReg1 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserReg2 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserReg3 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserReg4 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserReg5 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserReg6 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserReg7 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserReg8 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserReg9 ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserRegA ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserRegB ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserRegC ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserRegD ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserRegE ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+    set int_temp (++ int_temp) set KERNEL.int_UserRegF ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
+}
+
+# Clear out the old stack:
+function emptyStack() {
+    while (i KERNEL.int_StackSize) {
+        set int_temp (KERNEL.POP)
+    }
+}
+
+function saveStack(int_processIndex) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    
+    set int_i 0
+    while (i KERNEL.int_StackSize) {
+        (<> *int_pcbBlockAddress (KERNEL.POP) (+ int_PCBSTACKSTART int_i))
+        set int_i (++ int_i)
+    }
+}
+
+function defaultStack(int_processIndex) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress 1 int_PCBSTACKSIZE)
+    (<> *int_pcbBlockAddress 0 int_PCBSTACKSTART)
+}
+
+# Loads the stack for a program and resumes its execution
+function loadStackAndRun(int_processIndex) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    
+    (emptyStack)
+
+    set int_stackSize ([] *int_pcbBlockAddress int_PCBSTACKSIZE)
+    set int_i int_stackSize for int_i (> int_i 0) (-- int_i) {
+        (KERNEL.PUSH ([] *int_pcbBlockAddress (+ int_PCBSTACKSIZE int_i)))
+    }
+
+    (KERNEL.RETI)
+}
+
+function unlockMemory(int_processIndex) {
+    (KERNEL.LOCK KERNEL.int_PageStackSize)
+
+    for int_i (< int_i int_memBlocksSize) (++ int_i) {
+        if (= (>> ([] *int_memBlocks int_i) 8) int_processIndex) {
+            (KERNEL.UNLOCK int_i)
+        }
+    }
+}
+
 function setProgramCounter(int_processIndex int_programCounter) {
     set *int_pcbBlockAddress ([] **int_proc int_processIndex)
     (<> *int_pcbBlockAddress int_programCounter int_PCBPROGRAMCOUNTER)
 }
 
-function createProcess() {
+function extFetch(int_diskIndex int_address) {
+    (KERNEL.EXTFETCH int_diskIndex 0 int_address)
+}
+
+function extWrite(int_diskIndex int_address) {
+    (KERNEL.EXTWRITE int_diskIndex 0 int_address)
+}
+
+function createProcess(int_diskIndex) {
+    set int_status 0
+
     (stdio.print "KERNEL Memory BINEND: ")
     (stdio.printHex (addr KERNEL.*int_BINEND))
+
+    # Result placed in KERNEL.int_ExtBufferIn
+    (extFetch int_diskIndex 0)
+
+    set int_progSize KERNEL.int_ExtBufferIn
+    set int_numBlocks (++ (>> KERNEL.int_ExtBufferIn 8))
 
     # Returns the index of a process slot it finds
     set int_processIndex (findOpenProcessSlot)
 
     if (= int_processIndex -1) {
         (stdio.print "ERROR in createProcess(): Could not find process slot.")
+        set int_status 1
     }
     else {
-        set int_pcbIndex (allocateNextBlock (++ int_processIndex))
+        # Figure out the number of empty pages.
+        if (> (getNumberOfOpenMemBlocks) int_numBlocks) {
 
-        if (= int_pcbIndex -1) {
-            (stdio.print "ERROR in createProcess(): Could not find memory block to allocate.")
-        }
-        else {
+            set int_pcbIndex (allocateNextBlock (++ int_processIndex) 0)
+            
+            set int_progByte 1
+
+            set int_i 1 for int_i (<= int_i int_numBlocks) (++ int_i) {
+                set int_memBlock (allocateNextBlock (++ int_processIndex) int_i)
+                
+                for int_j (< int_j (utils.min (- int_progSize (<< int_i 8)) 256)) (++ int_j) {
+                    (extFetch int_diskIndex int_progByte)
+                    (<> (ptr (<< int_memBlock 8)) KERNEL.int_ExtBufferIn int_j)
+                    set int_progByte (++ int_progByte)
+                }
+            }
+
             (<> **int_proc (ptr (<< int_pcbIndex 8)) int_processIndex)
             (setProcessState int_processIndex int_PROCREADY)
-            (setUserRegisters int_processIndex)
+            (saveUserRegisters int_processIndex)
             (setProgramCounter int_processIndex 0)
+
+            # Create default stack
+            (defaultStack int_processIndex)
 
             (stdio.print " Process Index: ")
             (stdio.printU int_processIndex)
@@ -104,7 +217,12 @@ function createProcess() {
 
             (stdio.print " Process State: ")
             (stdio.printU (getProcessState int_processIndex))
-            (stdio.newline)
+
+        }
+        else {
+            (stdio.print "ERROR in createProcess(): Not enough memory to load program")
+
+            set int_status 2
         }
     }
-}
+} returns int_status

@@ -11,10 +11,11 @@ global *int_memBlocks 256
 
 # This triggers every 2^15 ticks
 function KERNEL.TimerTick() {
-    (stdio.print "\u")
-    (stdio.newline)
+    # Switch programs
 
-    (KERNEL.SETTIMER 0x8000)
+    loop { }
+
+    (KERNEL.SETTIMER 0x0004)
 }
 
 # Print from a user program
@@ -61,16 +62,24 @@ function main() {
     (initializeProcessArray)
     (initializeMemoryBlocks)
 
-    (pcb.createProcess)
-    (pcb.createProcess)
-    (pcb.createProcess)
-    (pcb.createProcess)
-    (pcb.createProcess)
+    (stdio.print "Number of open memory blocks: ")
+    (stdio.printU (pcb.getNumberOfOpenMemBlocks))
+    (stdio.newline)
+
+    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+
+    (stdio.print "Number of open memory blocks: ")
+    (stdio.printU (pcb.getNumberOfOpenMemBlocks))
 
     (stdio.newline)
 
-    # Break us out of kernel mode in a dumb way
-    # (enableUserMode)
+    # Start running a process
+    (KERNEL.SETTIMER 0x0100)
+    (pcb.unlockMemory 1)
+    (pcb.loadStackAndRun 1)
 
-    loop { }
 }

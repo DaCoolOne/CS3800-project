@@ -228,7 +228,7 @@ class TokenParser:
                         c = self.nextChar()
                     if c.isspace():
                         return Token(TOKEN_TYPE.INT, self.getTokenLine(), int(s, 16))
-                    elif c in '(){}#':
+                    elif c is not None and c in '(){}#':
                         self.stepBack()
                         return Token(TOKEN_TYPE.INT, f'"{self.fname}" {self.line}', int(s, 16))
                     else:
@@ -661,6 +661,14 @@ class UnaryIntFunction(Function):
                 return ' '.join(toStr("    MOV", destReg, argRegs[0])) + '\n' + ' '.join(toStr("   ", self.name, destReg))
     def getSignature(self) -> Tuple[str, List[str], bool]:
         return ("int", ["int"], False)
+
+class ArglessIntFunction(Function):
+    def __init__(self, name: str) -> None:
+        self.name = name
+    def compile(self, destReg: int, argRegs: List[int]) -> str:
+        return ' '.join(toStr("   ", self.name, destReg))
+    def getSignature(self) -> Tuple[str, List[str], bool]:
+        return ("int", [], False)
 
 # Because there are a lot of these
 class BinaryIntFunction(Function):
@@ -1306,7 +1314,7 @@ class Compiler:
         "KERNEL.PRINTH": VoidIntFunction("PRINTH"),
         "KERNEL.PRINTL": VoidIntFunction("PRINTL"),
         "KERNEL.PUSH": VoidIntFunction("PUSH"),
-        "KERNEL.POP": VoidIntFunction("POP"),
+        "KERNEL.POP": ArglessIntFunction("POP"),
         "KERNEL.LOCK": VoidIntFunction("LOCK"),
         "KERNEL.UNLOCK": VoidIntFunction("UNLOCK"),
         "KERNEL.USRADDR": UnaryIntFunction("USR_ADDR"),
@@ -1625,9 +1633,12 @@ if __name__ == "__main__":
     
     if 'autoassemble' in opt and opt['autoassemble']:
         print("Invoking auto-assembler")
-        for o in outputs:
+        for i,o in enumerate(outputs):
             print(f"Assemble {o}")
-            subprocess.run(["./assembler.exe", o, o[:o.find('.')]+'.bin'])
+            if i == 0:
+                subprocess.run(["./assembler.exe", o, o[:o.find('.')]+'.bin'])
+            else:
+                subprocess.run(["./assembler.exe", "-u", o, o[:o.find('.')]+'.bin'])
     
     if 'autorun' in opt and opt['autorun']:
         try:

@@ -44,7 +44,7 @@ function printS(int_n) {
 
 function printU(int_n) {
     set int_largeDigit 1
-    while (< int_largeDigit (/ int_n 10)) {
+    while (<= int_largeDigit (/ int_n 10)) {
         set int_largeDigit (* int_largeDigit 10)
     }
     while (> int_largeDigit 0) {

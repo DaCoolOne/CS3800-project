@@ -4,7 +4,7 @@ import utils "utils"
 
 function printU(int_n) {
     set int_largeDigit 1
-    while (< int_largeDigit (/ int_n 10)) {
+    while (<= int_largeDigit (/ int_n 10)) {
         set int_largeDigit (* int_largeDigit 10)
     }
     while (> int_largeDigit 0) {
@@ -27,11 +27,11 @@ function printHex(int_n) {
     set int_largeDigit 0xF000
     for int_c (< int_c 4) (++ int_c) {
         set int_digit (>> (& int_largeDigit int_n) (<< (- 3 int_c) 2))
-        if (< int_digit 9) {
+        if (<= int_digit 9) {
             (KERNEL.PRINTL (+ int_digit 0x30))
         }
         else {
-            (KERNEL.PRINTL (+ int_digit 0x26))
+            (KERNEL.PRINTL (+ int_digit 0x37))
         }
         set int_largeDigit (>> int_largeDigit 4)
     }
