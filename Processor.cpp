@@ -184,6 +184,11 @@ void Processor::dumpState() {
     
     int processor = m_program_counter;
     std::cout << "INSTRUCTION_PTR: " << m_program_counter << '/' << (m_program_counter * 2) << std::endl;
+    std::cout << "Stack:";
+    for(int i = 0; i < m_REGS[E_PROC_REG_STACK_SIZE]; i ++) {
+        std::cout << ' ' << m_STACK[i] ;
+    }
+    std::cout << std::endl;
     if(!(m_flags & E_PROC_FLAG_KERNEL)) {
         processor = getUsrAddr(m_program_counter);
         std::cout << "INS_MEM_PTR: " << processor << '/' << (processor * 2) << std::endl;
