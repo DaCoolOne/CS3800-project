@@ -2,8 +2,6 @@
 
 # Print utilities but it's a buffer
 
-global int_KERNELARG
-
 import util "utils"
 
 const int_PRINTBUFFERSIZE 19
@@ -11,22 +9,26 @@ global *int_printBuffer 10
 global int_printChar 0
 
 function print(str_s) {
-    set int_KERNELARG (addr (CastStrIntPtr str_s))
+    set KERNEL.int_KERNELARG (addr (CastStrIntPtr str_s))
 
     # Invoke kernel to print
     (KERNEL.RAISE 6)
 }
 
-function buffer(int_c) {
+function uncheckedBuffer(int_c) {
     (util.setChar (CastIntPtrStr *int_printBuffer) int_c int_printChar)
     set int_printChar (++ int_printChar)
+}
+
+function buffer(int_c) {
     if (>= int_printChar int_PRINTBUFFERSIZE) {
         (bufferflush)
     }
+    (uncheckedBuffer int_c)
 }
 
 function bufferflush() {
-    (buffer 0)
+    (uncheckedBuffer 0)
     set int_KERNELARG (addr *int_printBuffer)
     (KERNEL.RAISE 6)
     set int_printChar 0

@@ -1,5 +1,12 @@
 {
-    "src": "kernel/main.lispp",
-    "dest": "kernel.asm",
-    "kernel": true
+    "kernel": {
+        "src": "kernel/main.lispp",
+        "dest": "kernel.asm"
+    },
+    "user": [
+        {
+            "src": "user_programs/fibonacci.lispp",
+            "dest": "test.asm"
+        }
+    ]
 }

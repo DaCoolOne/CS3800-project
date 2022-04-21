@@ -3,15 +3,16 @@
 import os "os"
 
 function main() {
-    set a 1
-    set b 0
+    set int_a 1
+    set int_b 0
     
     (os.print "Fibonacci Sequence")
-    while (< a 10000) {
-        (os.printU a)
-        set _temp a
-        set a (+ a b)
-        set b _temp
+
+    while (< int_a 10000) {
+        (os.printU int_a)
+        set int_temp int_a
+        set int_a (+ int_a int_b)
+        set int_b int_temp
     }
 }
 

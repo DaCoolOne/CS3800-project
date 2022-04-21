@@ -1374,30 +1374,33 @@ class Compiler:
         self.FUNCTION_LIST: Dict[str, CompileKernelFunctionBuilder] = {}
 
     def initGlobals(self) -> "Compiler":
-        self.vars.newGlobal("KERNEL.int_UserReg0")
-        self.vars.newGlobal("KERNEL.int_UserReg1")
-        self.vars.newGlobal("KERNEL.int_UserReg2")
-        self.vars.newGlobal("KERNEL.int_UserReg3")
-        self.vars.newGlobal("KERNEL.int_UserReg4")
-        self.vars.newGlobal("KERNEL.int_UserReg5")
-        self.vars.newGlobal("KERNEL.int_UserReg6")
-        self.vars.newGlobal("KERNEL.int_UserReg7")
-        self.vars.newGlobal("KERNEL.int_UserReg8")
-        self.vars.newGlobal("KERNEL.int_UserReg9")
-        self.vars.newGlobal("KERNEL.int_UserRegA")
-        self.vars.newGlobal("KERNEL.int_UserRegB")
-        self.vars.newGlobal("KERNEL.int_UserRegC")
-        self.vars.newGlobal("KERNEL.int_UserRegD")
-        self.vars.newGlobal("KERNEL.int_UserRegE")
-        self.vars.newGlobal("KERNEL.int_UserRegF")
-        
-        self.vars.newGlobal("KERNEL.int_PageStackSize")
-        self.vars.newGlobal("KERNEL.int_StackSize")
-        self.vars.newGlobal("KERNEL.int_ExtBufferIn")
-        self.vars.newGlobal("KERNEL.int_ExtBufferOut")
-        self.vars.newGlobal("KERNEL.int_AluStatus")
-        self.vars.newGlobal("KERNEL.int_ExtDevices")
-        self.vars.newGlobal("KERNEL.int_LastUserIns")
+        if self.kernelMode:
+            self.vars.newGlobal("KERNEL.int_UserReg0")
+            self.vars.newGlobal("KERNEL.int_UserReg1")
+            self.vars.newGlobal("KERNEL.int_UserReg2")
+            self.vars.newGlobal("KERNEL.int_UserReg3")
+            self.vars.newGlobal("KERNEL.int_UserReg4")
+            self.vars.newGlobal("KERNEL.int_UserReg5")
+            self.vars.newGlobal("KERNEL.int_UserReg6")
+            self.vars.newGlobal("KERNEL.int_UserReg7")
+            self.vars.newGlobal("KERNEL.int_UserReg8")
+            self.vars.newGlobal("KERNEL.int_UserReg9")
+            self.vars.newGlobal("KERNEL.int_UserRegA")
+            self.vars.newGlobal("KERNEL.int_UserRegB")
+            self.vars.newGlobal("KERNEL.int_UserRegC")
+            self.vars.newGlobal("KERNEL.int_UserRegD")
+            self.vars.newGlobal("KERNEL.int_UserRegE")
+            self.vars.newGlobal("KERNEL.int_UserRegF")
+            
+            self.vars.newGlobal("KERNEL.int_PageStackSize")
+            self.vars.newGlobal("KERNEL.int_StackSize")
+            self.vars.newGlobal("KERNEL.int_ExtBufferIn")
+            self.vars.newGlobal("KERNEL.int_ExtBufferOut")
+            self.vars.newGlobal("KERNEL.int_AluStatus")
+            self.vars.newGlobal("KERNEL.int_ExtDevices")
+            self.vars.newGlobal("KERNEL.int_LastUserIns")
+        else:
+            self.vars.newGlobal("KERNEL.int_KERNELARG")
 
         return self
 
@@ -1517,26 +1520,30 @@ class Compiler:
 
         __MAIN.construct(self.vars.counter, self.FUNCTION_LIST)
 
-        interrupts = [
-            (i if i in self.FUNCTION_LIST else '0_defaultInterrupt')
-            for i in Compiler.__LISP_ASM_KERNEL_INTERRUPTS
-        ]
-        interrupts[0] = 'INIT'
+        if self.kernelMode:
+            interrupts = [
+                (i if i in self.FUNCTION_LIST else '0_defaultInterrupt')
+                for i in Compiler.__LISP_ASM_KERNEL_INTERRUPTS
+            ]
+            interrupts[0] = 'INIT'
 
-        self.output = '\n    ' + '\n    '.join(f"JMP __INTER_{i}" for i in interrupts)
-        self.output += '\n__INTER_INIT:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_1_main\n    SHUTDOWN\n'
+            self.output = '\n    ' + '\n    '.join(f"JMP __INTER_{i}" for i in interrupts)
+            self.output += '\n__INTER_INIT:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_1_main\n    SHUTDOWN\n'
+            
+            for interrupt in Compiler.__LISP_ASM_KERNEL_INTERRUPTS:
+                if interrupt in self.FUNCTION_LIST:
+                    self.FUNCTION_LIST[interrupt].construct(self.vars.counter, self.FUNCTION_LIST)
 
-        for interrupt in Compiler.__LISP_ASM_KERNEL_INTERRUPTS:
-            if interrupt in self.FUNCTION_LIST:
-                self.FUNCTION_LIST[interrupt].construct(self.vars.counter, self.FUNCTION_LIST)
+            for interrupt in Compiler.__LISP_ASM_KERNEL_INTERRUPTS:
+                if interrupt in self.FUNCTION_LIST:
+                    self.output += self.FUNCTION_LIST[interrupt].compile(True)
 
-        for interrupt in Compiler.__LISP_ASM_KERNEL_INTERRUPTS:
-            if interrupt in self.FUNCTION_LIST:
-                self.output += self.FUNCTION_LIST[interrupt].compile(True)
-
-        if '__INTER_0_defaultInterrupt' not in self.FUNCTION_LIST:
-            self.output += """\n__INTER_0_defaultInterrupt:
+            if '__INTER_0_defaultInterrupt' not in self.FUNCTION_LIST:
+                self.output += """\n__INTER_0_defaultInterrupt:
     RETI\n"""
+
+        else:
+            self.output += '\n__INTER_INIT:\n' + ''.join(self.vars.globalInit) + '    CALL __FCALL_1_main\n    SHUTDOWN\n'
 
         self.output += __MAIN.compile()
         
@@ -1549,25 +1556,21 @@ class Compiler:
 if __name__ == "__main__":
     inputFile = None
     outputFile = None
-    kernelMode = None
 
     if os.path.exists("lsp_opt.json"):
         with open("lsp_opt.json") as f:
             opt = json.load(f)
         
-        if 'src' in opt:
-            inputFile = opt['src']
-        if 'dest' in opt:
-            outputFile = opt['dest']
         if 'kernel' in opt:
-            kernelMode = opt['kernel']
+            if 'src' in opt['kernel']:
+                inputFile = opt['kernel']['src']
+            if 'dest' in opt['kernel']:
+                outputFile = opt['kernel']['dest']
 
-    if kernelMode is None:
-        kernelMode = input("Is kernel? (y/n) ") == 'y'
     if inputFile is None:
-        inputFile = input("Source file: ")
+        inputFile = input("Kernel source file: ")
     if outputFile is None:
-        outputFile = input("Output file: ")
+        outputFile = input("Kernel output file: ")
 
     if os.path.abspath(inputFile) == os.path.abspath(outputFile):
         raise Exception(f"Source and destination may not overlap!")
@@ -1576,24 +1579,39 @@ if __name__ == "__main__":
 
     with open(FULL_PATH) as f:
         tsp = TokenParser(os.path.basename(FULL_PATH), f.read())
-    #print("Parsing program:")
-    #print('-----------------------')
-    #print(tsp.digest)
-    #print('-----------------------')
     parser = Parser(tsp)
     try:
         parser.parse_S()
-        #print('\nParse tree:')
-        #parser.tree.print()
 
-        ckm = Compiler(parser.tree, FULL_PATH, kernelMode).initGlobals().compile().buildAsm()
-        #print("Generated asm")
-        #print("------------------------")
-        #print(ckm.output)
+        ckm = Compiler(parser.tree, FULL_PATH, True).initGlobals().compile().buildAsm()
 
         with open(outputFile, 'w') as f:
             f.write(ckm.output)
 
     except ParserError as e:
         print(e)
+    
+    
+    if 'user' in opt:
+        print("Kernel compiled, compiling user programs")
+        for userP in opt['user']:
+            try:
+                print(f"Compiling {userP['src']} to {userP['dest']}")
+
+                FULL_PATH = os.path.abspath(userP['src'])
+                with open(FULL_PATH) as f:
+                    tsp = TokenParser(os.path.basename(FULL_PATH), f.read())
+                parser = Parser(tsp)
+            
+                parser.parse_S()
+
+                ckm = Compiler(parser.tree, FULL_PATH, False).initGlobals().compile().buildAsm()
+
+                with open(userP['dest'], 'w') as f:
+                    f.write(ckm.output)
+
+            except ParserError as e:
+                print(e)
+            except KeyError as e:
+                print("Key error", e)
 

@@ -6,7 +6,7 @@
     JMP __INTER_0_defaultInterrupt
     JMP __INTER_0_defaultInterrupt
     JMP __INTER_0_defaultInterrupt
-    JMP __INTER_0_defaultInterrupt
+    JMP __INTER_0_UserDefined1
     JMP __INTER_0_defaultInterrupt
     JMP __INTER_0_defaultInterrupt
     JMP __INTER_0_defaultInterrupt
@@ -21,11 +21,6 @@ __INTER_INIT:
     SET 24 __ALLOC_1
     CALL __FCALL_1_main
     SHUTDOWN
-
-__FCALL_2_newline:
-    SET 27 10
-    PRINTL 27
-    RET
 
 __FCALL_3_getChar:
     MOV 32 30
@@ -64,6 +59,11 @@ __LOOP_3_EVAL:
     CJMP 30 __LOOP_3_BODY
     RET
 
+__FCALL_2_newline:
+    SET 27 10
+    PRINTL 27
+    RET
+
 __INTER_0_TimerTick:
     SET 25 __STR_CONST_6
     MOV 27 25
@@ -72,8 +72,35 @@ __INTER_0_TimerTick:
     SET 25 32768
     SETTIMER 25
     RETI
+
+
+__INTER_0_UserDefined1:
+    MOV 25 0
+    USR_ADDR 25
+
+
+    MOV 27 25
+    CALL __FCALL_2_print
+    CALL __FCALL_2_newline
+    RETI
 __INTER_0_defaultInterrupt:
     RETI
+
+
+__FCALL_1_initializeProcessArray:
+    SET 25 0
+    JMP __LOOP_0_EVAL
+__LOOP_0_BODY:
+    SET 26 -1
+
+    ADD 27 23 25
+    ST 26 27
+    INC 25
+__LOOP_0_EVAL:
+    SET 26 10
+    GTR 26 26 25
+    CJMP 26 __LOOP_0_BODY
+    RET
 
 __FCALL_1_initializeMemoryBlocks:
     SET 25 0
@@ -104,61 +131,6 @@ __LOOP_2_EVAL:
     RET
 
 
-__FCALL_2_printU:
-    SET 28 1
-    JMP __LOOP_7_EVAL
-__LOOP_7_BODY:
-    SET 29 10
-    LMUL 28 28 29
-__LOOP_7_EVAL:
-    SET 29 10
-    DIV 29 27 29
-    GTR 29 29 28
-    CJMP 29 __LOOP_7_BODY
-    JMP __LOOP_8_EVAL
-__LOOP_8_BODY:
-    DIV 29 27 28
-    SET 30 48
-    ADD 30 29 30
-    PRINTL 30
-    LMUL 30 29 28
-    SUB 27 27 30
-    SET 30 10
-    DIV 28 28 30
-__LOOP_8_EVAL:
-    SET 30 0
-    GTR 30 28 30
-    CJMP 30 __LOOP_8_BODY
-    RET
-
-__FCALL_4_allocateNextBlock:
-    SET 27 1
-    SET 28 -1
-    SET 29 0
-    JMP __LOOP_6_EVAL
-__LOOP_6_BODY:
-    ADD 30 24 29
-    LD 30
-    SET 31 0
-    EQ 30 30 31
-    CJMP 30 __IF_4_C0_BODY
-    JMP __IF_4_END
-__IF_4_C0_BODY:
-    SET 30 8
-    LSHIFT 30 26 30
-    ADD 31 24 29
-    ST 30 31
-    MOV 28 29
-    SET 27 0
-__IF_4_END:
-    INC 29
-__LOOP_6_EVAL:
-    SET 30 256
-    GTR 30 30 29
-    BAND 30 27 30
-    CJMP 30 __LOOP_6_BODY
-    RET
-
 __FCALL_4_setProcessState:
     ADD 29 23 27
     LD 29
@@ -166,131 +138,6 @@ __FCALL_4_setProcessState:
     ADD 31 29 30
     ST 28 31
     RET
-
-
-__FCALL_4_setProgramCounter:
-    ADD 29 23 27
-    LD 29
-    SET 30 1
-    ADD 31 29 30
-    ST 28 31
-    RET
-
-__FCALL_2_printHex:
-    SET 26 61440
-    SET 27 0
-    JMP __LOOP_4_EVAL
-__LOOP_4_BODY:
-    AND 28 26 25
-    SET 29 3
-    SUB 29 29 27
-    SET 30 2
-    LSHIFT 29 29 30
-    RSHIFT 28 28 29
-    SET 29 9
-    GTR 29 29 28
-    CJMP 29 __IF_1_C0_BODY
-    SET 29 38
-    ADD 29 28 29
-    PRINTL 29
-    JMP __IF_1_END
-__IF_1_C0_BODY:
-    SET 29 48
-    ADD 29 28 29
-    PRINTL 29
-__IF_1_END:
-    SET 29 4
-    RSHIFT 26 26 29
-    INC 27
-__LOOP_4_EVAL:
-    SET 29 4
-    GTR 29 29 27
-    CJMP 29 __LOOP_4_BODY
-    RET
-
-__FCALL_4_setUserRegisters:
-    ADD 28 23 27
-    LD 28
-    SET 29 2
-    ADD 30 28 29
-    ST 0 30
-    SET 29 2
-    SET 30 1
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 1 30
-    SET 29 2
-    SET 30 2
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 2 30
-    SET 29 2
-    SET 30 3
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 3 30
-    SET 29 2
-    SET 30 4
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 4 30
-    SET 29 2
-    SET 30 5
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 5 30
-    SET 29 2
-    SET 30 6
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 6 30
-    SET 29 2
-    SET 30 7
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 7 30
-    SET 29 2
-    SET 30 8
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 8 30
-    SET 29 2
-    SET 30 9
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 9 30
-    SET 29 2
-    SET 30 10
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 10 30
-    SET 29 2
-    SET 30 11
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 11 30
-    SET 29 2
-    SET 30 12
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 12 30
-    SET 29 2
-    SET 30 13
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 13 30
-    SET 29 2
-    SET 30 14
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 14 30
-    SET 29 2
-    SET 30 15
-    ADD 29 29 30
-    ADD 30 28 29
-    ST 15 30
-    RET
-
 
 __FCALL_4_getProcessState:
     ADD 28 23 27
@@ -323,6 +170,186 @@ __LOOP_5_EVAL:
     GTR 28 28 27
     BAND 28 25 28
     CJMP 28 __LOOP_5_BODY
+    RET
+
+__FCALL_4_setProgramCounter:
+    ADD 29 23 27
+    LD 29
+    SET 30 1
+    ADD 31 29 30
+    ST 28 31
+    RET
+
+__FCALL_2_printU:
+    SET 28 1
+    JMP __LOOP_7_EVAL
+__LOOP_7_BODY:
+    SET 29 10
+    LMUL 28 28 29
+__LOOP_7_EVAL:
+    SET 29 10
+    DIV 29 27 29
+    GTR 29 29 28
+    CJMP 29 __LOOP_7_BODY
+    JMP __LOOP_8_EVAL
+__LOOP_8_BODY:
+    DIV 29 27 28
+    SET 30 48
+    ADD 30 29 30
+    PRINTL 30
+    LMUL 30 29 28
+    SUB 27 27 30
+    SET 30 10
+    DIV 28 28 30
+__LOOP_8_EVAL:
+    SET 30 0
+    GTR 30 28 30
+    CJMP 30 __LOOP_8_BODY
+    RET
+
+
+__FCALL_4_allocateNextBlock:
+    SET 27 1
+    SET 28 -1
+    SET 29 0
+    JMP __LOOP_6_EVAL
+__LOOP_6_BODY:
+    ADD 30 24 29
+    LD 30
+    SET 31 0
+    EQ 30 30 31
+    CJMP 30 __IF_4_C0_BODY
+    JMP __IF_4_END
+__IF_4_C0_BODY:
+    SET 30 8
+    LSHIFT 30 26 30
+    ADD 31 24 29
+    ST 30 31
+    MOV 28 29
+    SET 27 0
+__IF_4_END:
+    INC 29
+__LOOP_6_EVAL:
+    SET 30 256
+    GTR 30 30 29
+    BAND 30 27 30
+    CJMP 30 __LOOP_6_BODY
+    RET
+
+__FCALL_4_setUserRegisters:
+    ADD 28 23 27
+    LD 28
+    SET 29 0
+    SET 30 2
+    ADD 31 28 30
+    ST 0 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 1 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 2 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 3 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 4 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 5 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 6 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 7 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 8 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 9 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 10 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 11 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 12 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 13 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 14 31
+    INC 29
+    SET 30 2
+    ADD 30 30 29
+    ADD 31 28 30
+    ST 15 31
+    RET
+
+__FCALL_2_printHex:
+    SET 26 61440
+    SET 27 0
+    JMP __LOOP_4_EVAL
+__LOOP_4_BODY:
+    AND 28 26 25
+    SET 29 3
+    SUB 29 29 27
+    SET 30 2
+    LSHIFT 29 29 30
+    RSHIFT 28 28 29
+    SET 29 9
+    GTR 29 29 28
+    CJMP 29 __IF_1_C0_BODY
+    SET 29 38
+    ADD 29 28 29
+    PRINTL 29
+    JMP __IF_1_END
+__IF_1_C0_BODY:
+    SET 29 48
+    ADD 29 28 29
+    PRINTL 29
+__IF_1_END:
+    SET 29 4
+    RSHIFT 26 26 29
+    INC 27
+__LOOP_4_EVAL:
+    SET 29 4
+    GTR 29 29 27
+    CJMP 29 __LOOP_4_BODY
     RET
 
 __FCALL_4_createProcess:
@@ -384,21 +411,6 @@ __IF_3_C0_BODY:
     SET 27 __STR_CONST_5
     CALL __FCALL_2_print
 __IF_3_END:
-    RET
-
-__FCALL_1_initializeProcessArray:
-    SET 25 0
-    JMP __LOOP_0_EVAL
-__LOOP_0_BODY:
-    SET 26 -1
-
-    ADD 27 23 25
-    ST 26 27
-    INC 25
-__LOOP_0_EVAL:
-    SET 26 10
-    GTR 26 26 25
-    CJMP 26 __LOOP_0_BODY
     RET
 
 __FCALL_1_main:
