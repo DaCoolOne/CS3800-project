@@ -170,11 +170,16 @@ function unlockMemory(int_processIndex) {
 }
 
 function freeMemory(int_processIndex) {
+    set int_processIndex (++ int_processIndex)
+
     for int_i (< int_i int_memBlocksSize) (++ int_i) {
         if (= (>> ([] *int_memBlocks int_i) 8) int_processIndex) {
+            (stdio.print "Freeing block ")
+            (stdio.printU int_i)
+            (stdio.newline)
             (<> *int_memBlocks 0 int_i)
         }
-    } 
+    }
 }
 
 function extFetch(int_diskIndex int_address) {
@@ -225,12 +230,17 @@ function switchProcess(int_current int_processIndex) {
     }
     else {
         # Swap the processes
-        if (= (addr ([] **int_proc int_processIndex)) -1) {
+        if(= int_current -1) {
 
         }
         else {
-            (setProcessState int_current int_PROCREADY)
-            (saveUserRegisters int_current)
+            if (= (addr ([] **int_proc int_current)) -1) {
+
+            }
+            else {
+                (setProcessState int_current int_PROCREADY)
+                (saveUserRegisters int_current)
+            }
         }
 
         (loadUserRegisters int_processIndex)
@@ -242,7 +252,7 @@ function switchProcess(int_current int_processIndex) {
 function getNextProcess(int_current) {
     set int_i (% (++ int_current) int_procSize)
     set int_next -1
-    while (&& (= int_next -1) (= (= int_current int_next) 0)) {
+    while (&& (= int_next -1) (= (= int_current int_i) 0)) {
         if(= (addr ([] **int_proc int_i)) -1) {
 
         }

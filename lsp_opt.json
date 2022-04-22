@@ -8,7 +8,7 @@
     "user": [
         {
             "src": "user_programs/fibonacci.lispp",
-            "dest": "test.asm"
+            "dest": "fibonacci.asm"
         }
     ]
 }

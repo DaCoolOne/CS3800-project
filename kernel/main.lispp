@@ -11,7 +11,13 @@ global *int_memBlocks 256
 
 function killProcessInterrupt() {
     set int_current (pcb.getCurrentlyRunningProcess)
-    (pcb.killProcess int_current)
+
+    if (= int_current -1) {
+
+    }
+    else {
+        (pcb.killProcess int_current)
+    }
 
     set int_next (pcb.getNextProcess int_current)
     
@@ -83,8 +89,17 @@ function KERNEL.BadMemAccess() {
 
 # Print from a user program
 function KERNEL.UserDefined1() {
-    (stdio.print (CastIntPtrStr (ptr (KERNEL.USRADDR KERNEL.int_UserReg0))))
-    (stdio.newline)
+    set int_usrAddress (KERNEL.USRADDR KERNEL.int_UserReg0)
+    if (i int_usrAddress) {
+        (stdio.print (CastIntPtrStr (ptr int_usrAddress)))
+        (stdio.newline)
+    }
+    else {
+        (stdio.print "Bad request, cannot print")
+        (stdio.newline)
+
+        (killProcessInterrupt)
+    }
 }
 
 # Print a signed number
@@ -158,7 +173,7 @@ function main() {
     # Start running a process
     (stdio.print "LAUNCH PROCESS")
     (stdio.newline)
-    (KERNEL.SETTIMER 0x010)
+    (KERNEL.SETTIMER 0x0010)
     (pcb.unlockMemory 0)
     (pcb.loadStackAndRun 0)
 

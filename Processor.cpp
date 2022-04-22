@@ -11,12 +11,7 @@ uint16_t Processor::getExtData() {
 void Processor::executeNextInstruction() {
     // Not in kernel mode
     if(!(m_flags & E_PROC_FLAG_KERNEL)) {
-        m_timer_counter --;
-        if(m_timer_counter == 0) {
-            interrupt(E_PROC_TIMER_TICK);
-        }
-
-        m_REGS[E_PROC_REG_PREV_INS] = m_program_counter;
+        m_REGS[E_PROC_REG_PREV_INS] = getUsrAddr(m_program_counter);
     }
 
     uint16_t addr = getAddress(m_program_counter++);
@@ -49,7 +44,12 @@ void Processor::executeNextInstruction() {
             break;
 
             case E_PROC_KINS_USR_ADDR:
-                m_REGS[ins_low] = getUsrAddr(m_REGS[ins_low]);
+                if((m_REGS[ins_low] >> 8) < m_REGS[E_PROC_REG_PAGE_STACK_SIZE]) {
+                    m_REGS[ins_low] = getUsrAddr(m_REGS[ins_low]);
+                }
+                else {
+                    m_REGS[ins_low] = 0;
+                }
             break;
             case E_PROC_KINS_SETTIMER:
                 m_timer_counter = m_REGS[ins_low];
@@ -164,6 +164,14 @@ void Processor::executeNextInstruction() {
             break;
 
             default: interrupt(E_PROC_ERROR_BAD_INS);
+        }
+    }
+    
+    // Trigger timer ticks
+    if(!(m_flags & E_PROC_FLAG_KERNEL)) {
+        m_timer_counter --;
+        if(m_timer_counter == 0) {
+            interrupt(E_PROC_TIMER_TICK);
         }
     }
 };
