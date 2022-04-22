@@ -207,9 +207,14 @@ function getCurrentlyRunningProcess() {
     set int_searchingForRunningProcess 1
 
     for int_i (&& int_searchingForRunningProcess (< int_i int_procSize)) (++ int_i) {
-        if (= (getProcessState int_i) int_PROCRUNNING) {
-            set int_runningProcessIndex int_i
-            set int_searchingForRunningProcess 0
+        if(= (addr ([] **int_proc int_i)) -1) {
+
+        }
+        else {
+            if (= (getProcessState int_i) int_PROCRUNNING) {
+                set int_runningProcessIndex int_i
+                set int_searchingForRunningProcess 0
+            }
         }
     }
 } returns int_runningProcessIndex
@@ -220,8 +225,14 @@ function switchProcess(int_current int_processIndex) {
     }
     else {
         # Swap the processes
-        (setProcessState int_current int_PROCREADY)
-        (saveUserRegisters int_current)
+        if (= (addr ([] **int_proc int_processIndex)) -1) {
+
+        }
+        else {
+            (setProcessState int_current int_PROCREADY)
+            (saveUserRegisters int_current)
+        }
+
         (loadUserRegisters int_processIndex)
         (unlockMemory int_processIndex)
         (loadStackAndRun int_processIndex)

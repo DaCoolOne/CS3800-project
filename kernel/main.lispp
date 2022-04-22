@@ -15,6 +15,12 @@ function killProcessInterrupt() {
 
     set int_next (pcb.getNextProcess int_current)
     
+    (stdio.print "Killing ")
+    (stdio.printS int_current)
+    (stdio.print " and switching to ")
+    (stdio.printS int_next)
+    (stdio.newline)
+
     if (= int_next -1) {
         (stdio.print "All tasks finished, shutting down.")
         (stdio.newline)
@@ -52,13 +58,26 @@ function KERNEL.TimerTick() {
 function KERNEL.BadIns() {
     (stdio.print "Bad Instruction!")
     (stdio.printHex KERNEL.int_LastUserIns)
+    (stdio.newline)
 
     (killProcessInterrupt)
 }
 function KERNEL.StackOverflow() {
+    (stdio.print "Stack Overflow!")
+    (stdio.newline)
+
     (killProcessInterrupt)
 }
 function KERNEL.StackUnderflow() {
+    (stdio.print "Stack Underflow!")
+    (stdio.newline)
+
+    (killProcessInterrupt)
+}
+function KERNEL.BadMemAccess() {
+    (stdio.print "Bad Mem Access!")
+    (stdio.newline)
+
     (killProcessInterrupt)
 }
 
