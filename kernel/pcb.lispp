@@ -19,18 +19,14 @@ const int_PCBUSRREGS 2
 const int_PCBSTACKSIZE 18
 const int_PCBSTACKSTART 19
 
-function findOpenProcessSlot() {
-    set int_searchingForBlock 1
-    set int_processIndex -1
+function setProcessState(int_processIndex int_processState) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress int_processState int_PCBSTATE)
+}
 
-    # Finds an open process slot to place process into
-    for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
-        if (= (addr ([] **int_proc int_i)) -1) {
-            set int_processIndex int_i
-            set int_searchingForBlock 0
-        }
-    }
-} returns int_processIndex
+function getProcessState(int_processIndex) {
+    set int_processState ([] ([] **int_proc int_processIndex) int_PCBSTATE)
+} returns int_processState
 
 function allocateNextBlock(int_processIndex int_order) {
     set int_searchingForMemory 1
@@ -54,15 +50,6 @@ function getNumberOfOpenMemBlocks() {
         }
     }
 } returns int_numOpenBlocks
-
-function setProcessState(int_processIndex int_processState) {
-    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
-    (<> *int_pcbBlockAddress int_processState int_PCBSTATE)
-}
-
-function getProcessState(int_processIndex) {
-    set int_processState ([] ([] **int_proc int_processIndex) int_PCBSTATE)
-} returns int_processState
 
 function saveUserRegisters(int_processIndex) {
     set *int_pcbBlockAddress ([] **int_proc int_processIndex)
@@ -104,23 +91,43 @@ function loadUserRegisters(int_processIndex) {
     set int_temp (++ int_temp) set KERNEL.int_UserRegF ([] *int_pcbBlockAddress (+ int_PCBUSRREGS int_temp))
 }
 
+function setProgramCounter(int_processIndex int_programCounter) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress int_programCounter int_PCBPROGRAMCOUNTER)
+}
+
 # Clear out the old stack:
 function emptyStack() {
+    # Since this function is on top of the stack, we need to
+    # save that return address
     set int_rval (KERNEL.POP)
+    # Clear the stack
     while (i KERNEL.int_StackSize) {
         set int_temp (KERNEL.POP)
     }
+    # Put the return address we saved back onto the stack,
+    # allowing this function to return.
     (KERNEL.PUSH int_rval)
 }
 
 function saveStack(int_processIndex) {
+    # Since this function is on top of the stack, we need to
+    # save that return address
+    set int_rval (KERNEL.POP)
+
     set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+
+    (<> *int_pcbBlockAddress KERNEL.int_StackSize int_PCBSTACKSIZE)
     
     set int_i 0
     while (-- KERNEL.int_StackSize) {
         (<> *int_pcbBlockAddress (KERNEL.POP) (+ int_PCBSTACKSTART int_i))
         set int_i (++ int_i)
     }
+
+    # Put the return address we saved back onto the stack,
+    # allowing this function to return.
+    (KERNEL.PUSH int_rval)
 }
 
 function defaultStack(int_processIndex) {
@@ -133,12 +140,19 @@ function defaultStack(int_processIndex) {
 function loadStackAndRun(int_processIndex) {
     set *int_pcbBlockAddress ([] **int_proc int_processIndex)
     
+    # We have to be careful with the return stack at this point,
+    # because we essentially just cleared it out. For example, returning
+    # now would cause a stack underflow.
     (emptyStack)
 
     set int_stackSize ([] *int_pcbBlockAddress int_PCBSTACKSIZE)
     set int_i int_stackSize for int_i (> int_i 0) (-- int_i) {
         (KERNEL.PUSH ([] *int_pcbBlockAddress (+ int_PCBSTACKSIZE int_i)))
     }
+
+    # This pushes the program counter onto the stack that was just emptied and set up
+    # This is okay, because once the function completes the program counter will be popped
+    (setProcessState int_processIndex int_PROCRUNNING)
 
     (KERNEL.RETI)
 }
@@ -155,9 +169,12 @@ function unlockMemory(int_processIndex) {
     }
 }
 
-function setProgramCounter(int_processIndex int_programCounter) {
-    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
-    (<> *int_pcbBlockAddress int_programCounter int_PCBPROGRAMCOUNTER)
+function freeMemory(int_processIndex) {
+    for int_i (< int_i int_memBlocksSize) (++ int_i) {
+        if (= (>> ([] *int_memBlocks int_i) 8) int_processIndex) {
+            (<> *int_memBlocks 0 int_i)
+        }
+    } 
 }
 
 function extFetch(int_diskIndex int_address) {
@@ -170,6 +187,66 @@ function extFetch(int_diskIndex int_address) {
 
 function extWrite(int_diskIndex int_address) {
     (KERNEL.EXTWRITE int_diskIndex 0 int_address)
+}
+
+function findOpenProcessSlot() {
+    set int_searchingForBlock 1
+    set int_processIndex -1
+
+    # Finds an open process slot to place process into
+    for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
+        if (= (addr ([] **int_proc int_i)) -1) {
+            set int_processIndex int_i
+            set int_searchingForBlock 0
+        }
+    }
+} returns int_processIndex
+
+function getCurrentlyRunningProcess() {
+    set int_runningProcessIndex -1
+    set int_searchingForRunningProcess 1
+
+    for int_i (&& int_searchingForRunningProcess (< int_i int_procSize)) (++ int_i) {
+        if (= (getProcessState int_i) int_PROCRUNNING) {
+            set int_runningProcessIndex int_i
+            set int_searchingForRunningProcess 0
+        }
+    }
+} returns int_runningProcessIndex
+
+function switchProcess(int_current int_processIndex) {
+    if (= int_current int_processIndex) {
+        (loadStackAndRun int_processIndex)
+    }
+    else {
+        # Swap the processes
+        (setProcessState int_current int_PROCREADY)
+        (saveUserRegisters int_current)
+        (loadUserRegisters int_processIndex)
+        (unlockMemory int_processIndex)
+        (loadStackAndRun int_processIndex)
+    }
+}
+
+function getNextProcess(int_current) {
+    set int_i (% (++ int_current) int_procSize)
+    set int_next -1
+    while (&& (= int_next -1) (= (= int_current int_next) 0)) {
+        if(= (addr ([] **int_proc int_i)) -1) {
+
+        }
+        else {
+            if (= (getProcessState int_i) int_PROCREADY) {
+                set int_next int_i
+            }
+        }
+        set int_i (% (++ int_i) int_procSize)
+    }
+} returns int_next
+
+function killProcess(int_processIndex) {
+    (freeMemory int_processIndex)
+    (<> **int_proc (ptr -1) int_processIndex)
 }
 
 function createProcess(int_diskIndex) {

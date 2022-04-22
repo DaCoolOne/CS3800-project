@@ -9,6 +9,24 @@ global **int_proc 10
 const int_memBlocksSize 256
 global *int_memBlocks 256
 
+function killProcessInterrupt() {
+    set int_current (pcb.getCurrentlyRunningProcess)
+    (pcb.killProcess int_current)
+
+    set int_next (pcb.getNextProcess int_current)
+    
+    if (= int_next -1) {
+        (stdio.print "All tasks finished, shutting down.")
+        (stdio.newline)
+        (KERNEL.SHUTDOWN)
+    }
+
+    (KERNEL.SETTIMER 0x0010)
+
+    # Switch to next availible process
+    (pcb.switchProcess int_current int_next)
+}
+
 # This triggers every 2^15 ticks
 function KERNEL.TimerTick() {
     # Switch programs
@@ -16,14 +34,32 @@ function KERNEL.TimerTick() {
     (stdio.print "TIMER TICK")
     (stdio.newline)
 
-    loop { }
+    # Find the next availible process
+    set int_current (pcb.getCurrentlyRunningProcess)
+    (pcb.saveStack int_current)
+    
+    set int_next (pcb.getNextProcess int_current)
+    if (= int_next -1) {
+        set int_next int_current
+    }
 
-    (KERNEL.SETTIMER 0x0100)
+    (KERNEL.SETTIMER 0x0010)
+
+    # Switch to next availible process
+    (pcb.switchProcess int_current int_next)
 }
 
 function KERNEL.BadIns() {
     (stdio.print "Bad Instruction!")
     (stdio.printHex KERNEL.int_LastUserIns)
+
+    (killProcessInterrupt)
+}
+function KERNEL.StackOverflow() {
+    (killProcessInterrupt)
+}
+function KERNEL.StackUnderflow() {
+    (killProcessInterrupt)
 }
 
 # Print from a user program
@@ -32,8 +68,22 @@ function KERNEL.UserDefined1() {
     (stdio.newline)
 }
 
-function begin() {
-    (KERNEL.RETI)
+# Print a signed number
+function KERNEL.UserDefined2() {
+    (stdio.printS KERNEL.int_UserReg0)
+    (stdio.newline)
+}
+
+# Print a unsigned number
+function KERNEL.UserDefined3() {
+    (stdio.printU KERNEL.int_UserReg0)
+    (stdio.newline)
+}
+
+# Print a hex number
+function KERNEL.UserDefined4() {
+    (stdio.printHex KERNEL.int_UserReg0)
+    (stdio.newline)
 }
 
 function initializeProcessArray() {
@@ -75,7 +125,8 @@ function main() {
     (stdio.newline)
 
     set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    
     #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
     #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
     #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
@@ -88,7 +139,7 @@ function main() {
     # Start running a process
     (stdio.print "LAUNCH PROCESS")
     (stdio.newline)
-    (KERNEL.SETTIMER 0x0300)
+    (KERNEL.SETTIMER 0x010)
     (pcb.unlockMemory 0)
     (pcb.loadStackAndRun 0)
 

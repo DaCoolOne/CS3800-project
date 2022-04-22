@@ -1,13 +1,5 @@
 
 
-# Print utilities but it's a buffer
-
-import util "utils"
-
-const int_PRINTBUFFERSIZE 19
-global *int_printBuffer 10
-global int_printChar 0
-
 function print(str_s) {
     set KERNEL.int_KERNELARG (addr (CastStrIntPtr str_s))
 
@@ -15,44 +7,23 @@ function print(str_s) {
     (KERNEL.RAISE 6)
 }
 
-function uncheckedBuffer(int_c) {
-    (util.setChar (CastIntPtrStr *int_printBuffer) int_c int_printChar)
-    set int_printChar (++ int_printChar)
-}
-
-function buffer(int_c) {
-    if (>= int_printChar int_PRINTBUFFERSIZE) {
-        (bufferflush)
-    }
-    (uncheckedBuffer int_c)
-}
-
-function bufferflush() {
-    (uncheckedBuffer 0)
-    set KERNEL.int_KERNELARG (addr *int_printBuffer)
-    (KERNEL.RAISE 6)
-    set int_printChar 0
-}
-
 function printS(int_n) {
-    if (>> int_n 15) {
-        (uncheckedBuffer 0x2D) # Print hypen
-        set int_n (- 0 int_n)
-    }
-    (printU int_n)
+    set KERNEL.int_KERNELARG int_n
+
+    # Invoke kernel to print
+    (KERNEL.RAISE 7)
 }
 
 function printU(int_n) {
-    set int_largeDigit 1
-    while (<= int_largeDigit (/ int_n 10)) {
-        set int_largeDigit (* int_largeDigit 10)
-    }
-    while (> int_largeDigit 0) {
-        set int_digit (/ int_n int_largeDigit)
-        (uncheckedBuffer (+ int_digit 0x30))
-        set int_n (- int_n (* int_digit int_largeDigit))
-        set int_largeDigit (/ int_largeDigit 10)
-    }
-    (bufferflush)
+    set KERNEL.int_KERNELARG int_n
+
+    # Invoke kernel to print
+    (KERNEL.RAISE 8)
 }
 
+function printHex(int_n) {
+    set KERNEL.int_KERNELARG int_n
+
+    # Invoke kernel to print
+    (KERNEL.RAISE 9)
+}

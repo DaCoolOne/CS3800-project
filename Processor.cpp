@@ -219,9 +219,6 @@ void Processor::step() {
     }
     // Interupts
     catch(PROC_ERRORS e) {
-        if(e == E_PROC_ERROR_BAD_INS) {
-            std::cout << "BAD INS!" << std::endl;
-        }
         // Enter kernel mode on interupt.
         m_flags |= E_PROC_FLAG_KERNEL;
 

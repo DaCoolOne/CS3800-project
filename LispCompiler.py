@@ -1321,6 +1321,7 @@ class Compiler:
         "KERNEL.EXTFETCH": VoidInt3Function("EXTFETCH"),
         "KERNEL.EXTWRITE": VoidInt3Function("EXTWRITE"),
         "KERNEL.PRINTFLUSH": VoidFunction("PRINTFLUSH"),
+        "KERNEL.SHUTDOWN": VoidFunction("SHUTDOWN"),
         "KERNEL.RETI": VoidFunction("RETI"),
         "KERNEL.SETTIMER": VoidIntFunction("SETTIMER"),
         "++": UnaryIntFunction("INC"),
