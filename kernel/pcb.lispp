@@ -120,7 +120,7 @@ function saveStack(int_processIndex) {
     (<> *int_pcbBlockAddress KERNEL.int_StackSize int_PCBSTACKSIZE)
     
     set int_i 0
-    while (-- KERNEL.int_StackSize) {
+    while (i KERNEL.int_StackSize) {
         (<> *int_pcbBlockAddress (KERNEL.POP) (+ int_PCBSTACKSTART int_i))
         set int_i (++ int_i)
     }
@@ -174,9 +174,6 @@ function freeMemory(int_processIndex) {
 
     for int_i (< int_i int_memBlocksSize) (++ int_i) {
         if (= (>> ([] *int_memBlocks int_i) 8) int_processIndex) {
-            (stdio.print "Freeing block ")
-            (stdio.printU int_i)
-            (stdio.newline)
             (<> *int_memBlocks 0 int_i)
         }
     }

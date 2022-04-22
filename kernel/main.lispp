@@ -62,9 +62,14 @@ function KERNEL.TimerTick() {
 }
 
 function KERNEL.BadIns() {
-    (stdio.print "Bad Instruction!")
-    (stdio.printHex KERNEL.int_LastUserIns)
-    (stdio.newline)
+    set int_lastInstruction ([] (ptr 0) KERNEL.int_LastUserIns)
+
+    # Yo, I just figured out how to code !=
+    if (^ int_lastInstruction 0xFF00) {
+        (stdio.print "Bad Instruction! ")
+        (stdio.printHex int_lastInstruction)
+        (stdio.newline)
+    }
 
     (killProcessInterrupt)
 }
