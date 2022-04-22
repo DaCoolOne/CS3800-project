@@ -1,0 +1,18 @@
+
+
+import os "os"
+
+function main() {
+    set int_a 2
+    set int_b 1
+    
+    (os.print "Lucas Number")
+
+    while (< int_a 10000) {
+        (os.printU int_a)
+        set int_temp (+ int_a int_b)
+        set int_a int_b
+        set int_b int_temp
+    }
+}
+

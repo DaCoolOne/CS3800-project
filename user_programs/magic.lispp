@@ -1,0 +1,17 @@
+import os "os"
+
+function main() {
+  set int_domain 20000
+  
+
+  for int_i 1 (< int_i (+ int_domain 1)) (++ int_i) {
+    while (&& (> int_i 1) (<= int_i int_domain)) {
+      if (= (% int_i 2) 0) {
+        set int_i (/ int_i 2)
+      }
+      else {
+        set int_i (+ (* 3 int_i) 1)
+      }
+    }
+  }
+}

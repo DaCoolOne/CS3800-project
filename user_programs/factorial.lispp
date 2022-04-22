@@ -1,0 +1,14 @@
+import os "os"
+
+function main() {
+  (os.print "Factorial 1 to 8")
+  for int_j 1 (< int_j 9) (++ int_j) {
+    set int_factorial 1
+    if (>= int_factorial 1) {
+      for int_i (< int_i int_j) (++ int_i) {
+        set int_factorial (* int_i)
+      }
+    }
+    (os.printU int_factorial)
+  }
+}
