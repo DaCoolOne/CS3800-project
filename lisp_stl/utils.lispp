@@ -31,10 +31,10 @@ function getChar(str_s int_i) {
 function setChar(str_s int_c int_i) {
     set int_toSet ([] (CastStrIntPtr str_s) (>> int_i 1))
     if (& int_i 0x1) {
-        set int_toSet (| (& int_c 0xFF) int_toSet)
+        set int_toSet (| (& int_c 0xFF) (& int_toSet 0xFF00))
     }
     else {
-        set int_toSet (| (<< int_c 8) int_toSet)
+        set int_toSet (| (<< int_c 8) (& int_toSet 0xFF))
     }
     (<> (CastStrIntPtr str_s) int_toSet (>> int_i 1))
 }

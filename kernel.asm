@@ -277,6 +277,15 @@ __FCALL_4_getProcessState:
 
 
 
+__FCALL_3_min:
+    GTR 38 36 37
+    CJMP 38 __IF_7_C0_BODY
+    JMP __IF_7_END
+__IF_7_C0_BODY:
+    MOV 36 37
+__IF_7_END:
+    RET
+
 
 __FCALL_4_allocateNextBlock:
     SET 35 1
@@ -437,15 +446,6 @@ __FCALL_4_defaultStack:
     SET 39 19
     ADD 40 37 39
     ST 38 40
-    RET
-
-__FCALL_3_min:
-    GTR 38 36 37
-    CJMP 38 __IF_7_C0_BODY
-    JMP __IF_7_END
-__IF_7_C0_BODY:
-    MOV 36 37
-__IF_7_END:
     RET
 
 __FCALL_4_extFetch:
@@ -657,7 +657,7 @@ __FCALL_1_main:
     MOV 36 26
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
-    SET 26 256
+    SET 26 768
     SETTIMER 26
     SET 26 0
     CALL __FCALL_4_unlockMemory

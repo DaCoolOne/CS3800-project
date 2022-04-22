@@ -88,7 +88,7 @@ function main() {
     # Start running a process
     (stdio.print "LAUNCH PROCESS")
     (stdio.newline)
-    (KERNEL.SETTIMER 0x0100)
+    (KERNEL.SETTIMER 0x0300)
     (pcb.unlockMemory 0)
     (pcb.loadStackAndRun 0)
 

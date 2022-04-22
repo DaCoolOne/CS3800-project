@@ -29,14 +29,14 @@ function buffer(int_c) {
 
 function bufferflush() {
     (uncheckedBuffer 0)
-    set int_KERNELARG (addr *int_printBuffer)
-    (KERNEL.RAISE 8)
+    set KERNEL.int_KERNELARG (addr *int_printBuffer)
+    (KERNEL.RAISE 6)
     set int_printChar 0
 }
 
 function printS(int_n) {
     if (>> int_n 15) {
-        (buffer 0x2D) # Print hypen
+        (uncheckedBuffer 0x2D) # Print hypen
         set int_n (- 0 int_n)
     }
     (printU int_n)
@@ -49,7 +49,7 @@ function printU(int_n) {
     }
     while (> int_largeDigit 0) {
         set int_digit (/ int_n int_largeDigit)
-        (buffer (+ int_digit 0x30))
+        (uncheckedBuffer (+ int_digit 0x30))
         set int_n (- int_n (* int_digit int_largeDigit))
         set int_largeDigit (/ int_largeDigit 10)
     }

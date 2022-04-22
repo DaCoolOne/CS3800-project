@@ -6,60 +6,51 @@ __INTER_INIT:
     SHUTDOWN
 
 __FCALL_3_setChar:
-    MOV 13 10
-    SET 14 1
-    RSHIFT 14 12 14
-    ADD 13 13 14
-    LD 13
-    SET 14 1
-    AND 14 12 14
-    CJMP 14 __IF_10_C0_BODY
-    SET 14 8
-    LSHIFT 14 11 14
-    OR 13 14 13
-    JMP __IF_10_END
-__IF_10_C0_BODY:
+    MOV 12 9
+    SET 13 1
+    RSHIFT 13 11 13
+    ADD 12 12 13
+    LD 12
+    SET 13 1
+    AND 13 11 13
+    CJMP 13 __IF_9_C0_BODY
+    SET 13 8
+    LSHIFT 13 10 13
     SET 14 255
-    AND 14 11 14
-    OR 13 14 13
-__IF_10_END:
-    MOV 14 10
-    SET 15 1
-    RSHIFT 15 12 15
-    ADD 16 14 15
-    ST 13 16
+    AND 14 12 14
+    OR 12 13 14
+    JMP __IF_9_END
+__IF_9_C0_BODY:
+    SET 13 255
+    AND 13 10 13
+    SET 14 65280
+    AND 14 12 14
+    OR 12 13 14
+__IF_9_END:
+    MOV 13 9
+    SET 14 1
+    RSHIFT 14 11 14
+    ADD 15 13 14
+    ST 12 15
     RET
 
 __FCALL_2_uncheckedBuffer:
-    MOV 10 1
-    MOV 12 2
-    MOV 11 9
+    MOV 9 1
+    MOV 11 2
+    MOV 10 8
     CALL __FCALL_3_setChar
     INC 2
     RET
 
 
 __FCALL_2_bufferflush:
-    SET 9 0
+    SET 8 0
     CALL __FCALL_2_uncheckedBuffer
-    MOV 9 1
-    SET 10 8
-    RAISE 10
+    MOV 0 1
+    SET 8 6
+    RAISE 8
     SET 2 0
     RET
-
-__FCALL_2_buffer:
-    SET 9 19
-    GTEQ 9 2 9
-    CJMP 9 __IF_9_C0_BODY
-    JMP __IF_9_END
-__IF_9_C0_BODY:
-    CALL __FCALL_2_bufferflush
-__IF_9_END:
-    MOV 9 8
-    CALL __FCALL_2_uncheckedBuffer
-    RET
-
 
 __FCALL_2_printU:
     SET 6 1
@@ -77,7 +68,7 @@ __LOOP_18_BODY:
     DIV 7 5 6
     SET 8 48
     ADD 8 7 8
-    CALL __FCALL_2_buffer
+    CALL __FCALL_2_uncheckedBuffer
     LMUL 8 7 6
     SUB 5 5 8
     SET 8 10
@@ -97,16 +88,16 @@ __FCALL_2_print:
     RET
 
 __FCALL_1_main:
-    SET 3 1
-    SET 4 0
+    SET 3 0
+    SET 4 1
     SET 5 __STR_CONST_0
     CALL __FCALL_2_print
     JMP __LOOP_16_EVAL
 __LOOP_16_BODY:
     MOV 5 3
     CALL __FCALL_2_printU
-    MOV 5 3
-    ADD 3 3 4
+    ADD 5 3 4
+    MOV 3 4
     MOV 4 5
 __LOOP_16_EVAL:
     SET 6 10000
