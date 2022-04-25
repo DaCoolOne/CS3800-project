@@ -1,6 +1,6 @@
 # Loads all of the processes from the disk and provides useful information to the kernel.
 
-const int_FileRepititions 3
+const int_FileRepititions 1
 
 global int_DiskCounter 0
 

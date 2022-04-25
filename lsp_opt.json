@@ -12,6 +12,10 @@
         {
             "src": "user_programs/lucas.lispp",
             "dest": "lucas.asm"
-        }
+        },
+        {
+          "src": "user_programs/fizzbuzz.lispp",
+          "dest": "fizzbuzz.asm"
+      }
     ]
 }
