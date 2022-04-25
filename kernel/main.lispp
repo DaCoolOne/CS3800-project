@@ -155,6 +155,7 @@ function KERNEL.UserDefined5() {
     set int_usrAddress (KERNEL.USRADDR KERNEL.int_UserReg0)
     if (i int_usrAddress) {
         (stdio.print (CastIntPtrStr (ptr int_usrAddress)))
+        (stdio.printS KERNEL.int_UserReg1)
         (stdio.newline)
     }
     else {
@@ -163,9 +164,6 @@ function KERNEL.UserDefined5() {
 
         (killProcessInterrupt)
     }
-
-    (stdio.printS KERNEL.int_UserReg1)
-    (stdio.newline)
 }
 
 function initializeProcessArray() {
