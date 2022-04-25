@@ -1571,9 +1571,9 @@ if __name__ == "__main__":
 
     outputs: List[str] = []
 
-    if os.path.exists("lsp_opt.json"):
-        print("Using settings from lsp_opt.json")
-        with open("lsp_opt.json") as f:
+    if os.path.exists("lisp_options.json"):
+        print("Using settings from lisp_options.json")
+        with open("lisp_options.json") as f:
             opt = json.load(f)
         
         if 'kernel' in opt:
