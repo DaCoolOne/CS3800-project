@@ -27,3 +27,11 @@ function printHex(int_n) {
     # Invoke kernel to print
     (KERNEL.RAISE 9)
 }
+
+function printTaggedNum(str_s int_n) {
+    set KERNEL.int_KERNELARG (addr (CastStrIntPtr str_s))
+    set KERNEL.int_KERNELARG2 int_n
+
+    # Invoke kernel to print
+    (KERNEL.RAISE 10)
+}

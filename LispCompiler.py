@@ -1411,6 +1411,7 @@ class Compiler:
             self.vars.newGlobal("KERNEL.int_LastUserIns")
         else:
             self.vars.newGlobal("KERNEL.int_KERNELARG")
+            self.vars.newGlobal("KERNEL.int_KERNELARG2")
 
         return self
 

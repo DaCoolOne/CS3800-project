@@ -2,6 +2,7 @@ import stdio "stdio"
 import process "./process.lispp"
 import memory "./pcb/memory.lispp"
 import stack "./pcb/stack.lispp"
+import disk "./disk.lispp"
 
 # Initializes the Process Array
 const int_procSize 10
@@ -10,6 +11,14 @@ global **int_proc 10
 # Initializes the Memory Address Blocks Array
 const int_memBlocksSize 256
 global *int_memBlocks 256
+
+function allocateEmptySlots() {
+    # BXOR is technically a != function
+    set int_isFull 0
+    while (&& (disk.hasNextFile) (= int_isFull 0)) {
+        set int_isFull (process.createProcess (disk.getNextFile))
+    }
+}
 
 function killProcessInterrupt() {
     set int_current (process.getCurrentlyRunningProcess)
@@ -68,12 +77,20 @@ function KERNEL.TimerTick() {
 }
 
 function KERNEL.BadIns() {
-    set int_lastInstruction ([] (ptr 0) KERNEL.int_LastUserIns)
+    set *int_mem (ptr 0)
+    set int_lastInstruction ([] *int_mem KERNEL.int_LastUserIns)
 
-    # Yo, I just figured out how to code !=
+    # BXOR is technically a != operation
     if (^ int_lastInstruction 0xFF00) {
-        (stdio.print "Bad Instruction! ")
+        (stdio.print "Bad Instruction at ")
+        (stdio.printHex KERNEL.int_LastUserIns)
+        (stdio.print " - ")
         (stdio.printHex int_lastInstruction)
+        if (= (>> int_lastInstruction 8) 0x01) {
+            set int_lastInstruction ([] *int_mem (++ KERNEL.int_LastUserIns))
+            (stdio.print " CJMP -> ")
+            (stdio.printHex int_lastInstruction)
+        }
         (stdio.newline)
     }
 
@@ -131,6 +148,25 @@ function KERNEL.UserDefined4() {
     (stdio.newline)
 }
 
+# Print a string and number pair
+function KERNEL.UserDefined4() {
+    
+    set int_usrAddress (KERNEL.USRADDR KERNEL.int_UserReg0)
+    if (i int_usrAddress) {
+        (stdio.print (CastIntPtrStr (ptr int_usrAddress)))
+        (stdio.newline)
+    }
+    else {
+        (stdio.print "Bad request, cannot print")
+        (stdio.newline)
+
+        (killProcessInterrupt)
+    }
+    
+    (stdio.printS KERNEL.int_UserReg1)
+    (stdio.newline)
+}
+
 function initializeProcessArray() {
 
     # Initializes all of the process indeces to -1
@@ -152,15 +188,7 @@ function initializeMemoryBlocks() {
     }
 }
 
-# Get block where PCB is located
-# Shift block to be high byte which is block
-# Low byte is const PCB state
-# bitwise or values
-# pass in id of the process
-# Get block where pcb is located
-# Create a value who's high byte is pcb block and low byte is the pcb state
-# ptr convert to pointer
-
+# Initialization of the kernel.
 function main() {
     (stdio.newline)
 

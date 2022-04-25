@@ -1,0 +1,16 @@
+# Loads all of the processes from the disk and provides useful information to the kernel.
+
+const int_FileRepititions 3
+
+global int_DiskCounter 0
+
+function hasNextFile() {
+    set int_has (< int_DiskCounter (* KERNEL.int_ExtDevices int_FileRepititions))
+} returns int_has
+
+# Pre: Has a next file
+function getNextFile() {
+    set int_r (% int_DiskCounter KERNEL.int_ExtDevices)
+    set int_DiskCounter (++ int_DiskCounter)
+} returns int_r
+
