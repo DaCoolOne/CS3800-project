@@ -8,6 +8,34 @@
     "user": [{
             "src": "user_programs/caesarcipher.lispp",
             "dest": "caesarcipher.asm"
-        }
+          },
+          {
+              "src": "user_programs/factorial.lispp",
+              "dest": "factorial.asm"
+          },
+          {
+            "src": "user_programs/fibonacci.lispp",
+            "dest": "fibonacci.asm"
+          },
+          {
+            "src": "user_programs/fizzbuzz.lispp",
+            "dest": "fizzbuzz.asm"
+          },
+          {
+            "src": "user_programs/lucas.lispp",
+            "dest": "lucas.asm"
+          },
+          {
+            "src": "user_programs/magic.lispp",
+            "dest": "magic.asm"
+          },
+          {
+            "src": "user_programs/random.lispp",
+            "dest": "random.asm"
+          },
+          {
+            "src": "user_programs/sorting.lispp",
+            "dest": "sorting.asm"
+          }
     ]
 }
