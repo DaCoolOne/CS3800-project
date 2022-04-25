@@ -102,6 +102,121 @@ __LOOP_3_EVAL:
     CJMP 51 __LOOP_3_BODY
     RET
 
+__FCALL_10_saveStack:
+    POP 28
+    ADD 29 23 27
+    LD 29
+    SET 30 18
+    ADD 31 29 30
+    ST 17 31
+    SET 30 0
+    JMP __LOOP_18_EVAL
+__LOOP_18_BODY:
+    POP 31
+    SET 32 19
+    ADD 32 32 30
+    ADD 33 29 32
+    ST 31 33
+    INC 30
+__LOOP_18_EVAL:
+    MOV 31 17
+    CJMP 31 __LOOP_18_BODY
+    PUSH 28
+    RET
+
+
+__FCALL_4_getNextProcess:
+    MOV 30 29
+    INC 30
+    SET 31 10
+    MOD 30 30 31
+    SET 31 -1
+    JMP __LOOP_19_EVAL
+__LOOP_19_BODY:
+    ADD 32 23 30
+    LD 32
+
+    SET 33 -1
+    EQ 32 32 33
+    CJMP 32 __IF_12_C0_BODY
+    MOV 44 30
+    CALL __FCALL_11_getProcessState
+    MOV 32 45
+    SET 33 0
+    EQ 32 32 33
+    CJMP 32 __IF_13_C0_BODY
+    JMP __IF_13_END
+__IF_13_C0_BODY:
+    MOV 31 30
+__IF_13_END:
+    JMP __IF_12_END
+__IF_12_C0_BODY:
+__IF_12_END:
+    MOV 32 30
+    INC 32
+    SET 33 10
+    MOD 30 32 33
+__LOOP_19_EVAL:
+    SET 32 -1
+    EQ 32 31 32
+    EQ 33 29 30
+    SET 34 0
+    EQ 33 33 34
+    BAND 32 32 33
+    CJMP 32 __LOOP_19_BODY
+    RET
+
+__FCALL_2_newline:
+    SET 48 10
+    PRINTL 48
+    RET
+
+__FCALL_10_emptyStack:
+    POP 34
+    JMP __LOOP_15_EVAL
+__LOOP_15_BODY:
+    POP 35
+__LOOP_15_EVAL:
+    MOV 36 17
+    CJMP 36 __LOOP_15_BODY
+    PUSH 34
+    RET
+
+__FCALL_11_setProcessState:
+    ADD 50 23 48
+    LD 50
+    SET 51 0
+    ADD 52 50 51
+    ST 49 52
+    RET
+
+__FCALL_10_loadStackAndRun:
+    ADD 33 23 32
+    LD 33
+    CALL __FCALL_10_emptyStack
+    SET 34 18
+    ADD 34 33 34
+    LD 34
+    MOV 35 34
+    JMP __LOOP_16_EVAL
+__LOOP_16_BODY:
+    SET 36 18
+    ADD 36 36 35
+    ADD 36 33 36
+    LD 36
+    PUSH 36
+    DEC 35
+__LOOP_16_EVAL:
+    SET 36 0
+    GTR 36 35 36
+    CJMP 36 __LOOP_16_BODY
+    SET 36 1
+    MOV 49 36
+    MOV 48 32
+    CALL __FCALL_11_setProcessState
+    RETI
+    RET
+
 __FCALL_9_loadUserRegisters:
     ADD 33 23 32
     LD 33
@@ -186,51 +301,91 @@ __FCALL_9_loadUserRegisters:
     LD 15
     RET
 
-__FCALL_11_setProcessState:
-    ADD 50 23 48
-    LD 50
+
+
+__FCALL_2_printU:
+    SET 49 1
+    JMP __LOOP_6_EVAL
+__LOOP_6_BODY:
+    SET 50 10
+    LMUL 49 49 50
+__LOOP_6_EVAL:
+    SET 50 10
+    DIV 50 48 50
+    GTEQ 50 50 49
+    CJMP 50 __LOOP_6_BODY
+    JMP __LOOP_7_EVAL
+__LOOP_7_BODY:
+    DIV 50 48 49
+    SET 51 48
+    ADD 51 50 51
+    PRINTL 51
+    LMUL 51 50 49
+    SUB 48 48 51
+    SET 51 10
+    DIV 49 49 51
+__LOOP_7_EVAL:
     SET 51 0
-    ADD 52 50 51
-    ST 49 52
+    GTR 51 49 51
+    CJMP 51 __LOOP_7_BODY
     RET
 
-__FCALL_10_emptyStack:
-    POP 34
-    JMP __LOOP_15_EVAL
-__LOOP_15_BODY:
-    POP 35
-__LOOP_15_EVAL:
-    MOV 36 17
-    CJMP 36 __LOOP_15_BODY
-    PUSH 34
-    RET
-
-__FCALL_10_loadStackAndRun:
-    ADD 33 23 32
-    LD 33
-    CALL __FCALL_10_emptyStack
-    SET 34 18
-    ADD 34 33 34
-    LD 34
-    MOV 35 34
-    JMP __LOOP_16_EVAL
-__LOOP_16_BODY:
-    SET 36 18
-    ADD 36 36 35
-    ADD 36 33 36
+__FCALL_8_unlockMemory:
+    LOCK 16
+    INC 32
+    SET 33 1
+    SET 34 1
+    JMP __LOOP_13_EVAL
+__LOOP_13_BODY:
+    SET 35 0
+    JMP __LOOP_14_EVAL
+__LOOP_14_BODY:
+    ADD 36 24 35
     LD 36
-    PUSH 36
-    DEC 35
-__LOOP_16_EVAL:
-    SET 36 0
-    GTR 36 35 36
-    CJMP 36 __LOOP_16_BODY
-    SET 36 1
-    MOV 49 36
+    SET 37 8
+    RSHIFT 36 36 37
+    EQ 36 36 32
+    ADD 37 24 35
+    LD 37
+    SET 38 15
+    AND 37 37 38
+    EQ 37 37 33
+    BAND 38 36 37
+    CJMP 38 __IF_8_C0_BODY
+    JMP __IF_8_END
+__IF_8_C0_BODY:
+    UNLOCK 35
+    INC 33
+    SET 38 __STR_CONST_14
+    MOV 48 38
+    CALL __FCALL_2_print
+    MOV 48 35
+    CALL __FCALL_2_printU
+    SET 38 __STR_CONST_15
+    MOV 48 38
+    CALL __FCALL_2_print
     MOV 48 32
-    CALL __FCALL_11_setProcessState
-    RETI
+    CALL __FCALL_2_printU
+    CALL __FCALL_2_newline
+__IF_8_END:
+    SET 38 256
+    DEC 38
+    EQ 38 35 38
+    CJMP 38 __IF_9_C0_BODY
+    JMP __IF_9_END
+__IF_9_C0_BODY:
+    SET 34 0
+__IF_9_END:
+    INC 35
+__LOOP_14_EVAL:
+    SET 38 256
+    GTR 38 38 35
+    CJMP 38 __LOOP_14_BODY
+__LOOP_13_EVAL:
+    MOV 38 34
+    CJMP 38 __LOOP_13_BODY
     RET
+
 
 __FCALL_9_saveUserRegisters:
     ADD 43 23 42
@@ -316,96 +471,6 @@ __FCALL_9_saveUserRegisters:
     ST 15 46
     RET
 
-
-__FCALL_2_newline:
-    SET 48 10
-    PRINTL 48
-    RET
-
-__FCALL_2_printU:
-    SET 49 1
-    JMP __LOOP_6_EVAL
-__LOOP_6_BODY:
-    SET 50 10
-    LMUL 49 49 50
-__LOOP_6_EVAL:
-    SET 50 10
-    DIV 50 48 50
-    GTEQ 50 50 49
-    CJMP 50 __LOOP_6_BODY
-    JMP __LOOP_7_EVAL
-__LOOP_7_BODY:
-    DIV 50 48 49
-    SET 51 48
-    ADD 51 50 51
-    PRINTL 51
-    LMUL 51 50 49
-    SUB 48 48 51
-    SET 51 10
-    DIV 49 49 51
-__LOOP_7_EVAL:
-    SET 51 0
-    GTR 51 49 51
-    CJMP 51 __LOOP_7_BODY
-    RET
-
-
-__FCALL_8_unlockMemory:
-    LOCK 16
-    INC 32
-    SET 33 1
-    SET 34 1
-    JMP __LOOP_13_EVAL
-__LOOP_13_BODY:
-    SET 35 0
-    JMP __LOOP_14_EVAL
-__LOOP_14_BODY:
-    ADD 36 24 35
-    LD 36
-    SET 37 8
-    RSHIFT 36 36 37
-    EQ 36 36 32
-    ADD 37 24 35
-    LD 37
-    SET 38 15
-    AND 37 37 38
-    EQ 37 37 33
-    BAND 38 36 37
-    CJMP 38 __IF_8_C0_BODY
-    JMP __IF_8_END
-__IF_8_C0_BODY:
-    UNLOCK 35
-    INC 33
-    SET 38 __STR_CONST_14
-    MOV 48 38
-    CALL __FCALL_2_print
-    MOV 48 35
-    CALL __FCALL_2_printU
-    SET 38 __STR_CONST_15
-    MOV 48 38
-    CALL __FCALL_2_print
-    MOV 48 32
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-__IF_8_END:
-    SET 38 256
-    DEC 38
-    EQ 38 35 38
-    CJMP 38 __IF_9_C0_BODY
-    JMP __IF_9_END
-__IF_9_C0_BODY:
-    SET 34 0
-__IF_9_END:
-    INC 35
-__LOOP_14_EVAL:
-    SET 38 256
-    GTR 38 38 35
-    CJMP 38 __LOOP_14_BODY
-__LOOP_13_EVAL:
-    MOV 38 34
-    CJMP 38 __LOOP_13_BODY
-    RET
-
 __FCALL_4_switchProcess:
     EQ 32 30 31
     CJMP 32 __IF_16_C0_BODY
@@ -443,71 +508,6 @@ __IF_16_C0_BODY:
 __IF_16_END:
     RET
 
-
-
-__FCALL_4_getNextProcess:
-    MOV 30 29
-    INC 30
-    SET 31 10
-    MOD 30 30 31
-    SET 31 -1
-    JMP __LOOP_19_EVAL
-__LOOP_19_BODY:
-    ADD 32 23 30
-    LD 32
-
-    SET 33 -1
-    EQ 32 32 33
-    CJMP 32 __IF_12_C0_BODY
-    MOV 44 30
-    CALL __FCALL_11_getProcessState
-    MOV 32 45
-    SET 33 0
-    EQ 32 32 33
-    CJMP 32 __IF_13_C0_BODY
-    JMP __IF_13_END
-__IF_13_C0_BODY:
-    MOV 31 30
-__IF_13_END:
-    JMP __IF_12_END
-__IF_12_C0_BODY:
-__IF_12_END:
-    MOV 32 30
-    INC 32
-    SET 33 10
-    MOD 30 32 33
-__LOOP_19_EVAL:
-    SET 32 -1
-    EQ 32 31 32
-    EQ 33 29 30
-    SET 34 0
-    EQ 33 33 34
-    BAND 32 32 33
-    CJMP 32 __LOOP_19_BODY
-    RET
-
-
-__FCALL_10_saveStack:
-    POP 28
-    ADD 29 23 27
-    LD 29
-    SET 30 18
-    ADD 31 29 30
-    ST 17 31
-    SET 30 0
-    JMP __LOOP_18_EVAL
-__LOOP_18_BODY:
-    POP 31
-    SET 32 19
-    ADD 32 32 30
-    ADD 33 29 32
-    ST 31 33
-    INC 30
-__LOOP_18_EVAL:
-    MOV 31 17
-    CJMP 31 __LOOP_18_BODY
-    PUSH 28
-    RET
 
 __INTER_0_TimerTick:
     CALL __FCALL_4_getCurrentlyRunningProcess
@@ -548,6 +548,39 @@ __IF_15_END:
     RETI
 
 
+__FCALL_8_freeMemory:
+    INC 30
+    SET 31 0
+    JMP __LOOP_20_EVAL
+__LOOP_20_BODY:
+    ADD 32 24 31
+    LD 32
+    SET 33 8
+    RSHIFT 32 32 33
+    EQ 32 32 30
+    CJMP 32 __IF_20_C0_BODY
+    JMP __IF_20_END
+__IF_20_C0_BODY:
+    SET 32 0
+    ADD 33 24 31
+    ST 32 33
+__IF_20_END:
+    INC 31
+__LOOP_20_EVAL:
+    SET 32 256
+    GTR 32 32 31
+    CJMP 32 __LOOP_20_BODY
+    RET
+
+__FCALL_4_killProcess:
+    MOV 30 29
+    CALL __FCALL_8_freeMemory
+    SET 30 -1
+
+    ADD 31 23 29
+    ST 30 31
+    RET
+
 
 
 __FCALL_2_printS:
@@ -566,6 +599,7 @@ __IF_21_END:
     RET
 
 
+
 __FCALL_12_getNextFile:
     MOD 29 25 21
     INC 25
@@ -575,6 +609,24 @@ __FCALL_12_hasNextFile:
     SET 29 1
     LMUL 29 21 29
     GTR 29 29 25
+    RET
+
+__FCALL_6_setProgramCounter:
+    ADD 42 23 40
+    LD 42
+    SET 43 1
+    ADD 44 42 43
+    ST 41 44
+    RET
+
+
+__FCALL_3_min:
+    GTR 42 40 41
+    CJMP 42 __IF_7_C0_BODY
+    JMP __IF_7_END
+__IF_7_C0_BODY:
+    MOV 40 41
+__IF_7_END:
     RET
 
 __FCALL_2_printHex:
@@ -635,54 +687,6 @@ __LOOP_9_EVAL:
     CJMP 36 __LOOP_9_BODY
     RET
 
-
-
-__FCALL_6_setProgramCounter:
-    ADD 42 23 40
-    LD 42
-    SET 43 1
-    ADD 44 42 43
-    ST 41 44
-    RET
-
-__FCALL_3_min:
-    GTR 42 40 41
-    CJMP 42 __IF_7_C0_BODY
-    JMP __IF_7_END
-__IF_7_C0_BODY:
-    MOV 40 41
-__IF_7_END:
-    RET
-
-__FCALL_7_extFetch:
-    SET 41 1
-    LSHIFT 41 40 41
-    SET 42 0
-    EXTFETCH 39 42 41
-    MOV 42 18
-    SET 43 0
-    MOV 44 41
-    INC 44
-    EXTFETCH 39 43 44
-    SET 43 8
-    LSHIFT 43 42 43
-    OR 42 43 18
-    RET
-
-__FCALL_10_defaultStack:
-    ADD 41 23 40
-    LD 41
-    SET 42 1
-    SET 43 18
-    ADD 44 41 43
-    ST 42 44
-    SET 42 0
-    SET 43 19
-    ADD 44 41 43
-    ST 42 44
-    RET
-
-
 __FCALL_8_getNumberOfOpenMemBlocks:
     SET 34 0
     SET 35 0
@@ -704,7 +708,20 @@ __LOOP_5_EVAL:
     CJMP 36 __LOOP_5_BODY
     RET
 
-
+__FCALL_7_extFetch:
+    SET 41 1
+    LSHIFT 41 40 41
+    SET 42 0
+    EXTFETCH 39 42 41
+    MOV 42 18
+    SET 43 0
+    MOV 44 41
+    INC 44
+    EXTFETCH 39 43 44
+    SET 43 8
+    LSHIFT 43 42 43
+    OR 42 43 18
+    RET
 
 __FCALL_8_allocateNextBlock:
     SET 39 1
@@ -734,6 +751,23 @@ __LOOP_10_EVAL:
     BAND 42 39 42
     CJMP 42 __LOOP_10_BODY
     RET
+
+
+
+__FCALL_10_defaultStack:
+    ADD 41 23 40
+    LD 41
+    SET 42 1
+    SET 43 18
+    ADD 44 41 43
+    ST 42 44
+    SET 42 0
+    SET 43 19
+    ADD 44 41 43
+    ST 42 44
+    RET
+
+
 
 __FCALL_4_createProcess:
     SET 30 0
@@ -884,39 +918,6 @@ __LOOP_8_EVAL:
     RET
 
 
-
-__FCALL_8_freeMemory:
-    INC 30
-    SET 31 0
-    JMP __LOOP_20_EVAL
-__LOOP_20_BODY:
-    ADD 32 24 31
-    LD 32
-    SET 33 8
-    RSHIFT 32 32 33
-    EQ 32 32 30
-    CJMP 32 __IF_20_C0_BODY
-    JMP __IF_20_END
-__IF_20_C0_BODY:
-    SET 32 0
-    ADD 33 24 31
-    ST 32 33
-__IF_20_END:
-    INC 31
-__LOOP_20_EVAL:
-    SET 32 256
-    GTR 32 32 31
-    CJMP 32 __LOOP_20_BODY
-    RET
-
-__FCALL_4_killProcess:
-    MOV 30 29
-    CALL __FCALL_8_freeMemory
-    SET 30 -1
-
-    ADD 31 23 29
-    ST 30 31
-    RET
 
 __FCALL_1_killProcessInterrupt:
     CALL __FCALL_1_allocateEmptySlots
@@ -1106,10 +1107,6 @@ __INTER_0_defaultInterrupt:
     RETI
 
 
-
-
-
-
 __FCALL_1_initializeProcessArray:
     SET 26 0
     JMP __LOOP_0_EVAL
@@ -1154,6 +1151,10 @@ __LOOP_2_EVAL:
     GTEQ 27 27 26
     CJMP 27 __LOOP_2_BODY
     RET
+
+
+
+
 
 
 __FCALL_1_main:
