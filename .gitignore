@@ -33,3 +33,6 @@
 
 # Binaries
 *.bin
+
+# Custom
+*.asm

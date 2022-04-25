@@ -38,11 +38,11 @@ function unlockMemory(int_processIndex) {
             if (&& int_isProcess int_isOrder) {
                 (KERNEL.UNLOCK int_i)
                 set int_order (++ int_order)
-                (stdio.print "Unlocked block ")
-                (stdio.printU int_i)
-                (stdio.print " for process ")
-                (stdio.printU int_processIndex)
-                (stdio.newline)
+                # (stdio.print "Unlocked block ")
+                # (stdio.printU int_i)
+                # (stdio.print " for process ")
+                # (stdio.printU int_processIndex)
+                # (stdio.newline)
             }
 
             if (= int_i (-- int_memBlocksSize)) {

@@ -7,7 +7,8 @@ function main() {
     
     (os.print "Magic Numbers")
 
-    for int_i 1 (< int_i (+ int_domain 1)) (++ int_i) {
+    set int_i 1
+    for int_i (< int_i (+ int_domain 1)) (++ int_i) {
         while (&& (> int_i 1) (<= int_i int_domain)) {
             if (= (% int_i 2) 0) {
                 set int_i (/ int_i 2)

@@ -3,40 +3,36 @@
     "autorun": true,
     "kernel": {
         "src": "kernel/main.lispp",
-        "dest": "kernel.asm"
+        "dest": "generated/kernel.asm"
     },
     "user": [
         {
             "src": "user_programs/caesarcipher.lispp",
-            "dest": "caesarcipher.asm"
+            "dest": "generated/caesarcipher.asm"
         },
         {
             "src": "user_programs/factorial.lispp",
-            "dest": "factorial.asm"
+            "dest": "generated/factorial.asm"
         },
         {
             "src": "user_programs/fibonacci.lispp",
-            "dest": "fibonacci.asm"
+            "dest": "generated/fibonacci.asm"
         },
         {
             "src": "user_programs/fizzbuzz.lispp",
-            "dest": "fizzbuzz.asm"
+            "dest": "generated/fizzbuzz.asm"
         },
         {
             "src": "user_programs/lucas.lispp",
-            "dest": "lucas.asm"
-        },
-        {
-            "src": "user_programs/magic.lispp",
-            "dest": "magic.asm"
+            "dest": "generated/lucas.asm"
         },
         {
             "src": "user_programs/random.lispp",
-            "dest": "random.asm"
+            "dest": "generated/random.asm"
         },
         {
             "src": "user_programs/sorting.lispp",
-            "dest": "sorting.asm"
+            "dest": "generated/sorting.asm"
         }
     ]
 }

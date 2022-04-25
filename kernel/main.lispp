@@ -4,6 +4,8 @@ import memory "./pcb/memory.lispp"
 import stack "./pcb/stack.lispp"
 import disk "./disk.lispp"
 
+const int_TimerDelay 0x50
+
 # Initializes the Process Array
 const int_procSize 10
 global **int_proc 10
@@ -12,8 +14,21 @@ global **int_proc 10
 const int_memBlocksSize 256
 global *int_memBlocks 256
 
-function allocateEmptySlots() {
+global int_LastPrint -1
+
+function PrintHeader(int_proc) {
     # BXOR is technically a != function
+    if (^ int_LastPrint int_proc) {
+        set int_LastPrint int_proc
+        (stdio.print "Process ")
+        (stdio.printU int_proc)
+        (stdio.print ":")
+        (stdio.newline)
+    }
+    (stdio.print "  ")
+}
+
+function allocateEmptySlots() {
     set int_isFull 0
     while (&& (disk.hasNextFile) (= int_isFull 0)) {
         set int_isFull (process.createProcess (disk.getNextFile))
@@ -47,7 +62,7 @@ function killProcessInterrupt() {
         (KERNEL.SHUTDOWN)
     }
 
-    (KERNEL.SETTIMER 0x0010)
+    (KERNEL.SETTIMER int_TimerDelay)
 
     # Switch to next availible process
     (process.switchProcess int_current int_next)
@@ -66,16 +81,16 @@ function KERNEL.TimerTick() {
         set int_next int_current
     }
 
-    (KERNEL.SETTIMER 0x0050)
+    (KERNEL.SETTIMER int_TimerDelay)
 
     # Switch to next availible process
-    if (^ int_current int_next) {
-        (stdio.print "Switching from Process ")
-        (stdio.printU int_current)
-        (stdio.print " to ")
-        (stdio.printU int_next)
-        (stdio.newline)
-    }
+    # if (^ int_current int_next) {
+    #     (stdio.print "Switching from Process ")
+    #     (stdio.printU int_current)
+    #     (stdio.print " to ")
+    #     (stdio.printU int_next)
+    #     (stdio.newline)
+    # }
     (process.switchProcess int_current int_next)
 }
 
@@ -120,6 +135,8 @@ function KERNEL.BadMemAccess() {
 
 # Print from a user program
 function KERNEL.UserDefined1() {
+    (PrintHeader (process.getCurrentlyRunningProcess))
+
     set int_usrAddress (KERNEL.USRADDR KERNEL.int_UserReg0)
     if (i int_usrAddress) {
         (stdio.print (CastIntPtrStr (ptr int_usrAddress)))
@@ -135,24 +152,28 @@ function KERNEL.UserDefined1() {
 
 # Print a signed number
 function KERNEL.UserDefined2() {
+    (PrintHeader (process.getCurrentlyRunningProcess))
     (stdio.printS KERNEL.int_UserReg0)
     (stdio.newline)
 }
 
 # Print a unsigned number
 function KERNEL.UserDefined3() {
+    (PrintHeader (process.getCurrentlyRunningProcess))
     (stdio.printU KERNEL.int_UserReg0)
     (stdio.newline)
 }
 
 # Print a hex number
 function KERNEL.UserDefined4() {
+    (PrintHeader (process.getCurrentlyRunningProcess))
     (stdio.printHex KERNEL.int_UserReg0)
     (stdio.newline)
 }
 
 # Print a string and number pair
 function KERNEL.UserDefined5() {
+    (PrintHeader (process.getCurrentlyRunningProcess))
     
     set int_usrAddress (KERNEL.USRADDR KERNEL.int_UserReg0)
     if (i int_usrAddress) {
@@ -217,7 +238,7 @@ function main() {
     # Start running a process
     (stdio.print "LAUNCH PROCESS")
     (stdio.newline)
-    (KERNEL.SETTIMER 0x0010)
+    (KERNEL.SETTIMER int_TimerDelay)
     (memory.unlockMemory 0)
     (stack.loadStackAndRun 0)
 

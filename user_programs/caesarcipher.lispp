@@ -10,7 +10,8 @@ global str_original "Four score and seven years ago our fathers brought forth on
 function encode(int_key) {
     set int_i 0
 
-    for int_i (< int_i (utils.strLen str_original)) (++ int_i){
+    set int_strlen (utils.strLen str_original)
+    for int_i (< int_i int_strlen) (++ int_i){
         set int_ascii (utils.getChar str_original int_i)
         if (&& (>= int_ascii 32) (<= int_ascii 126)) {
             set int_ascii (+ (% (+ (- int_ascii int_min) int_key) int_max) int_min) #(+ (+ (% (- int_ascii int_min) int_max) int_key) int_min)
@@ -23,7 +24,8 @@ function encode(int_key) {
 function decode(int_key) {
     set int_d 0
 
-    for int_d (< int_d (utils.strLen str_original)) (++ int_d){
+    set int_strlen (utils.strLen str_original)
+    for int_d (< int_d int_strlen) (++ int_d){
         set int_ascii (utils.getChar str_original int_d)
         if (&& (>= int_ascii 32) (<= int_ascii 126)) {
             set int_ascii (+ (% (+ (- int_ascii int_min) (- int_max int_key)) int_max) int_min)
@@ -53,6 +55,6 @@ function main() {
     (os.print "Decoding")
     (decode int_key)
 
-    (os.printTaggedNum str_original (+ 11100 int_key))  
+    (os.print str_original)  
 }
 
