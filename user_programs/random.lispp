@@ -1,0 +1,30 @@
+
+
+import os "os"
+
+global int_RNGSEED 0x351
+
+function setSeed(int_seed) {
+    set int_RNGSEED int_seed
+}
+
+# https://lemire.me/blog/2019/07/03/a-fast-16-bit-random-number-generator/
+function hash16(int_inp int_key) {
+    set int_hashLow 0
+    set int_hashHigh 0
+    # FULLMUL is an instruction I wish I didn't need to write
+    set int_hashLow (FULLMUL int_inp int_key)
+    set int_inp (^ int_hashHigh int_hashLow)
+} returns int_inp
+
+function randInt() {
+    set int_RNGSEED (+ int_RNGSEED 0xfc15)
+    set int_x (hash16 int_RNGSEED 0x2ab)
+} returns int_x
+
+function main() {
+    for int_i (< int_i 50) (++ int_i) {
+        (os.printU (randInt))
+    }
+}
+
