@@ -3,7 +3,7 @@ CS3800 project thingy
 
 # Processor
 
-The easiest way to run this program is to run `LispCompiler` with Python 3.9
+The easiest way to run this program is to run `LispCompiler.py` with Python 3.9
 
 The Lisp Compiler has several options that can be configured inside `lisp_options.json`. In this file, you can
 configure the processes that are launched, you can enable/disable convenience options (for example, once the
