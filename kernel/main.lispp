@@ -150,7 +150,7 @@ function KERNEL.UserDefined4() {
 }
 
 # Print a string and number pair
-function KERNEL.UserDefined4() {
+function KERNEL.UserDefined5() {
     
     set int_usrAddress (KERNEL.USRADDR KERNEL.int_UserReg0)
     if (i int_usrAddress) {

@@ -115,7 +115,7 @@ function main() {
     if (< int_n 5) {
         (stdio.print "N is less than 5")
     }
-    elseif (= int_n 5) {
+    elif (= int_n 5) {
         (stdio.print "N is equal to 5")
     }
     else {
