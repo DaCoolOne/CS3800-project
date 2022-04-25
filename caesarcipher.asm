@@ -4,24 +4,6 @@ __INTER_INIT:
     CALL __FCALL_1_main
     SHUTDOWN
 
-__FCALL_3_getChar:
-    MOV 11 9
-    SET 12 1
-    RSHIFT 12 10 12
-    ADD 11 11 12
-    LD 11
-    SET 12 1
-    AND 12 10 12
-    CJMP 12 __IF_27_C0_BODY
-    SET 12 8
-    RSHIFT 11 11 12
-    JMP __IF_27_END
-__IF_27_C0_BODY:
-    SET 12 255
-    AND 11 11 12
-__IF_27_END:
-    RET
-
 __FCALL_3_setChar:
     MOV 10 7
     SET 11 1
@@ -51,6 +33,23 @@ __IF_29_END:
     ST 10 13
     RET
 
+__FCALL_3_getChar:
+    MOV 11 9
+    SET 12 1
+    RSHIFT 12 10 12
+    ADD 11 11 12
+    LD 11
+    SET 12 1
+    AND 12 10 12
+    CJMP 12 __IF_27_C0_BODY
+    SET 12 8
+    RSHIFT 11 11 12
+    JMP __IF_27_END
+__IF_27_C0_BODY:
+    SET 12 255
+    AND 11 11 12
+__IF_27_END:
+    RET
 
 __FCALL_3_strLen:
     SET 8 0
@@ -64,6 +63,7 @@ __LOOP_22_EVAL:
     MOV 9 11
     CJMP 9 __LOOP_22_BODY
     RET
+
 
 __FCALL_1_encode:
     SET 5 0
@@ -100,6 +100,13 @@ __LOOP_21_EVAL:
     MOV 7 8
     GTR 7 7 5
     CJMP 7 __LOOP_21_BODY
+    RET
+
+__FCALL_2_print:
+    MOV 5 4
+    MOV 0 5
+    SET 5 6
+    RAISE 5
     RET
 
 
@@ -150,13 +157,6 @@ __FCALL_2_printTaggedNum:
     MOV 1 5
     SET 6 10
     RAISE 6
-    RET
-
-__FCALL_2_print:
-    MOV 5 4
-    MOV 0 5
-    SET 5 6
-    RAISE 5
     RET
 
 __FCALL_1_main:
