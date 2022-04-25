@@ -9,13 +9,17 @@ function main() {
 
     set int_i 1
     for int_i (< int_i (+ int_domain 1)) (++ int_i) {
-        while (&& (> int_i 1) (<= int_i int_domain)) {
-            if (= (% int_i 2) 0) {
-                set int_i (/ int_i 2)
+        set int_change int_i
+        while (&& (> int_change 1) (<= int_change int_domain)) {
+            if (= (% int_change 2) 0) {
+                set int_change (/ int_change 2)
             }
             else {
-                set int_i (+ (* 3 int_i) 1)
+                set int_change (+ (* 3 int_change) 1)
             }
+        }
+        if (= (% int_i 100) 0){
+            (os.printTaggedNum "Magic " int_i)
         }
     }
 }

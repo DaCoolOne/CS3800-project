@@ -1,39 +1,43 @@
 {
-    "autobuild": true,
-    "autoassemble": true,
-    "autorun": true,
-    "kernel": {
-        "src": "kernel/main.lispp",
-        "dest": "generated/kernel.asm"
-    },
-    "user": [
-        {
-            "src": "user_programs/caesarcipher.lispp",
-            "dest": "generated/caesarcipher.asm"
-        },
-        {
-            "src": "user_programs/factorial.lispp",
-            "dest": "generated/factorial.asm"
-        },
-        {
-            "src": "user_programs/fibonacci.lispp",
-            "dest": "generated/fibonacci.asm"
-        },
-        {
-            "src": "user_programs/fizzbuzz.lispp",
-            "dest": "generated/fizzbuzz.asm"
-        },
-        {
-            "src": "user_programs/lucas.lispp",
-            "dest": "generated/lucas.asm"
-        },
-        {
-            "src": "user_programs/random.lispp",
-            "dest": "generated/random.asm"
-        },
-        {
-            "src": "user_programs/sorting.lispp",
-            "dest": "generated/sorting.asm"
-        }
-    ]
+  "autobuild": true,
+  "autoassemble": true,
+  "autorun": true,
+  "kernel": {
+      "src": "kernel/main.lispp",
+      "dest": "generated/kernel.asm"
+  },
+  "user": [
+      {
+          "src": "user_programs/caesarcipher.lispp",
+          "dest": "generated/caesarcipher.asm"
+      },
+      {
+          "src": "user_programs/factorial.lispp",
+          "dest": "generated/factorial.asm"
+      },
+      {
+          "src": "user_programs/fibonacci.lispp",
+          "dest": "generated/fibonacci.asm"
+      },
+      {
+          "src": "user_programs/fizzbuzz.lispp",
+          "dest": "generated/fizzbuzz.asm"
+      },
+      {
+          "src": "user_programs/lucas.lispp",
+          "dest": "generated/lucas.asm"
+      },
+      {
+        "src": "user_programs/magic.lispp",
+        "dest": "generated/magic.asm"
+      },
+      {
+          "src": "user_programs/random.lispp",
+          "dest": "generated/random.asm"
+      },
+      {
+          "src": "user_programs/sorting.lispp",
+          "dest": "generated/sorting.asm"
+      }
+  ]
 }
