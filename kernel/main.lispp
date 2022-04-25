@@ -21,6 +21,8 @@ function allocateEmptySlots() {
 }
 
 function killProcessInterrupt() {
+    (allocateEmptySlots)
+    
     set int_current (process.getCurrentlyRunningProcess)
 
     if (= int_current -1) {
@@ -28,7 +30,6 @@ function killProcessInterrupt() {
     }
     else {
         (process.killProcess int_current)
-        (allocateEmptySlots)
     }
     
     set int_next (process.getNextProcess int_current)
@@ -68,12 +69,13 @@ function KERNEL.TimerTick() {
     (KERNEL.SETTIMER 0x0050)
 
     # Switch to next availible process
-    (stdio.newline)
-    (stdio.print "Switching from Process ")
-    (stdio.printU int_current)
-    (stdio.print " to ")
-    (stdio.printU int_next)
-    (stdio.newline)
+    if (^ int_current int_next) {
+        (stdio.print "Switching from Process ")
+        (stdio.printU int_current)
+        (stdio.print " to ")
+        (stdio.printU int_next)
+        (stdio.newline)
+    }
     (process.switchProcess int_current int_next)
 }
 

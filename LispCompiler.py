@@ -1293,6 +1293,7 @@ class Compiler:
         "+": NnaryIntFunction("ADD"),
         "-": BinaryIntFunction("SUB"),
         "*": NnaryIntFunction("LMUL"),
+        "FULLMUL": NnaryIntFunction("MUL"),
         "/": BinaryIntFunction("DIV"),
         "%": BinaryIntFunction("MOD"),
         "&": NnaryIntFunction("AND"),
