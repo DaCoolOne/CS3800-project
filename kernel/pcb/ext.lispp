@@ -1,0 +1,11 @@
+function extFetch(int_diskIndex int_address) {
+    set int_addr (<< int_address 1)
+    (KERNEL.EXTFETCH int_diskIndex 0 int_addr)
+    set int_2byte KERNEL.int_ExtBufferIn
+    (KERNEL.EXTFETCH int_diskIndex 0 (++ int_addr))
+    set int_2byte (| (<< int_2byte 8) KERNEL.int_ExtBufferIn)
+} returns int_2byte
+
+function extWrite(int_diskIndex int_address) {
+    (KERNEL.EXTWRITE int_diskIndex 0 int_address)
+}

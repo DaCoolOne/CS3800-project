@@ -1,0 +1,13 @@
+# Initializes enums for process states
+const int_PROCREADY 0
+const int_PROCRUNNING 1
+const int_PROCBLOCKED 2
+
+function setProcessState(int_processIndex int_processState) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress int_processState int_PCBSTATE)
+}
+
+function getProcessState(int_processIndex) {
+    set int_processState ([] ([] **int_proc int_processIndex) int_PCBSTATE)
+} returns int_processState

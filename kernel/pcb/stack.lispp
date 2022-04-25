@@ -1,0 +1,62 @@
+import state "./state.lispp"
+
+# Loads the stack for a program and resumes its execution
+function loadStackAndRun(int_processIndex) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    
+    # We have to be careful with the return stack at this point,
+    # because we essentially just cleared it out. For example, returning
+    # now would cause a stack underflow.
+    (emptyStack)
+
+    set int_stackSize ([] *int_pcbBlockAddress int_PCBSTACKSIZE)
+    set int_i int_stackSize for int_i (> int_i 0) (-- int_i) {
+        (KERNEL.PUSH ([] *int_pcbBlockAddress (+ int_PCBSTACKSIZE int_i)))
+    }
+
+    # This pushes the program counter onto the stack that was just emptied and set up
+    # This is okay, because once the function completes the program counter will be popped
+    (state.setProcessState int_processIndex int_PROCRUNNING)
+
+    (KERNEL.RETI)
+}
+
+# Clear out the old stack:
+function emptyStack() {
+    # Since this function is on top of the stack, we need to
+    # save that return address
+    set int_rval (KERNEL.POP)
+    # Clear the stack
+    while (i KERNEL.int_StackSize) {
+        set int_temp (KERNEL.POP)
+    }
+    # Put the return address we saved back onto the stack,
+    # allowing this function to return.
+    (KERNEL.PUSH int_rval)
+}
+
+function saveStack(int_processIndex) {
+    # Since this function is on top of the stack, we need to
+    # save that return address
+    set int_rval (KERNEL.POP)
+
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+
+    (<> *int_pcbBlockAddress KERNEL.int_StackSize int_PCBSTACKSIZE)
+    
+    set int_i 0
+    while (i KERNEL.int_StackSize) {
+        (<> *int_pcbBlockAddress (KERNEL.POP) (+ int_PCBSTACKSTART int_i))
+        set int_i (++ int_i)
+    }
+
+    # Put the return address we saved back onto the stack,
+    # allowing this function to return.
+    (KERNEL.PUSH int_rval)
+}
+
+function defaultStack(int_processIndex) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress 1 int_PCBSTACKSIZE)
+    (<> *int_pcbBlockAddress 0 int_PCBSTACKSTART)
+}

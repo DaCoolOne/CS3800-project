@@ -1,5 +1,7 @@
 import stdio "stdio"
-import pcb "pcb.lispp"
+import process "./process.lispp"
+import memory "./pcb/memory.lispp"
+import stack "./pcb/stack.lispp"
 
 # Initializes the Process Array
 const int_procSize 10
@@ -10,17 +12,18 @@ const int_memBlocksSize 256
 global *int_memBlocks 256
 
 function killProcessInterrupt() {
-    set int_current (pcb.getCurrentlyRunningProcess)
+    set int_current (process.getCurrentlyRunningProcess)
 
     if (= int_current -1) {
 
     }
     else {
-        (pcb.killProcess int_current)
+        (process.killProcess int_current)
     }
 
-    set int_next (pcb.getNextProcess int_current)
+    set int_next (process.getNextProcess int_current)
     
+    (stdio.newline)
     (stdio.print "Killing ")
     (stdio.printS int_current)
     (stdio.print " and switching to ")
@@ -36,29 +39,32 @@ function killProcessInterrupt() {
     (KERNEL.SETTIMER 0x0010)
 
     # Switch to next availible process
-    (pcb.switchProcess int_current int_next)
+    (process.switchProcess int_current int_next)
 }
 
 # This triggers every 2^15 ticks
 function KERNEL.TimerTick() {
     # Switch programs
 
-    (stdio.print "TIMER TICK")
-    (stdio.newline)
-
     # Find the next availible process
-    set int_current (pcb.getCurrentlyRunningProcess)
-    (pcb.saveStack int_current)
+    set int_current (process.getCurrentlyRunningProcess)
+    (stack.saveStack int_current)
     
-    set int_next (pcb.getNextProcess int_current)
+    set int_next (process.getNextProcess int_current)
     if (= int_next -1) {
         set int_next int_current
     }
 
-    (KERNEL.SETTIMER 0x0010)
+    (KERNEL.SETTIMER 0x0050)
 
     # Switch to next availible process
-    (pcb.switchProcess int_current int_next)
+    (stdio.newline)
+    (stdio.print "Switching from Process ")
+    (stdio.printU int_current)
+    (stdio.print " to ")
+    (stdio.printU int_next)
+    (stdio.newline)
+    (process.switchProcess int_current int_next)
 }
 
 function KERNEL.BadIns() {
@@ -156,22 +162,42 @@ function initializeMemoryBlocks() {
 # ptr convert to pointer
 
 function main() {
+    (stdio.newline)
+
     (initializeProcessArray)
     (initializeMemoryBlocks)
 
-    (stdio.print "Number of open memory blocks: ")
-    (stdio.printU (pcb.getNumberOfOpenMemBlocks))
+    (stdio.print "KERNEL Memory BINARY END: 0x")
+    (stdio.printHex (addr KERNEL.*int_BINEND))
+    (stdio.newline)
+    (stdio.print "Number of open memory blocks (After Kernel Allocation): ")
+    (stdio.printU (memory.getNumberOfOpenMemBlocks))
+    (stdio.newline)
     (stdio.newline)
 
-    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    (stdio.print "Creating Process 0")(stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    (stdio.newline)
+    (stdio.print "Creating Process 1")(stdio.newline)
+    set int_Status (process.createProcess 1) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
     
-    #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    #set int_Status (pcb.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    #set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    #set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    #set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
 
-    (stdio.print "Number of open memory blocks: ")
-    (stdio.printU (pcb.getNumberOfOpenMemBlocks))
+    (stdio.newline)
+    (stdio.print "Number of open memory blocks (After Process Allocation): ")
+    (stdio.printU (memory.getNumberOfOpenMemBlocks))
+    (stdio.newline)
 
     (stdio.newline)
 
@@ -179,7 +205,7 @@ function main() {
     (stdio.print "LAUNCH PROCESS")
     (stdio.newline)
     (KERNEL.SETTIMER 0x0010)
-    (pcb.unlockMemory 0)
-    (pcb.loadStackAndRun 0)
+    (memory.unlockMemory 0)
+    (stack.loadStackAndRun 0)
 
 }

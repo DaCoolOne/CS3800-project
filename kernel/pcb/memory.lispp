@@ -1,0 +1,64 @@
+import stdio "stdio"
+
+function allocateNextBlock(int_processIndex int_order) {
+    set int_searchingForMemory 1
+    set int_memoryIndex -1
+
+    set int_i 0 for int_i (&& int_searchingForMemory (< int_i int_memBlocksSize)) (++ int_i) {
+        if (= ([] *int_memBlocks int_i) 0) {
+            (<> *int_memBlocks (| (<< int_processIndex 8) int_order) int_i)
+            set int_memoryIndex int_i
+            set int_searchingForMemory 0
+        }
+    }
+} returns int_memoryIndex
+
+function getNumberOfOpenMemBlocks() {
+    set int_numOpenBlocks 0
+    
+    for int_i (< int_i int_memBlocksSize) (++ int_i) {
+        if (= ([] *int_memBlocks int_i) 0) {
+            set int_numOpenBlocks (++ int_numOpenBlocks)
+        }
+    }
+} returns int_numOpenBlocks
+
+function unlockMemory(int_processIndex) {
+    (KERNEL.LOCK KERNEL.int_PageStackSize)
+
+    set int_processIndex (++ int_processIndex)
+    set int_order 1
+    set int_isSearching 1
+
+    while (i int_isSearching) {
+        for int_i (< int_i int_memBlocksSize) (++ int_i) {
+            set int_isProcess (= (>> ([] *int_memBlocks int_i) 8) int_processIndex)
+            set int_isOrder (= (& ([] *int_memBlocks int_i) 0x0F) int_order)
+
+            if (&& int_isProcess int_isOrder) {
+                (KERNEL.UNLOCK int_i)
+                set int_order (++ int_order)
+                (stdio.print "Unlocked block ")
+                (stdio.printU int_i)
+                (stdio.print " for process ")
+                (stdio.printU int_processIndex)
+                (stdio.newline)
+            }
+
+            if (= int_i (-- int_memBlocksSize)) {
+                set int_isSearching 0
+            }
+        }
+    }
+
+}
+
+function freeMemory(int_processIndex) {
+    set int_processIndex (++ int_processIndex)
+
+    for int_i (< int_i int_memBlocksSize) (++ int_i) {
+        if (= (>> ([] *int_memBlocks int_i) 8) int_processIndex) {
+            (<> *int_memBlocks 0 int_i)
+        }
+    }
+}

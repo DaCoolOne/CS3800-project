@@ -5,10 +5,13 @@
         "src": "kernel/main.lispp",
         "dest": "kernel.asm"
     },
-    "user": [
-        {
+    "user": [{
             "src": "user_programs/fibonacci.lispp",
             "dest": "fibonacci.asm"
+        },
+        {
+            "src": "user_programs/lucas.lispp",
+            "dest": "lucas.asm"
         }
     ]
 }

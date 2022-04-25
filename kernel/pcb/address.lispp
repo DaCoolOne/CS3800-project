@@ -1,0 +1,12 @@
+# Initializes address constant for PCB STATE
+const int_PCBSTATE 0
+
+# Initializes address constant for the program counter
+const int_PCBPROGRAMCOUNTER 1
+
+# Initializes address constant for the User Registers
+const int_PCBUSRREGS 2
+
+# Starting address for the stack constants
+const int_PCBSTACKSIZE 18
+const int_PCBSTACKSTART 19

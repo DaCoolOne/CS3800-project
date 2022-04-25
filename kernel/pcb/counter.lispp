@@ -1,0 +1,4 @@
+function setProgramCounter(int_processIndex int_programCounter) {
+    set *int_pcbBlockAddress ([] **int_proc int_processIndex)
+    (<> *int_pcbBlockAddress int_programCounter int_PCBPROGRAMCOUNTER)
+}

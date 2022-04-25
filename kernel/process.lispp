@@ -1,0 +1,161 @@
+import stdio "stdio"
+import utils "utils"
+import address "./pcb/address.lispp"
+import counter "./pcb/counter.lispp"
+import ext "./pcb/ext.lispp"
+import memory "./pcb/memory.lispp"
+import registers "./pcb/registers.lispp"
+import stack "./pcb/stack.lispp"
+import state "./pcb/state.lispp"
+
+function findOpenProcessSlot() {
+    set int_searchingForBlock 1
+    set int_processIndex -1
+
+    # Finds an open process slot to place process into
+    for int_i (&& int_searchingForBlock (< int_i int_procSize)) (++ int_i) {
+        if (= (addr ([] **int_proc int_i)) -1) {
+            set int_processIndex int_i
+            set int_searchingForBlock 0
+        }
+    }
+} returns int_processIndex
+
+function getCurrentlyRunningProcess() {
+    set int_runningProcessIndex -1
+    set int_searchingForRunningProcess 1
+
+    for int_i (&& int_searchingForRunningProcess (< int_i int_procSize)) (++ int_i) {
+        if(= (addr ([] **int_proc int_i)) -1) {
+
+        }
+        else {
+            if (= (state.getProcessState int_i) int_PROCRUNNING) {
+                set int_runningProcessIndex int_i
+                set int_searchingForRunningProcess 0
+            }
+        }
+    }
+} returns int_runningProcessIndex
+
+function switchProcess(int_current int_processIndex) {
+    if (= int_current int_processIndex) {
+        (stack.loadStackAndRun int_processIndex)
+    }
+    else {
+        # Swap the processes
+        if(= int_current -1) {
+
+        }
+        else {
+            if (= (addr ([] **int_proc int_current)) -1) {
+
+            }
+            else {
+                (state.setProcessState int_current int_PROCREADY)
+                (registers.saveUserRegisters int_current)
+            }
+        }
+
+        (registers.loadUserRegisters int_processIndex)
+        (memory.unlockMemory int_processIndex)
+        (stack.loadStackAndRun int_processIndex)
+    }
+}
+
+function getNextProcess(int_current) {
+    set int_i (% (++ int_current) int_procSize)
+    set int_next -1
+    while (&& (= int_next -1) (= (= int_current int_i) 0)) {
+        if(= (addr ([] **int_proc int_i)) -1) {
+
+        }
+        else {
+            if (= (state.getProcessState int_i) int_PROCREADY) {
+                set int_next int_i
+            }
+        }
+        set int_i (% (++ int_i) int_procSize)
+    }
+} returns int_next
+
+function killProcess(int_processIndex) {
+    (memory.freeMemory int_processIndex)
+    (<> **int_proc (ptr -1) int_processIndex)
+}
+
+function createProcess(int_diskIndex) {
+    set int_status 0
+
+    # Result placed in KERNEL.int_ExtBufferIn
+
+    set int_progSize (ext.extFetch int_diskIndex 0)
+    (stdio.print "Program Size Byte: 0x")
+    (stdio.printHex int_progSize)
+    (stdio.newline)
+    (stdio.print "Program Size: ")
+    (stdio.printU int_progSize)
+    (stdio.print " bytes")
+
+    set int_numBlocks (++ (>> int_progSize 8))
+
+    # Returns the index of a process slot it finds
+    set int_processIndex (findOpenProcessSlot)
+
+    if (= int_processIndex -1) {
+        (stdio.newline)
+        (stdio.print "ERROR in createProcess(): Could not find process slot.")
+        set int_status 1
+    }
+    else {
+        # Figure out the number of empty pages.
+        if (> (memory.getNumberOfOpenMemBlocks) int_numBlocks) {
+
+            set int_pcbIndex (memory.allocateNextBlock (++ int_processIndex) 0)
+            
+            set int_progByte 1
+
+            (stdio.newline)
+            (stdio.print "Allocating Memory...")
+            (stdio.newline)
+            set int_i 1 for int_i (<= int_i int_numBlocks) (++ int_i) {
+                
+                set int_memBlock (memory.allocateNextBlock (++ int_processIndex) int_i)
+
+                for int_j (< int_j (utils.min (- int_progSize (<< (-- int_i) 8)) 256)) (++ int_j) {
+                    set int_memoryByte (ext.extFetch int_diskIndex int_progByte)
+
+                    (stdio.printHex int_memoryByte) (stdio.print " ")
+
+                    (<> (ptr (<< int_memBlock 8)) int_memoryByte int_j)
+                    set int_progByte (++ int_progByte)
+                }
+
+                (stdio.newline)
+            }
+
+            (<> **int_proc (ptr (<< int_pcbIndex 8)) int_processIndex)
+            (state.setProcessState int_processIndex int_PROCREADY)
+            (registers.saveUserRegisters int_processIndex)
+            (counter.setProgramCounter int_processIndex 0)
+
+            # Create default stack
+            (stack.defaultStack int_processIndex)
+
+            (stdio.print "Process Index: ")
+            (stdio.printU int_processIndex)
+            
+            (stdio.print " Memory Index: ")
+            (stdio.printU int_pcbIndex)
+
+            (stdio.print " Process State: ")
+            (stdio.printU (state.getProcessState int_processIndex))
+
+        }
+        else {
+            (stdio.print "ERROR in createProcess(): Not enough memory to load program")
+
+            set int_status 2
+        }
+    }
+} returns int_status
