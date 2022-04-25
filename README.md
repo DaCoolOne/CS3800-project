@@ -3,17 +3,18 @@ CS3800 project thingy
 
 # Processor
 
-run `make processor` (this is the default make option)
+The easiest way to run this program is to run `LispCompiler` with Python 3.9
 
-This will generate a file called `processor.exe`
+The Lisp Compiler has several options that can be configured inside `lisp_options.json`. In this file, you can
+configure the processes that are launched, you can enable/disable convenience options (for example, once the
+processor and assembler are compiled, you don't need to compile them unless you make changes, so you can turn
+off autobuild to stop building them).
 
-You can run the processor with the command:
-
-`processor.exe INPUT_MEM`
+The rest of this file will be a deep dive into the various parts of the processor.
 
 # Processor specifications
 
-69 registers for storing any data. When in user mode, only the bottom 16 regs may be used.
+There are 69 registers for storing any data. When in user mode, only the bottom 16 regs may be used.
 
 Some of the registers have special meanings. First of all, in kernel mode the user registers can be accessed
 using KERNEL.int_UserRegN where N is 0-F (KERNEL.int_UserReg0 KERNEL.int_UserReg1 ... KERNEL.int_UserRegF).

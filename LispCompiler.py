@@ -2,11 +2,9 @@
 
 import subprocess
 import json
-from ntpath import join
 import os
 from typing import Dict, Set, Tuple, Union, List, Optional
 from enum import Enum, unique
-from unicodedata import name
 
 _IF_IDENT_CTR = 0
 _LOOP_IDENT_CTR = 0
@@ -1633,6 +1631,12 @@ if __name__ == "__main__":
                 print(e)
             except KeyError as e:
                 print("Key error", e)
+    
+    if 'autobuild' in opt and opt['autobuild']:
+        print("Building processor")
+        subprocess.run(["g++","main.cpp","Processor.cpp","-o","processor.exe"])
+        print("Building assembler")
+        subprocess.run(["g++","Assembler.cpp","assembler_main.cpp","-o","assembler.exe"])
     
     if 'autoassemble' in opt and opt['autoassemble']:
         print("Invoking auto-assembler")

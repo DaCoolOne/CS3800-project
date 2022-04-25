@@ -1,4 +1,5 @@
 {
+    "autobuild": true,
     "autoassemble": true,
     "autorun": true,
     "kernel": {
