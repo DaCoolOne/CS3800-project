@@ -5,6 +5,7 @@ import os "os"
 function main() {
     set int_domain 20000
     
+    (os.print "Magic Numbers")
 
     for int_i 1 (< int_i (+ int_domain 1)) (++ int_i) {
         while (&& (> int_i 1) (<= int_i int_domain)) {
@@ -17,3 +18,4 @@ function main() {
         }
     }
 }
+
