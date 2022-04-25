@@ -3,6 +3,14 @@ __INTER_INIT:
     CALL __FCALL_1_main
     SHUTDOWN
 
+__FCALL_2_printTaggedNum:
+    MOV 5 3
+    MOV 0 5
+    MOV 1 4
+    SET 5 10
+    RAISE 5
+    RET
+
 __FCALL_2_print:
     MOV 4 3
     MOV 0 4
@@ -14,14 +22,6 @@ __FCALL_2_printU:
     MOV 0 3
     SET 4 8
     RAISE 4
-    RET
-
-__FCALL_2_printTaggedNum:
-    MOV 5 3
-    MOV 0 5
-    MOV 1 4
-    SET 5 10
-    RAISE 5
     RET
 
 __FCALL_1_main:

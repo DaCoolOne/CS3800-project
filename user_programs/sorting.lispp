@@ -1,0 +1,45 @@
+
+
+import os "os"
+import random "./random.lispp"
+
+const int_ARRAYSIZE 30
+global *int_ARRAY 30
+
+function printArray() {
+    (os.print "Array:")
+    for int_i (< int_i int_ARRAYSIZE) (++ int_i) {
+        (os.printTaggedNum " -> " ([] *int_ARRAY int_i))
+    }
+}
+
+function main() {
+    # Generate a bunch of random numbers
+    for int_i (< int_i int_ARRAYSIZE) (++ int_i) {
+        (<> *int_ARRAY (% (random.randInt) 100) int_i)
+    }
+
+    (os.print "Unsorted array:")
+    (printArray)
+
+    # Implement bubble sort
+    set int_inOrder 0
+    while (= int_inOrder 0) {
+        set int_inOrder 1
+        
+        set int_i 1
+        for int_i (< int_i int_ARRAYSIZE) (++ int_i) {
+            set int_a ([] *int_ARRAY (-- int_i))
+            set int_b ([] *int_ARRAY int_i)
+            if (> int_a int_b) {
+                set int_inOrder 0
+                (<> *int_ARRAY int_a int_i)
+                (<> *int_ARRAY int_b (-- int_i))
+            }
+        }
+    }
+
+    (os.print "Sorted array:")
+    (printArray)
+}
+
