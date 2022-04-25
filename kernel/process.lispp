@@ -90,10 +90,10 @@ function createProcess(int_diskIndex) {
     # Result placed in KERNEL.int_ExtBufferIn
 
     set int_progSize (ext.extFetch int_diskIndex 0)
+    (stdio.newline)
     (stdio.print "Program Size Byte: 0x")
     (stdio.printHex int_progSize)
-    (stdio.newline)
-    (stdio.print "Program Size: ")
+    (stdio.print " Program Size: ")
     (stdio.printU int_progSize)
     (stdio.print " bytes")
 
@@ -125,13 +125,9 @@ function createProcess(int_diskIndex) {
                 for int_j (< int_j (utils.min (- int_progSize (<< (-- int_i) 8)) 256)) (++ int_j) {
                     set int_memoryByte (ext.extFetch int_diskIndex int_progByte)
 
-                    (stdio.printHex int_memoryByte) (stdio.print " ")
-
                     (<> (ptr (<< int_memBlock 8)) int_memoryByte int_j)
                     set int_progByte (++ int_progByte)
                 }
-
-                (stdio.newline)
             }
 
             (<> **int_proc (ptr (<< int_pcbIndex 8)) int_processIndex)

@@ -23,50 +23,23 @@ __INTER_INIT:
     CALL __FCALL_1_main
     SHUTDOWN
 
-__FCALL_2_printU:
-    SET 46 1
-    JMP __LOOP_6_EVAL
-__LOOP_6_BODY:
-    SET 47 10
-    LMUL 46 46 47
-__LOOP_6_EVAL:
-    SET 47 10
-    DIV 47 45 47
-    GTEQ 47 47 46
-    CJMP 47 __LOOP_6_BODY
-    JMP __LOOP_7_EVAL
-__LOOP_7_BODY:
-    DIV 47 45 46
-    SET 48 48
-    ADD 48 47 48
-    PRINTL 48
-    LMUL 48 47 46
-    SUB 45 45 48
-    SET 48 10
-    DIV 46 46 48
-__LOOP_7_EVAL:
-    SET 48 0
-    GTR 48 46 48
-    CJMP 48 __LOOP_7_BODY
-    RET
-
 __FCALL_10_emptyStack:
     POP 34
-    JMP __LOOP_14_EVAL
-__LOOP_14_BODY:
+    JMP __LOOP_15_EVAL
+__LOOP_15_BODY:
     POP 35
-__LOOP_14_EVAL:
+__LOOP_15_EVAL:
     MOV 36 17
-    CJMP 36 __LOOP_14_BODY
+    CJMP 36 __LOOP_15_BODY
     PUSH 34
     RET
 
 __FCALL_11_setProcessState:
-    ADD 47 23 45
-    LD 47
-    SET 48 0
-    ADD 49 47 48
-    ST 46 49
+    ADD 51 23 49
+    LD 51
+    SET 52 0
+    ADD 53 51 52
+    ST 50 53
     RET
 
 __FCALL_10_loadStackAndRun:
@@ -77,208 +50,24 @@ __FCALL_10_loadStackAndRun:
     ADD 34 33 34
     LD 34
     MOV 35 34
-    JMP __LOOP_15_EVAL
-__LOOP_15_BODY:
+    JMP __LOOP_16_EVAL
+__LOOP_16_BODY:
     SET 36 18
     ADD 36 36 35
     ADD 36 33 36
     LD 36
     PUSH 36
     DEC 35
-__LOOP_15_EVAL:
+__LOOP_16_EVAL:
     SET 36 0
     GTR 36 35 36
-    CJMP 36 __LOOP_15_BODY
+    CJMP 36 __LOOP_16_BODY
     SET 36 1
-    MOV 46 36
-    MOV 45 32
+    MOV 50 36
+    MOV 49 32
     CALL __FCALL_11_setProcessState
     RETI
     RET
-
-__FCALL_9_saveUserRegisters:
-    ADD 41 23 40
-    LD 41
-    SET 42 0
-    SET 43 2
-    ADD 44 41 43
-    ST 0 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 1 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 2 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 3 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 4 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 5 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 6 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 7 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 8 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 9 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 10 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 11 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 12 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 13 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 14 44
-    INC 42
-    SET 43 2
-    ADD 43 43 42
-    ADD 44 41 43
-    ST 15 44
-    RET
-
-__FCALL_2_newline:
-    SET 45 10
-    PRINTL 45
-    RET
-
-
-__FCALL_3_getChar:
-    MOV 50 48
-    SET 51 1
-    RSHIFT 51 49 51
-    ADD 50 50 51
-    LD 50
-    SET 51 1
-    AND 51 49 51
-    CJMP 51 __IF_0_C0_BODY
-    SET 51 8
-    RSHIFT 50 50 51
-    JMP __IF_0_END
-__IF_0_C0_BODY:
-    SET 51 255
-    AND 50 50 51
-__IF_0_END:
-    RET
-
-__FCALL_2_print:
-    SET 46 0
-    MOV 49 46
-    MOV 48 45
-    CALL __FCALL_3_getChar
-    MOV 47 50
-    JMP __LOOP_3_EVAL
-__LOOP_3_BODY:
-    PRINTL 47
-    INC 46
-    MOV 49 46
-    MOV 48 45
-    CALL __FCALL_3_getChar
-    MOV 47 50
-__LOOP_3_EVAL:
-    MOV 48 47
-    CJMP 48 __LOOP_3_BODY
-    RET
-
-__FCALL_8_unlockMemory:
-    LOCK 16
-    INC 32
-    SET 33 1
-    SET 34 1
-    JMP __LOOP_12_EVAL
-__LOOP_12_BODY:
-    SET 35 0
-    JMP __LOOP_13_EVAL
-__LOOP_13_BODY:
-    ADD 36 24 35
-    LD 36
-    SET 37 8
-    RSHIFT 36 36 37
-    EQ 36 36 32
-    ADD 37 24 35
-    LD 37
-    SET 38 15
-    AND 37 37 38
-    EQ 37 37 33
-    BAND 38 36 37
-    CJMP 38 __IF_8_C0_BODY
-    JMP __IF_8_END
-__IF_8_C0_BODY:
-    UNLOCK 35
-    INC 33
-    SET 38 __STR_CONST_27
-    MOV 45 38
-    CALL __FCALL_2_print
-    MOV 45 35
-    CALL __FCALL_2_printU
-    SET 38 __STR_CONST_28
-    MOV 45 38
-    CALL __FCALL_2_print
-    MOV 45 32
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-__IF_8_END:
-    SET 38 256
-    DEC 38
-    EQ 38 35 38
-    CJMP 38 __IF_9_C0_BODY
-    JMP __IF_9_END
-__IF_9_C0_BODY:
-    SET 34 0
-__IF_9_END:
-    INC 35
-__LOOP_13_EVAL:
-    SET 38 256
-    GTR 38 38 35
-    CJMP 38 __LOOP_13_BODY
-__LOOP_12_EVAL:
-    MOV 38 34
-    CJMP 38 __LOOP_12_BODY
-    RET
-
 
 __FCALL_9_loadUserRegisters:
     ADD 33 23 32
@@ -364,6 +153,216 @@ __FCALL_9_loadUserRegisters:
     LD 15
     RET
 
+__FCALL_9_saveUserRegisters:
+    ADD 44 23 43
+    LD 44
+    SET 45 0
+    SET 46 2
+    ADD 47 44 46
+    ST 0 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 1 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 2 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 3 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 4 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 5 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 6 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 7 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 8 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 9 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 10 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 11 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 12 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 13 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 14 47
+    INC 45
+    SET 46 2
+    ADD 46 46 45
+    ADD 47 44 46
+    ST 15 47
+    RET
+
+__FCALL_3_getChar:
+    MOV 54 52
+    SET 55 1
+    RSHIFT 55 53 55
+    ADD 54 54 55
+    LD 54
+    SET 55 1
+    AND 55 53 55
+    CJMP 55 __IF_0_C0_BODY
+    SET 55 8
+    RSHIFT 54 54 55
+    JMP __IF_0_END
+__IF_0_C0_BODY:
+    SET 55 255
+    AND 54 54 55
+__IF_0_END:
+    RET
+
+__FCALL_2_print:
+    SET 50 0
+    MOV 53 50
+    MOV 52 49
+    CALL __FCALL_3_getChar
+    MOV 51 54
+    JMP __LOOP_3_EVAL
+__LOOP_3_BODY:
+    PRINTL 51
+    INC 50
+    MOV 53 50
+    MOV 52 49
+    CALL __FCALL_3_getChar
+    MOV 51 54
+__LOOP_3_EVAL:
+    MOV 52 51
+    CJMP 52 __LOOP_3_BODY
+    RET
+
+__FCALL_2_printU:
+    SET 50 1
+    JMP __LOOP_6_EVAL
+__LOOP_6_BODY:
+    SET 51 10
+    LMUL 50 50 51
+__LOOP_6_EVAL:
+    SET 51 10
+    DIV 51 49 51
+    GTEQ 51 51 50
+    CJMP 51 __LOOP_6_BODY
+    JMP __LOOP_7_EVAL
+__LOOP_7_BODY:
+    DIV 51 49 50
+    SET 52 48
+    ADD 52 51 52
+    PRINTL 52
+    LMUL 52 51 50
+    SUB 49 49 52
+    SET 52 10
+    DIV 50 50 52
+__LOOP_7_EVAL:
+    SET 52 0
+    GTR 52 50 52
+    CJMP 52 __LOOP_7_BODY
+    RET
+
+__FCALL_2_newline:
+    SET 49 10
+    PRINTL 49
+    RET
+
+__FCALL_8_unlockMemory:
+    LOCK 16
+    INC 32
+    SET 33 1
+    SET 34 1
+    JMP __LOOP_13_EVAL
+__LOOP_13_BODY:
+    SET 35 0
+    JMP __LOOP_14_EVAL
+__LOOP_14_BODY:
+    ADD 36 24 35
+    LD 36
+    SET 37 8
+    RSHIFT 36 36 37
+    EQ 36 36 32
+    ADD 37 24 35
+    LD 37
+    SET 38 15
+    AND 37 37 38
+    EQ 37 37 33
+    BAND 38 36 37
+    CJMP 38 __IF_8_C0_BODY
+    JMP __IF_8_END
+__IF_8_C0_BODY:
+    UNLOCK 35
+    INC 33
+    SET 38 __STR_CONST_14
+    MOV 49 38
+    CALL __FCALL_2_print
+    MOV 49 35
+    CALL __FCALL_2_printU
+    SET 38 __STR_CONST_15
+    MOV 49 38
+    CALL __FCALL_2_print
+    MOV 49 32
+    CALL __FCALL_2_printU
+    CALL __FCALL_2_newline
+__IF_8_END:
+    SET 38 256
+    DEC 38
+    EQ 38 35 38
+    CJMP 38 __IF_9_C0_BODY
+    JMP __IF_9_END
+__IF_9_C0_BODY:
+    SET 34 0
+__IF_9_END:
+    INC 35
+__LOOP_14_EVAL:
+    SET 38 256
+    GTR 38 38 35
+    CJMP 38 __LOOP_14_BODY
+__LOOP_13_EVAL:
+    MOV 38 34
+    CJMP 38 __LOOP_13_BODY
+    RET
+
+
 __FCALL_4_switchProcess:
     EQ 32 30 31
     CJMP 32 __IF_15_C0_BODY
@@ -377,10 +376,10 @@ __FCALL_4_switchProcess:
     EQ 32 32 33
     CJMP 32 __IF_17_C0_BODY
     SET 32 0
-    MOV 46 32
-    MOV 45 30
+    MOV 50 32
+    MOV 49 30
     CALL __FCALL_11_setProcessState
-    MOV 40 30
+    MOV 43 30
     CALL __FCALL_9_saveUserRegisters
     JMP __IF_17_END
 __IF_17_C0_BODY:
@@ -402,28 +401,28 @@ __IF_15_END:
     RET
 
 __FCALL_11_getProcessState:
-    ADD 43 23 42
-    LD 43
-    SET 44 0
-    ADD 43 43 44
-    LD 43
+    ADD 46 23 45
+    LD 46
+    SET 47 0
+    ADD 46 46 47
+    LD 46
     RET
 
 __FCALL_4_getCurrentlyRunningProcess:
     SET 28 -1
     SET 29 1
     SET 30 0
-    JMP __LOOP_16_EVAL
-__LOOP_16_BODY:
+    JMP __LOOP_17_EVAL
+__LOOP_17_BODY:
     ADD 31 23 30
     LD 31
 
     SET 32 -1
     EQ 31 31 32
     CJMP 31 __IF_10_C0_BODY
-    MOV 42 30
+    MOV 45 30
     CALL __FCALL_11_getProcessState
-    MOV 31 43
+    MOV 31 46
     SET 32 1
     EQ 31 31 32
     CJMP 31 __IF_11_C0_BODY
@@ -436,11 +435,11 @@ __IF_11_END:
 __IF_10_C0_BODY:
 __IF_10_END:
     INC 30
-__LOOP_16_EVAL:
+__LOOP_17_EVAL:
     SET 31 10
     GTR 31 31 30
     BAND 31 29 31
-    CJMP 31 __LOOP_16_BODY
+    CJMP 31 __LOOP_17_BODY
     RET
 
 
@@ -452,19 +451,20 @@ __FCALL_10_saveStack:
     ADD 31 29 30
     ST 17 31
     SET 30 0
-    JMP __LOOP_17_EVAL
-__LOOP_17_BODY:
+    JMP __LOOP_18_EVAL
+__LOOP_18_BODY:
     POP 31
     SET 32 19
     ADD 32 32 30
     ADD 33 29 32
     ST 31 33
     INC 30
-__LOOP_17_EVAL:
+__LOOP_18_EVAL:
     MOV 31 17
-    CJMP 31 __LOOP_17_BODY
+    CJMP 31 __LOOP_18_BODY
     PUSH 28
     RET
+
 
 
 
@@ -474,17 +474,17 @@ __FCALL_4_getNextProcess:
     SET 31 10
     MOD 30 30 31
     SET 31 -1
-    JMP __LOOP_18_EVAL
-__LOOP_18_BODY:
+    JMP __LOOP_19_EVAL
+__LOOP_19_BODY:
     ADD 32 23 30
     LD 32
 
     SET 33 -1
     EQ 32 32 33
     CJMP 32 __IF_12_C0_BODY
-    MOV 42 30
+    MOV 45 30
     CALL __FCALL_11_getProcessState
-    MOV 32 43
+    MOV 32 46
     SET 33 0
     EQ 32 32 33
     CJMP 32 __IF_13_C0_BODY
@@ -499,14 +499,14 @@ __IF_12_END:
     INC 32
     SET 33 10
     MOD 30 32 33
-__LOOP_18_EVAL:
+__LOOP_19_EVAL:
     SET 32 -1
     EQ 32 31 32
     EQ 33 29 30
     SET 34 0
     EQ 33 33 34
     BAND 32 32 33
-    CJMP 32 __LOOP_18_BODY
+    CJMP 32 __LOOP_19_BODY
     RET
 
 __INTER_0_TimerTick:
@@ -527,15 +527,15 @@ __IF_14_END:
     SET 28 80
     SETTIMER 28
     CALL __FCALL_2_newline
-    SET 28 __STR_CONST_29
-    MOV 45 28
+    SET 28 __STR_CONST_16
+    MOV 49 28
     CALL __FCALL_2_print
-    MOV 45 26
+    MOV 49 26
     CALL __FCALL_2_printU
-    SET 28 __STR_CONST_30
-    MOV 45 28
+    SET 28 __STR_CONST_17
+    MOV 49 28
     CALL __FCALL_2_print
-    MOV 45 27
+    MOV 49 27
     CALL __FCALL_2_printU
     CALL __FCALL_2_newline
     MOV 31 27
@@ -543,13 +543,11 @@ __IF_14_END:
     CALL __FCALL_4_switchProcess
     RETI
 
-
-
 __FCALL_8_freeMemory:
     INC 30
     SET 31 0
-    JMP __LOOP_19_EVAL
-__LOOP_19_BODY:
+    JMP __LOOP_20_EVAL
+__LOOP_20_BODY:
     ADD 32 24 31
     LD 32
     SET 33 8
@@ -563,10 +561,10 @@ __IF_19_C0_BODY:
     ST 32 33
 __IF_19_END:
     INC 31
-__LOOP_19_EVAL:
+__LOOP_20_EVAL:
     SET 32 256
     GTR 32 32 31
-    CJMP 32 __LOOP_19_BODY
+    CJMP 32 __LOOP_20_BODY
     RET
 
 __FCALL_4_killProcess:
@@ -577,6 +575,7 @@ __FCALL_4_killProcess:
     ADD 31 23 29
     ST 30 31
     RET
+
 
 
 
@@ -591,10 +590,326 @@ __IF_20_C0_BODY:
     SET 31 0
     SUB 30 31 30
 __IF_20_END:
-    MOV 45 30
+    MOV 49 30
     CALL __FCALL_2_printU
     RET
 
+__FCALL_12_hasNextFile:
+    SET 30 3
+    LMUL 30 21 30
+    GTR 30 30 25
+    RET
+
+__FCALL_12_getNextFile:
+    MOD 30 25 21
+    INC 25
+    RET
+
+
+__FCALL_10_defaultStack:
+    ADD 42 23 41
+    LD 42
+    SET 43 1
+    SET 44 18
+    ADD 45 42 44
+    ST 43 45
+    SET 43 0
+    SET 44 19
+    ADD 45 42 44
+    ST 43 45
+    RET
+
+__FCALL_8_getNumberOfOpenMemBlocks:
+    SET 35 0
+    SET 36 0
+    JMP __LOOP_5_EVAL
+__LOOP_5_BODY:
+    ADD 37 24 36
+    LD 37
+    SET 38 0
+    EQ 37 37 38
+    CJMP 37 __IF_2_C0_BODY
+    JMP __IF_2_END
+__IF_2_C0_BODY:
+    INC 35
+__IF_2_END:
+    INC 36
+__LOOP_5_EVAL:
+    SET 37 256
+    GTR 37 37 36
+    CJMP 37 __LOOP_5_BODY
+    RET
+
+__FCALL_2_printHex:
+    SET 34 61440
+    SET 35 0
+    JMP __LOOP_4_EVAL
+__LOOP_4_BODY:
+    AND 36 34 33
+    SET 37 3
+    SUB 37 37 35
+    SET 38 2
+    LSHIFT 37 37 38
+    RSHIFT 36 36 37
+    SET 37 9
+    GTEQ 37 37 36
+    CJMP 37 __IF_1_C0_BODY
+    SET 37 55
+    ADD 37 36 37
+    PRINTL 37
+    JMP __IF_1_END
+__IF_1_C0_BODY:
+    SET 37 48
+    ADD 37 36 37
+    PRINTL 37
+__IF_1_END:
+    SET 37 4
+    RSHIFT 34 34 37
+    INC 35
+__LOOP_4_EVAL:
+    SET 37 4
+    GTR 37 37 35
+    CJMP 37 __LOOP_4_BODY
+    RET
+
+
+__FCALL_7_extFetch:
+    SET 42 1
+    LSHIFT 42 41 42
+    SET 43 0
+    EXTFETCH 40 43 42
+    MOV 43 18
+    SET 44 0
+    MOV 45 42
+    INC 45
+    EXTFETCH 40 44 45
+    SET 44 8
+    LSHIFT 44 43 44
+    OR 43 44 18
+    RET
+
+__FCALL_3_min:
+    GTR 43 41 42
+    CJMP 43 __IF_7_C0_BODY
+    JMP __IF_7_END
+__IF_7_C0_BODY:
+    MOV 41 42
+__IF_7_END:
+    RET
+
+
+
+__FCALL_6_setProgramCounter:
+    ADD 43 23 41
+    LD 43
+    SET 44 1
+    ADD 45 43 44
+    ST 42 45
+    RET
+
+__FCALL_8_allocateNextBlock:
+    SET 40 1
+    SET 41 -1
+    SET 42 0
+    JMP __LOOP_10_EVAL
+__LOOP_10_BODY:
+    ADD 43 24 42
+    LD 43
+    SET 44 0
+    EQ 43 43 44
+    CJMP 43 __IF_6_C0_BODY
+    JMP __IF_6_END
+__IF_6_C0_BODY:
+    SET 43 8
+    LSHIFT 43 38 43
+    OR 43 43 39
+    ADD 44 24 42
+    ST 43 44
+    MOV 41 42
+    SET 40 0
+__IF_6_END:
+    INC 42
+__LOOP_10_EVAL:
+    SET 43 256
+    GTR 43 43 42
+    BAND 43 40 43
+    CJMP 43 __LOOP_10_BODY
+    RET
+
+__FCALL_4_findOpenProcessSlot:
+    SET 34 1
+    SET 35 -1
+    SET 36 0
+    JMP __LOOP_9_EVAL
+__LOOP_9_BODY:
+    ADD 37 23 36
+    LD 37
+
+    SET 38 -1
+    EQ 37 37 38
+    CJMP 37 __IF_3_C0_BODY
+    JMP __IF_3_END
+__IF_3_C0_BODY:
+    MOV 35 36
+    SET 34 0
+__IF_3_END:
+    INC 36
+__LOOP_9_EVAL:
+    SET 37 10
+    GTR 37 37 36
+    BAND 37 34 37
+    CJMP 37 __LOOP_9_BODY
+    RET
+
+
+
+__FCALL_4_createProcess:
+    SET 31 0
+    SET 32 0
+    MOV 41 32
+    MOV 40 30
+    CALL __FCALL_7_extFetch
+    MOV 32 43
+    CALL __FCALL_2_newline
+    SET 33 __STR_CONST_3
+    MOV 49 33
+    CALL __FCALL_2_print
+    MOV 33 32
+    CALL __FCALL_2_printHex
+    SET 33 __STR_CONST_4
+    MOV 49 33
+    CALL __FCALL_2_print
+    MOV 49 32
+    CALL __FCALL_2_printU
+    SET 33 __STR_CONST_5
+    MOV 49 33
+    CALL __FCALL_2_print
+    SET 33 8
+    RSHIFT 33 32 33
+    INC 33
+    CALL __FCALL_4_findOpenProcessSlot
+    MOV 34 35
+    SET 35 -1
+    EQ 35 34 35
+    CJMP 35 __IF_4_C0_BODY
+    CALL __FCALL_8_getNumberOfOpenMemBlocks
+    GTR 35 35 33
+    CJMP 35 __IF_5_C0_BODY
+    SET 35 __STR_CONST_6
+    MOV 49 35
+    CALL __FCALL_2_print
+    SET 31 2
+    JMP __IF_5_END
+__IF_5_C0_BODY:
+    MOV 35 34
+    INC 35
+    SET 36 0
+    MOV 39 36
+    MOV 38 35
+    CALL __FCALL_8_allocateNextBlock
+    MOV 35 41
+    SET 36 1
+    CALL __FCALL_2_newline
+    SET 37 __STR_CONST_7
+    MOV 49 37
+    CALL __FCALL_2_print
+    CALL __FCALL_2_newline
+    SET 37 1
+    JMP __LOOP_11_EVAL
+__LOOP_11_BODY:
+    MOV 38 34
+    INC 38
+    MOV 39 37
+    CALL __FCALL_8_allocateNextBlock
+    MOV 38 41
+    SET 39 0
+    JMP __LOOP_12_EVAL
+__LOOP_12_BODY:
+    MOV 41 36
+    MOV 40 30
+    CALL __FCALL_7_extFetch
+    MOV 40 43
+    SET 41 8
+    LSHIFT 41 38 41
+
+    ADD 42 41 39
+    ST 40 42
+    INC 36
+    INC 39
+__LOOP_12_EVAL:
+    MOV 41 37
+    DEC 41
+    SET 42 8
+    LSHIFT 41 41 42
+    SUB 41 32 41
+    SET 42 256
+    CALL __FCALL_3_min
+    GTR 41 41 39
+    CJMP 41 __LOOP_12_BODY
+    INC 37
+__LOOP_11_EVAL:
+    GTEQ 41 33 37
+    CJMP 41 __LOOP_11_BODY
+    SET 41 8
+    LSHIFT 41 35 41
+
+    ADD 42 23 34
+    ST 41 42
+    SET 41 0
+    MOV 50 41
+    MOV 49 34
+    CALL __FCALL_11_setProcessState
+    MOV 43 34
+    CALL __FCALL_9_saveUserRegisters
+    SET 41 0
+    MOV 42 41
+    MOV 41 34
+    CALL __FCALL_6_setProgramCounter
+    MOV 41 34
+    CALL __FCALL_10_defaultStack
+    SET 41 __STR_CONST_8
+    MOV 49 41
+    CALL __FCALL_2_print
+    MOV 49 34
+    CALL __FCALL_2_printU
+    SET 41 __STR_CONST_9
+    MOV 49 41
+    CALL __FCALL_2_print
+    MOV 49 35
+    CALL __FCALL_2_printU
+    SET 41 __STR_CONST_10
+    MOV 49 41
+    CALL __FCALL_2_print
+    MOV 45 34
+    CALL __FCALL_11_getProcessState
+    MOV 41 46
+    MOV 49 41
+    CALL __FCALL_2_printU
+__IF_5_END:
+    JMP __IF_4_END
+__IF_4_C0_BODY:
+    CALL __FCALL_2_newline
+    SET 41 __STR_CONST_11
+    MOV 49 41
+    CALL __FCALL_2_print
+    SET 31 1
+__IF_4_END:
+    RET
+
+__FCALL_1_allocateEmptySlots:
+    SET 29 0
+    JMP __LOOP_8_EVAL
+__LOOP_8_BODY:
+    CALL __FCALL_12_getNextFile
+    CALL __FCALL_4_createProcess
+    MOV 29 31
+__LOOP_8_EVAL:
+    CALL __FCALL_12_hasNextFile
+    SET 31 0
+    EQ 31 29 31
+    BAND 30 30 31
+    CJMP 30 __LOOP_8_BODY
+    RET
 
 
 
@@ -605,6 +920,7 @@ __FCALL_1_killProcessInterrupt:
     CJMP 29 __IF_18_C0_BODY
     MOV 29 28
     CALL __FCALL_4_killProcess
+    CALL __FCALL_1_allocateEmptySlots
     JMP __IF_18_END
 __IF_18_C0_BODY:
 __IF_18_END:
@@ -612,13 +928,13 @@ __IF_18_END:
     CALL __FCALL_4_getNextProcess
     MOV 29 31
     CALL __FCALL_2_newline
-    SET 30 __STR_CONST_32
-    MOV 45 30
+    SET 30 __STR_CONST_19
+    MOV 49 30
     CALL __FCALL_2_print
     MOV 30 28
     CALL __FCALL_2_printS
-    SET 30 __STR_CONST_33
-    MOV 45 30
+    SET 30 __STR_CONST_20
+    MOV 49 30
     CALL __FCALL_2_print
     MOV 30 29
     CALL __FCALL_2_printS
@@ -628,8 +944,8 @@ __IF_18_END:
     CJMP 30 __IF_21_C0_BODY
     JMP __IF_21_END
 __IF_21_C0_BODY:
-    SET 30 __STR_CONST_34
-    MOV 45 30
+    SET 30 __STR_CONST_21
+    MOV 49 30
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
     SHUTDOWN
@@ -641,9 +957,11 @@ __IF_21_END:
     CALL __FCALL_4_switchProcess
     RET
 
+
+
 __INTER_0_BadMemAccess:
-    SET 26 __STR_CONST_31
-    MOV 45 26
+    SET 26 __STR_CONST_18
+    MOV 49 26
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
     CALL __FCALL_1_killProcessInterrupt
@@ -652,8 +970,8 @@ __INTER_0_BadMemAccess:
 
 
 __INTER_0_StackOverflow:
-    SET 26 __STR_CONST_35
-    MOV 45 26
+    SET 26 __STR_CONST_22
+    MOV 49 26
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
     CALL __FCALL_1_killProcessInterrupt
@@ -662,43 +980,12 @@ __INTER_0_StackOverflow:
 
 
 __INTER_0_StackUnderflow:
-    SET 26 __STR_CONST_36
-    MOV 45 26
+    SET 26 __STR_CONST_23
+    MOV 49 26
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
     CALL __FCALL_1_killProcessInterrupt
     RETI
-__FCALL_2_printHex:
-    SET 39 61440
-    SET 40 0
-    JMP __LOOP_4_EVAL
-__LOOP_4_BODY:
-    AND 41 39 38
-    SET 42 3
-    SUB 42 42 40
-    SET 43 2
-    LSHIFT 42 42 43
-    RSHIFT 41 41 42
-    SET 42 9
-    GTEQ 42 42 41
-    CJMP 42 __IF_1_C0_BODY
-    SET 42 55
-    ADD 42 41 42
-    PRINTL 42
-    JMP __IF_1_END
-__IF_1_C0_BODY:
-    SET 42 48
-    ADD 42 41 42
-    PRINTL 42
-__IF_1_END:
-    SET 42 4
-    RSHIFT 39 39 42
-    INC 40
-__LOOP_4_EVAL:
-    SET 42 4
-    GTR 42 42 40
-    CJMP 42 __LOOP_4_BODY
-    RET
 
 
 
@@ -713,15 +1000,15 @@ __INTER_0_BadIns:
     CJMP 28 __IF_22_C0_BODY
     JMP __IF_22_END
 __IF_22_C0_BODY:
-    SET 28 __STR_CONST_37
-    MOV 45 28
+    SET 28 __STR_CONST_24
+    MOV 49 28
     CALL __FCALL_2_print
-    MOV 38 22
+    MOV 33 22
     CALL __FCALL_2_printHex
-    SET 28 __STR_CONST_38
-    MOV 45 28
+    SET 28 __STR_CONST_25
+    MOV 49 28
     CALL __FCALL_2_print
-    MOV 38 27
+    MOV 33 27
     CALL __FCALL_2_printHex
     SET 28 8
     RSHIFT 28 27 28
@@ -734,10 +1021,10 @@ __IF_23_C0_BODY:
     INC 28
     ADD 27 26 28
     LD 27
-    SET 28 __STR_CONST_39
-    MOV 45 28
+    SET 28 __STR_CONST_26
+    MOV 49 28
     CALL __FCALL_2_print
-    MOV 38 27
+    MOV 33 27
     CALL __FCALL_2_printHex
 __IF_23_END:
     CALL __FCALL_2_newline
@@ -752,8 +1039,8 @@ __INTER_0_UserDefined1:
     USR_ADDR 26
     MOV 27 26
     CJMP 27 __IF_24_C0_BODY
-    SET 27 __STR_CONST_40
-    MOV 45 27
+    SET 27 __STR_CONST_27
+    MOV 49 27
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
     CALL __FCALL_1_killProcessInterrupt
@@ -761,7 +1048,7 @@ __INTER_0_UserDefined1:
 __IF_24_C0_BODY:
     MOV 27 26
 
-    MOV 45 27
+    MOV 49 27
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
 __IF_24_END:
@@ -776,7 +1063,7 @@ __INTER_0_UserDefined2:
 
 
 __INTER_0_UserDefined3:
-    MOV 45 0
+    MOV 49 0
     CALL __FCALL_2_printU
     CALL __FCALL_2_newline
     RETI
@@ -789,8 +1076,8 @@ __INTER_0_UserDefined4:
     USR_ADDR 26
     MOV 27 26
     CJMP 27 __IF_25_C0_BODY
-    SET 27 __STR_CONST_41
-    MOV 45 27
+    SET 27 __STR_CONST_28
+    MOV 49 27
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
     CALL __FCALL_1_killProcessInterrupt
@@ -798,7 +1085,7 @@ __INTER_0_UserDefined4:
 __IF_25_C0_BODY:
     MOV 27 26
 
-    MOV 45 27
+    MOV 49 27
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
 __IF_25_END:
@@ -808,6 +1095,27 @@ __IF_25_END:
     RETI
 __INTER_0_defaultInterrupt:
     RETI
+
+
+__FCALL_1_initializeProcessArray:
+    SET 26 0
+    JMP __LOOP_0_EVAL
+__LOOP_0_BODY:
+    SET 27 -1
+
+    ADD 28 23 26
+    ST 27 28
+    INC 26
+__LOOP_0_EVAL:
+    SET 27 10
+    GTR 27 27 26
+    CJMP 27 __LOOP_0_BODY
+    RET
+
+
+
+
+
 
 __FCALL_1_initializeMemoryBlocks:
     SET 26 0
@@ -839,443 +1147,53 @@ __LOOP_2_EVAL:
 
 
 
-
-__FCALL_10_defaultStack:
-    ADD 39 23 38
-    LD 39
-    SET 40 1
-    SET 41 18
-    ADD 42 39 41
-    ST 40 42
-    SET 40 0
-    SET 41 19
-    ADD 42 39 41
-    ST 40 42
-    RET
-
-__FCALL_7_extFetch:
-    SET 39 1
-    LSHIFT 39 38 39
-    SET 40 0
-    EXTFETCH 37 40 39
-    MOV 40 18
-    SET 41 0
-    MOV 42 39
-    INC 42
-    EXTFETCH 37 41 42
-    SET 41 8
-    LSHIFT 41 40 41
-    OR 40 41 18
-    RET
-
-__FCALL_8_getNumberOfOpenMemBlocks:
-    SET 32 0
-    SET 33 0
-    JMP __LOOP_5_EVAL
-__LOOP_5_BODY:
-    ADD 34 24 33
-    LD 34
-    SET 35 0
-    EQ 34 34 35
-    CJMP 34 __IF_2_C0_BODY
-    JMP __IF_2_END
-__IF_2_C0_BODY:
-    INC 32
-__IF_2_END:
-    INC 33
-__LOOP_5_EVAL:
-    SET 34 256
-    GTR 34 34 33
-    CJMP 34 __LOOP_5_BODY
-    RET
-
-__FCALL_3_min:
-    GTR 40 38 39
-    CJMP 40 __IF_7_C0_BODY
-    JMP __IF_7_END
-__IF_7_C0_BODY:
-    MOV 38 39
-__IF_7_END:
-    RET
-
-
-
-
-__FCALL_8_allocateNextBlock:
-    SET 37 1
-    SET 38 -1
-    SET 39 0
-    JMP __LOOP_9_EVAL
-__LOOP_9_BODY:
-    ADD 40 24 39
-    LD 40
-    SET 41 0
-    EQ 40 40 41
-    CJMP 40 __IF_6_C0_BODY
-    JMP __IF_6_END
-__IF_6_C0_BODY:
-    SET 40 8
-    LSHIFT 40 35 40
-    OR 40 40 36
-    ADD 41 24 39
-    ST 40 41
-    MOV 38 39
-    SET 37 0
-__IF_6_END:
-    INC 39
-__LOOP_9_EVAL:
-    SET 40 256
-    GTR 40 40 39
-    BAND 40 37 40
-    CJMP 40 __LOOP_9_BODY
-    RET
-
-
-__FCALL_4_findOpenProcessSlot:
-    SET 31 1
-    SET 32 -1
-    SET 33 0
-    JMP __LOOP_8_EVAL
-__LOOP_8_BODY:
-    ADD 34 23 33
-    LD 34
-
-    SET 35 -1
-    EQ 34 34 35
-    CJMP 34 __IF_3_C0_BODY
-    JMP __IF_3_END
-__IF_3_C0_BODY:
-    MOV 32 33
-    SET 31 0
-__IF_3_END:
-    INC 33
-__LOOP_8_EVAL:
-    SET 34 10
-    GTR 34 34 33
-    BAND 34 31 34
-    CJMP 34 __LOOP_8_BODY
-    RET
-
-__FCALL_6_setProgramCounter:
-    ADD 40 23 38
-    LD 40
-    SET 41 1
-    ADD 42 40 41
-    ST 39 42
-    RET
-
-
-
-__FCALL_4_createProcess:
-    SET 28 0
-    SET 29 0
-    MOV 38 29
-    MOV 37 27
-    CALL __FCALL_7_extFetch
-    MOV 29 40
-    SET 30 __STR_CONST_3
-    MOV 45 30
-    CALL __FCALL_2_print
-    MOV 38 29
-    CALL __FCALL_2_printHex
-    CALL __FCALL_2_newline
-    SET 30 __STR_CONST_4
-    MOV 45 30
-    CALL __FCALL_2_print
-    MOV 45 29
-    CALL __FCALL_2_printU
-    SET 30 __STR_CONST_5
-    MOV 45 30
-    CALL __FCALL_2_print
-    SET 30 8
-    RSHIFT 30 29 30
-    INC 30
-    CALL __FCALL_4_findOpenProcessSlot
-    MOV 31 32
-    SET 32 -1
-    EQ 32 31 32
-    CJMP 32 __IF_4_C0_BODY
-    CALL __FCALL_8_getNumberOfOpenMemBlocks
-    GTR 32 32 30
-    CJMP 32 __IF_5_C0_BODY
-    SET 32 __STR_CONST_6
-    MOV 45 32
-    CALL __FCALL_2_print
-    SET 28 2
-    JMP __IF_5_END
-__IF_5_C0_BODY:
-    MOV 32 31
-    INC 32
-    SET 33 0
-    MOV 36 33
-    MOV 35 32
-    CALL __FCALL_8_allocateNextBlock
-    MOV 32 38
-    SET 33 1
-    CALL __FCALL_2_newline
-    SET 34 __STR_CONST_7
-    MOV 45 34
-    CALL __FCALL_2_print
-    CALL __FCALL_2_newline
-    SET 34 1
-    JMP __LOOP_10_EVAL
-__LOOP_10_BODY:
-    MOV 35 31
-    INC 35
-    MOV 36 34
-    CALL __FCALL_8_allocateNextBlock
-    MOV 35 38
-    SET 36 0
-    JMP __LOOP_11_EVAL
-__LOOP_11_BODY:
-    MOV 38 33
-    MOV 37 27
-    CALL __FCALL_7_extFetch
-    MOV 37 40
-    MOV 38 37
-    CALL __FCALL_2_printHex
-    SET 38 __STR_CONST_8
-    MOV 45 38
-    CALL __FCALL_2_print
-    SET 38 8
-    LSHIFT 38 35 38
-
-    ADD 39 38 36
-    ST 37 39
-    INC 33
-    INC 36
-__LOOP_11_EVAL:
-    MOV 38 34
-    DEC 38
-    SET 39 8
-    LSHIFT 38 38 39
-    SUB 38 29 38
-    SET 39 256
-    CALL __FCALL_3_min
-    GTR 38 38 36
-    CJMP 38 __LOOP_11_BODY
-    CALL __FCALL_2_newline
-    INC 34
-__LOOP_10_EVAL:
-    GTEQ 38 30 34
-    CJMP 38 __LOOP_10_BODY
-    SET 38 8
-    LSHIFT 38 32 38
-
-    ADD 39 23 31
-    ST 38 39
-    SET 38 0
-    MOV 46 38
-    MOV 45 31
-    CALL __FCALL_11_setProcessState
-    MOV 40 31
-    CALL __FCALL_9_saveUserRegisters
-    SET 38 0
-    MOV 39 38
-    MOV 38 31
-    CALL __FCALL_6_setProgramCounter
-    MOV 38 31
-    CALL __FCALL_10_defaultStack
-    SET 38 __STR_CONST_9
-    MOV 45 38
-    CALL __FCALL_2_print
-    MOV 45 31
-    CALL __FCALL_2_printU
-    SET 38 __STR_CONST_10
-    MOV 45 38
-    CALL __FCALL_2_print
-    MOV 45 32
-    CALL __FCALL_2_printU
-    SET 38 __STR_CONST_11
-    MOV 45 38
-    CALL __FCALL_2_print
-    MOV 42 31
-    CALL __FCALL_11_getProcessState
-    MOV 38 43
-    MOV 45 38
-    CALL __FCALL_2_printU
-__IF_5_END:
-    JMP __IF_4_END
-__IF_4_C0_BODY:
-    CALL __FCALL_2_newline
-    SET 38 __STR_CONST_12
-    MOV 45 38
-    CALL __FCALL_2_print
-    SET 28 1
-__IF_4_END:
-    RET
-
-__FCALL_1_initializeProcessArray:
-    SET 26 0
-    JMP __LOOP_0_EVAL
-__LOOP_0_BODY:
-    SET 27 -1
-
-    ADD 28 23 26
-    ST 27 28
-    INC 26
-__LOOP_0_EVAL:
-    SET 27 10
-    GTR 27 27 26
-    CJMP 27 __LOOP_0_BODY
-    RET
-
-
-
-
-
-
 __FCALL_1_main:
     CALL __FCALL_2_newline
     CALL __FCALL_1_initializeProcessArray
     CALL __FCALL_1_initializeMemoryBlocks
     SET 26 __STR_CONST_0
-    MOV 45 26
+    MOV 49 26
     CALL __FCALL_2_print
     SET 26 __BINEND
 
-    MOV 38 26
+    MOV 33 26
     CALL __FCALL_2_printHex
     CALL __FCALL_2_newline
     SET 26 __STR_CONST_1
-    MOV 45 26
+    MOV 49 26
     CALL __FCALL_2_print
     CALL __FCALL_8_getNumberOfOpenMemBlocks
-    MOV 26 32
-    MOV 45 26
+    MOV 26 35
+    MOV 49 26
     CALL __FCALL_2_printU
     CALL __FCALL_2_newline
     CALL __FCALL_2_newline
     SET 26 __STR_CONST_2
-    MOV 45 26
+    MOV 49 26
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
-    SET 26 0
-    MOV 27 26
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_13
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
+    CALL __FCALL_1_allocateEmptySlots
     CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_14
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_15
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_16
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_17
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_18
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_19
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_20
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_21
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    SET 27 0
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_22
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    CALL __FCALL_2_newline
-    SET 27 __STR_CONST_23
-    MOV 45 27
-    CALL __FCALL_2_print
-    CALL __FCALL_2_newline
-    SET 27 1
-    CALL __FCALL_4_createProcess
-    MOV 26 28
-    SET 27 __STR_CONST_24
-    MOV 45 27
-    CALL __FCALL_2_print
-    MOV 45 26
-    CALL __FCALL_2_printU
-    CALL __FCALL_2_newline
-    CALL __FCALL_2_newline
-    SET 27 __STR_CONST_25
-    MOV 45 27
+    SET 26 __STR_CONST_12
+    MOV 49 26
     CALL __FCALL_2_print
     CALL __FCALL_8_getNumberOfOpenMemBlocks
-    MOV 27 32
-    MOV 45 27
+    MOV 26 35
+    MOV 49 26
     CALL __FCALL_2_printU
     CALL __FCALL_2_newline
     CALL __FCALL_2_newline
-    SET 27 __STR_CONST_26
-    MOV 45 27
+    SET 26 __STR_CONST_13
+    MOV 49 26
     CALL __FCALL_2_print
     CALL __FCALL_2_newline
-    SET 27 16
-    SETTIMER 27
-    SET 27 0
-    MOV 32 27
+    SET 26 16
+    SETTIMER 26
+    SET 26 0
+    MOV 32 26
     CALL __FCALL_8_unlockMemory
-    SET 27 0
-    MOV 32 27
+    SET 26 0
+    MOV 32 26
     CALL __FCALL_10_loadStackAndRun
     RET
 
@@ -1284,11 +1202,11 @@ __STR_CONST_0:
 __STR_CONST_1:
     .TEXT "Number of open memory blocks (After Kernel Allocation): "
 __STR_CONST_2:
-    .TEXT "Creating Process 0"
+    .TEXT "Creating Processes"
 __STR_CONST_3:
     .TEXT "Program Size Byte: 0x"
 __STR_CONST_4:
-    .TEXT "Program Size: "
+    .TEXT " Program Size: "
 __STR_CONST_5:
     .TEXT " bytes"
 __STR_CONST_6:
@@ -1296,72 +1214,46 @@ __STR_CONST_6:
 __STR_CONST_7:
     .TEXT "Allocating Memory..."
 __STR_CONST_8:
-    .TEXT " "
-__STR_CONST_9:
     .TEXT "Process Index: "
-__STR_CONST_10:
+__STR_CONST_9:
     .TEXT " Memory Index: "
-__STR_CONST_11:
+__STR_CONST_10:
     .TEXT " Process State: "
-__STR_CONST_12:
+__STR_CONST_11:
     .TEXT "ERROR in createProcess(): Could not find process slot."
-__STR_CONST_13:
-    .TEXT " Creation Status: "
-__STR_CONST_14:
-    .TEXT " Creation Status: "
-__STR_CONST_15:
-    .TEXT " Creation Status: "
-__STR_CONST_16:
-    .TEXT " Creation Status: "
-__STR_CONST_17:
-    .TEXT " Creation Status: "
-__STR_CONST_18:
-    .TEXT " Creation Status: "
-__STR_CONST_19:
-    .TEXT " Creation Status: "
-__STR_CONST_20:
-    .TEXT " Creation Status: "
-__STR_CONST_21:
-    .TEXT " Creation Status: "
-__STR_CONST_22:
-    .TEXT " Creation Status: "
-__STR_CONST_23:
-    .TEXT "Creating Process 1"
-__STR_CONST_24:
-    .TEXT " Creation Status: "
-__STR_CONST_25:
+__STR_CONST_12:
     .TEXT "Number of open memory blocks (After Process Allocation): "
-__STR_CONST_26:
+__STR_CONST_13:
     .TEXT "LAUNCH PROCESS"
-__STR_CONST_27:
+__STR_CONST_14:
     .TEXT "Unlocked block "
-__STR_CONST_28:
+__STR_CONST_15:
     .TEXT " for process "
-__STR_CONST_29:
+__STR_CONST_16:
     .TEXT "Switching from Process "
-__STR_CONST_30:
+__STR_CONST_17:
     .TEXT " to "
-__STR_CONST_31:
+__STR_CONST_18:
     .TEXT "Bad Mem Access!"
-__STR_CONST_32:
+__STR_CONST_19:
     .TEXT "Killing "
-__STR_CONST_33:
+__STR_CONST_20:
     .TEXT " and switching to "
-__STR_CONST_34:
+__STR_CONST_21:
     .TEXT "All tasks finished, shutting down."
-__STR_CONST_35:
+__STR_CONST_22:
     .TEXT "Stack Overflow!"
-__STR_CONST_36:
+__STR_CONST_23:
     .TEXT "Stack Underflow!"
-__STR_CONST_37:
+__STR_CONST_24:
     .TEXT "Bad Instruction at "
-__STR_CONST_38:
+__STR_CONST_25:
     .TEXT " - "
-__STR_CONST_39:
+__STR_CONST_26:
     .TEXT " CJMP -> "
-__STR_CONST_40:
+__STR_CONST_27:
     .TEXT "Bad request, cannot print"
-__STR_CONST_41:
+__STR_CONST_28:
     .TEXT "Bad request, cannot print"
 __ALLOC_0:
     .ALLOC 10

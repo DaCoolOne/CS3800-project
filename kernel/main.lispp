@@ -28,10 +28,11 @@ function killProcessInterrupt() {
     }
     else {
         (process.killProcess int_current)
+        (allocateEmptySlots)
     }
-
-    set int_next (process.getNextProcess int_current)
     
+    set int_next (process.getNextProcess int_current)
+
     (stdio.newline)
     (stdio.print "Killing ")
     (stdio.printS int_current)
@@ -162,7 +163,7 @@ function KERNEL.UserDefined4() {
 
         (killProcessInterrupt)
     }
-    
+
     (stdio.printS KERNEL.int_UserReg1)
     (stdio.newline)
 }
@@ -203,24 +204,8 @@ function main() {
     (stdio.newline)
     (stdio.newline)
 
-    (stdio.print "Creating Process 0")(stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    (stdio.newline)
-    (stdio.print "Creating Process 1")(stdio.newline)
-    set int_Status (process.createProcess 1) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    
-    #set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    #set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
-    #set int_Status (process.createProcess 0) (stdio.print " Creation Status: ") (stdio.printU int_Status) (stdio.newline)
+    (stdio.print "Creating Processes")(stdio.newline)
+    (allocateEmptySlots)
 
     (stdio.newline)
     (stdio.print "Number of open memory blocks (After Process Allocation): ")
